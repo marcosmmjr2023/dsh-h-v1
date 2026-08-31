@@ -1,0 +1,543 @@
+/**
+ * Smart Model Router Plugin for DeepSeek Harness
+ * 
+ * Intelligent routing based on task complexity analysis.
+ * Routes simple tasks to cheap/local models, complex tasks to premium models.
+ * 
+ * @module smart-model-router
+ */
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const DEFAULT_ROUTING_CONFIG = {
+  // Provider tiers (from cheapest to most expensive)
+  tiers: {
+    free: {
+      providers: ['opencode-go-free'],
+      models: ['mimo-v2.5-free'],
+      maxTokens: 4096,
+      reasoningEffort: 'off'
+    },
+    go: {
+      providers: ['opencode-go'],
+      models: ['mimo-v2.5', 'mimo-v2', 'deepseek-v4-flash'],
+      maxTokens: 8192,
+      reasoningEffort: 'medium'
+    },
+    plus: {
+      providers: ['deepseek-official'],
+      models: ['deepseek-v4-pro'],
+      maxTokens: 16384,
+      reasoningEffort: 'high'
+    }
+  },
+
+  // Complexity thresholds
+  thresholds: {
+    simple: {
+      maxMessageLength: 500,
+      maxToolCount: 3,
+      keywords: ['hello', 'hi', 'thanks', 'help', 'what is', 'define', 'explain briefly']
+    },
+    complex: {
+      minMessageLength: 1000,
+      minToolCount: 5,
+      keywords: ['implement', 'create', 'build', 'refactor', 'debug', 'optimize', 
+                 'architecture', 'design pattern', 'algorithm', 'complex', 'advanced'],
+      codeIndicators: ['```', 'function', 'class', 'import', 'export', 'async', 'await']
+    }
+  },
+
+  // Fallback configuration
+  fallback: {
+    enabled: true,
+    maxRetries: 2,
+    retryDelayMs: 1000
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPLEXITY ANALYZER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Analyzes task complexity based on multiple factors
+ */
+class ComplexityAnalyzer {
+  constructor(config = DEFAULT_ROUTING_CONFIG) {
+    this.config = config;
+  }
+
+  /**
+   * Analyze messages to determine task complexity
+   * @param {Message[]} messages - Conversation messages
+   * @param {ToolSchema[]} tools - Available tools
+   * @param {string} purpose - Request purpose
+   * @returns {{ score: number, tier: string, reasons: string[] }}
+   */
+  analyze(messages, tools = [], purpose = undefined) {
+    const reasons = [];
+    let score = 0;
+
+    // Factor 1: Message content analysis
+    const lastUserMessage = this.getLastUserMessage(messages);
+    if (lastUserMessage) {
+      const contentScore = this.analyzeContent(lastUserMessage);
+      score += contentScore.score;
+      reasons.push(...contentScore.reasons);
+    }
+
+    // Factor 2: Tool complexity
+    const toolScore = this.analyzeTools(tools);
+    score += toolScore.score;
+    reasons.push(...toolScore.reasons);
+
+    // Factor 3: Conversation context
+    const contextScore = this.analyzeContext(messages);
+    score += contextScore.score;
+    reasons.push(...contextScore.reasons);
+
+    // Factor 4: Purpose-based routing
+    const purposeScore = this.analyzePurpose(purpose);
+    score += purposeScore.score;
+    reasons.push(...purposeScore.reasons);
+
+    // Determine tier based on score
+    const tier = this.scoreToTier(score);
+
+    return { score, tier, reasons };
+  }
+
+  getLastUserMessage(messages) {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        return messages[i];
+      }
+    }
+    return null;
+  }
+
+  analyzeContent(message) {
+    const score = { score: 0, reasons: [] };
+    const content = this.extractTextContent(message);
+    const contentLength = content.length;
+
+    // Length analysis
+    if (contentLength < this.config.thresholds.simple.maxMessageLength) {
+      score.score -= 2;
+      score.reasons.push('Short message (simple)');
+    } else if (contentLength > this.config.thresholds.complex.minMessageLength) {
+      score.score += 3;
+      score.reasons.push('Long message (complex)');
+    }
+
+    // Keyword analysis
+    const lowerContent = content.toLowerCase();
+    
+    // Simple keywords
+    const simpleKeywords = this.config.thresholds.simple.keywords;
+    const simpleMatches = simpleKeywords.filter(kw => lowerContent.includes(kw));
+    if (simpleMatches.length > 0) {
+      score.score -= 2;
+      score.reasons.push(`Simple keywords: ${simpleMatches.join(', ')}`);
+    }
+
+    // Complex keywords
+    const complexKeywords = this.config.thresholds.complex.keywords;
+    const complexMatches = complexKeywords.filter(kw => lowerContent.includes(kw));
+    if (complexMatches.length > 0) {
+      score.score += 2 * complexMatches.length;
+      score.reasons.push(`Complex keywords: ${complexMatches.join(', ')}`);
+    }
+
+    // Code indicators
+    const codeIndicators = this.config.thresholds.complex.codeIndicators;
+    const codeMatches = codeIndicators.filter(ind => lowerContent.includes(ind));
+    if (codeMatches.length > 0) {
+      score.score += codeMatches.length;
+      score.reasons.push(`Code indicators: ${codeMatches.join(', ')}`);
+    }
+
+    // Question complexity
+    if (lowerContent.includes('?')) {
+      const questionMarks = (lowerContent.match(/\?/g) || []).length;
+      if (questionMarks > 2) {
+        score.score += 2;
+        score.reasons.push('Multiple questions (complex)');
+      }
+    }
+
+    return score;
+  }
+
+  analyzeTools(tools) {
+    const score = { score: 0, reasons: [] };
+    const toolCount = tools.length;
+
+    if (toolCount < this.config.thresholds.simple.maxToolCount) {
+      score.score -= 1;
+      score.reasons.push(`Few tools available (${toolCount})`);
+    } else if (toolCount > this.config.thresholds.complex.minToolCount) {
+      score.score += 2;
+      score.reasons.push(`Many tools available (${toolCount})`);
+    }
+
+    // Analyze tool types
+    const toolNames = tools.map(t => t.name || '').join(' ').toLowerCase();
+    
+    const complexToolPatterns = ['subagent', 'workflow', 'ralph', 'bash', 'fs'];
+    const complexTools = complexToolPatterns.filter(p => toolNames.includes(p));
+    if (complexTools.length > 0) {
+      score.score += complexTools.length;
+      score.reasons.push(`Complex tools: ${complexTools.join(', ')}`);
+    }
+
+    return score;
+  }
+
+  analyzeContext(messages) {
+    const score = { score: 0, reasons: [] };
+    
+    // Conversation length
+    if (messages.length > 20) {
+      score.score += 2;
+      score.reasons.push('Long conversation (complex context)');
+    } else if (messages.length < 3) {
+      score.score -= 1;
+      score.reasons.push('Short conversation (simple context)');
+    }
+
+    // Check for tool results (indicates ongoing complex work)
+    const hasToolResults = messages.some(m => m.role === 'tool' || m.type === 'tool-result');
+    if (hasToolResults) {
+      score.score += 2;
+      score.reasons.push('Active tool usage (complex)');
+    }
+
+    return score;
+  }
+
+  analyzePurpose(purpose) {
+    const score = { score: 0, reasons: [] };
+
+    if (purpose === 'compaction') {
+      score.score -= 3;
+      score.reasons.push('Compaction purpose (simple)');
+    } else if (purpose === 'session-title') {
+      score.score -= 3;
+      score.reasons.push('Session title purpose (simple)');
+    }
+
+    return score;
+  }
+
+  extractTextContent(message) {
+    if (typeof message.content === 'string') {
+      return message.content;
+    }
+    if (Array.isArray(message.content)) {
+      return message.content
+        .filter(b => b.type === 'text')
+        .map(b => b.text)
+        .join(' ');
+    }
+    return '';
+  }
+
+  scoreToTier(score) {
+    if (score <= -2) return 'free';
+    if (score >= 5) return 'plus';
+    return 'go';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTING DECISION MAKER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Makes routing decisions based on complexity analysis
+ */
+class RoutingDecisionMaker {
+  constructor(config = DEFAULT_ROUTING_CONFIG, availableProviders = []) {
+    this.config = config;
+    this.availableProviders = availableProviders;
+    this.analyzer = new ComplexityAnalyzer(config);
+  }
+
+  /**
+   * Make a routing decision
+   * @param {GenerateOptions} options - Current request options
+   * @returns {{ provider: string, model: string, tier: string, reasons: string[] }}
+   */
+  decide(options) {
+    const { messages, tools, purpose, provider: currentProvider, model: currentModel } = options;
+
+    // Analyze complexity
+    const analysis = this.analyzer.analyze(messages, tools, purpose);
+    
+    // Get target tier configuration
+    const tierConfig = this.config.tiers[analysis.tier];
+    
+    // Select best available provider for this tier
+    const selected = this.selectProvider(tierConfig, currentProvider, currentModel);
+
+    return {
+      provider: selected.provider,
+      model: selected.model,
+      tier: analysis.tier,
+      score: analysis.score,
+      reasons: analysis.reasons,
+      maxTokens: tierConfig.maxTokens,
+      reasoningEffort: tierConfig.reasoningEffort
+    };
+  }
+
+  selectProvider(tierConfig, currentProvider, currentModel) {
+    // First, try to use a provider from the target tier
+    for (const provider of tierConfig.providers) {
+      if (this.isProviderAvailable(provider)) {
+        const model = this.selectModel(provider, tierConfig.models);
+        return { provider, model };
+      }
+    }
+
+    // Fallback: use current provider with tier's model settings
+    return {
+      provider: currentProvider,
+      model: currentModel,
+      fallback: true
+    };
+  }
+
+  isProviderAvailable(provider) {
+    return this.availableProviders.some(p => p.id === provider);
+  }
+
+  selectModel(provider, preferredModels) {
+    // Try to find a preferred model for this provider
+    const providerModels = this.availableProviders
+      .filter(p => p.id === provider)
+      .flatMap(p => p.models || []);
+
+    for (const preferred of preferredModels) {
+      if (providerModels.some(m => m.id === preferred)) {
+        return preferred;
+      }
+    }
+
+    // Return first available model or undefined
+    return providerModels[0]?.id;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CORDIS PLUGIN
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Smart Model Router Cordis Plugin
+ */
+function createSmartRouterPlugin(config = DEFAULT_ROUTING_CONFIG) {
+  return {
+    name: 'smart-model-router',
+    
+    inject: ['llm', 'agents'],
+    
+    apply(ctx) {
+      const decisionMaker = new RoutingDecisionMaker(config);
+      const routingLog = [];
+
+      // Get available providers on plugin mount
+      const updateAvailableProviders = () => {
+        const providers = ctx.llm.listProviders();
+        decisionMaker.availableProviders = providers;
+        console.log(`[SmartRouter] Available providers: ${providers.map(p => p.id).join(', ')}`);
+      };
+
+      // Initial provider list
+      updateAvailableProviders();
+
+      // Listen for provider updates
+      ctx.on('llm/adapters-updated', () => {
+        updateAvailableProviders();
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // INTERCEPT llm/stream WATERFALL
+      // ═══════════════════════════════════════════════════════════════════════
+      
+      ctx.on('llm/stream', async (options, next) => {
+        // Skip routing for auxiliary calls
+        if (options.purpose) {
+          console.log(`[SmartRouter] Skipping auxiliary call: ${options.purpose}`);
+          return next();
+        }
+
+        // Make routing decision
+        const decision = decisionMaker.decide(options);
+        
+        // Log the decision
+        const logEntry = {
+          timestamp: new Date().toISOString(),
+          originalProvider: options.provider,
+          originalModel: options.model,
+          routedProvider: decision.provider,
+          routedModel: decision.model,
+          tier: decision.tier,
+          score: decision.score,
+          reasons: decision.reasons
+        };
+        routingLog.push(logEntry);
+
+        // Keep log manageable
+        if (routingLog.length > 100) {
+          routingLog.shift();
+        }
+
+        console.log(`[SmartRouter] Routing decision:`, {
+          from: `${options.provider}/${options.model}`,
+          to: `${decision.provider}/${decision.model}`,
+          tier: decision.tier,
+          score: decision.score,
+          reasons: decision.reasons.slice(0, 3)
+        });
+
+        // Apply routing decision if different from current
+        if (decision.provider !== options.provider || decision.model !== options.model) {
+          const routedOptions = {
+            ...options,
+            provider: decision.provider,
+            model: decision.model,
+            // Apply tier-specific settings
+            maxTokens: decision.maxTokens,
+            reasoningEffort: decision.reasoningEffort
+          };
+
+          // Execute with routed options
+          try {
+            return await next(routedOptions);
+          } catch (error) {
+            // Fallback logic
+            if (config.fallback.enabled) {
+              console.log(`[SmartRouter] Routed call failed, attempting fallback...`);
+              return await handleFallback(options, decision, error, next, config);
+            }
+            throw error;
+          }
+        }
+
+        // No routing needed, proceed with original options
+        return next();
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // INTERCEPT agent/request-error FOR FALLBACK
+      // ═══════════════════════════════════════════════════════════════════════
+      
+      ctx.on('agent/request-error', async (payload, next) => {
+        const { failure, coordinates } = payload;
+        
+        console.log(`[SmartRouter] Request error:`, {
+          code: failure.code,
+          provider: coordinates.provider,
+          model: coordinates.model
+        });
+
+        // Handle specific error types
+        if (failure.code === 'RATE_LIMIT' || failure.code === 'QUOTA_EXCEEDED') {
+          // Rate limited - try to route to different provider
+          const tierConfig = config.tiers.go; // Fall back to go tier
+          const alternative = decisionMaker.selectProvider(
+            tierConfig, 
+            coordinates.provider, 
+            coordinates.model
+          );
+
+          if (alternative.provider !== coordinates.provider) {
+            console.log(`[SmartRouter] Rate limited, retrying with: ${alternative.provider}`);
+            return { kind: 'retry', provider: alternative.provider, model: alternative.model };
+          }
+        }
+
+        // Default: proceed with normal retry logic
+        return next();
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // EXPOSE ROUTING INFO VIA SERVICE
+      // ═══════════════════════════════════════════════════════════════════════
+      
+      // Register a service to expose routing decisions
+      ctx.provide('smartRouter', {
+        getLog: () => [...routingLog],
+        getLastDecision: () => routingLog[routingLog.length - 1],
+        getConfig: () => ({ ...config }),
+        forceRoute: (tier) => {
+          // Force all future requests to use a specific tier
+          console.log(`[SmartRouter] Forcing tier: ${tier}`);
+          // Implementation would modify decision maker
+        }
+      });
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPER METHODS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Handle fallback logic when a routed request fails
+ */
+async function handleFallback(originalOptions, failedDecision, error, next, config) {
+  // Try go tier if plus failed
+  if (failedDecision.tier === 'plus') {
+    const goTier = config.tiers.go;
+    console.log(`[SmartRouter] Falling back to go tier: ${goTier.providers[0]}`);
+    
+    try {
+      return await next({
+        ...originalOptions,
+        provider: goTier.providers[0],
+        model: goTier.models[0],
+        maxTokens: goTier.maxTokens
+      });
+    } catch (goError) {
+      // Continue to free fallback
+    }
+  }
+
+  // Try free if go tier failed
+  if (failedDecision.tier !== 'free') {
+    const freeTier = config.tiers.free;
+    console.log(`[SmartRouter] Falling back to free tier: ${freeTier.providers[0]}`);
+    
+    try {
+      return await next({
+        ...originalOptions,
+        provider: freeTier.providers[0],
+        model: freeTier.models[0],
+        maxTokens: freeTier.maxTokens
+      });
+    } catch (freeError) {
+      // All fallbacks failed
+    }
+  }
+
+  // Re-throw original error if all fallbacks fail
+  throw error;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPORTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+module.exports = {
+  createSmartRouterPlugin,
+  ComplexityAnalyzer,
+  RoutingDecisionMaker,
+  DEFAULT_ROUTING_CONFIG
+};
