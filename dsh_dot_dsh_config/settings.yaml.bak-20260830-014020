@@ -1,0 +1,68 @@
+permission:
+  defaultPreset: danger-full-access
+agent-default-model:
+  provider: deepseek-official
+  model: deepseek-v4-flash
+  reasoningEffort: high
+ui-onboarding:
+  welcomeNoticeVersion: 2026-08-13.1
+llm-pi-ai:
+  providers:
+    opencode-go-free:
+      displayName: OpenCode Free (Grátis)
+      apiKeyEnv: OPENCODE_GO_API_KEY
+      models:
+        - id: mimo-v2.5-free
+          name: Mimo V2.5 Free
+          contextWindow: 32000
+          maxTokens: 4096
+          reasoningEfforts:
+            off: null
+            low: low
+    opencode-go:
+      displayName: OpenCode Go
+      apiKeyEnv: OPENCODE_GO_API_KEY
+      models:
+        - id: mimo-v2.5
+          name: Mimo V2.5
+          contextWindow: 1000000
+          maxTokens: 8192
+          reasoningEfforts:
+            off: null
+            low: low
+            medium: medium
+            high: high
+        - id: mimo-v2
+          name: Mimo V2
+          contextWindow: 256000
+          maxTokens: 4096
+        - id: deepseek-v4-flash
+          name: DeepSeek V4 Flash
+          contextWindow: 128000
+          maxTokens: 8192
+    deepseek-official:
+      displayName: DeepSeek Pro
+      apiKeyEnv: DEEPSEEK_API_KEY
+      models:
+        - id: deepseek-v4-pro
+          name: DeepSeek V4 Pro
+          contextWindow: 128000
+          maxTokens: 16384
+          reasoningEfforts:
+            off: null
+            low: low
+            medium: medium
+            high: high
+            xhigh: xhigh
+smart-router:
+  mode: eco
+  custom: false
+  complex:
+    - deepseek-official/deepseek-v4-pro
+    - opencode-go/deepseek-v4-flash
+  simple:
+    - opencode-go/mimo-v2.5
+    - opencode-go/mimo-v2
+  standard:
+    - opencode-go/deepseek-v4-flash
+    - opencode-go/mimo-v2.5

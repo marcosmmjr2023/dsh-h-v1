@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────────────────────────
+# Node / dependencies
+# ─────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─────────────────────────────────────────────────────────────
+# Credentials and secrets (NEVER commit)
+# ─────────────────────────────────────────────────────────────
+# Real credentials file
+.credentials.yaml
+# All rotating backups of credentials
+.credentials.yaml.bak
+.credentials.yaml.bak-*
+# Same protection applied inside dsh_dot_dsh_config/
+dsh_dot_dsh_config/.credentials.yaml
+dsh_dot_dsh_config/.credentials.yaml.bak
+dsh_dot_dsh_config/.credentials.yaml.bak-*
+
+# ─────────────────────────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────────────────────────
+*.log
+dsh_dot_dsh_config/web.log
+
+# ─────────────────────────────────────────────────────────────
+# OS / editor scratch files
+# ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─────────────────────────────────────────────────────────────
+# Local environment
+# ─────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─────────────────────────────────────────────────────────────
+# Runtime / state directories
+# ─────────────────────────────────────────────────────────────
+# Sessions, profiles storage and other runtime data live under
+# dsh_dot_dsh_config/ — keep the directory but ignore volatile state.
+dsh_dot_dsh_config/sessions/
+dsh_dot_dsh_config/storages/

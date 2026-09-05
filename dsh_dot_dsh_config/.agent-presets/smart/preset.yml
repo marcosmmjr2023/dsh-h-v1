@@ -1,0 +1,3 @@
+name: Smart Compact
+description: Agente completo (igual Standard) com compactacao de contexto otimizada: resume sempre com um modelo de 1M (mimo-v2.5), compacta mais cedo (60%) para a sessao nao crescer progressivamente, e mantem a qualidade do codigo.
+order: 2
