@@ -9,21 +9,21 @@
 #    (hook agent/request, por-agente via agent/created).
 - insert:
     - id: smart-router
-      name: '/home/deploy/.dsh/smart-router-plugin.js'
+      name: 'file:///C:/Users/marco/OneDrive/Documentos/projetos/dsh-h-v1/dsh_dot_dsh_config/smart-router-plugin.js'
       config:
         enabled: true
 # 3) OpenRouter Enhanced: grupos "OpenRouter Free" (modelos gratuitos) e
 #    "OpenRouter Pro" (escolha de provedor por modelo, provider.order).
 - insert:
     - id: openrouter-enhanced
-      name: '/home/deploy/.dsh/openrouter-enhanced-plugin.js'
+      name: 'file:///C:/Users/marco/OneDrive/Documentos/projetos/dsh-h-v1/dsh_dot_dsh_config/openrouter-enhanced-plugin.js'
       config:
         enabled: true
 # 4) Model Visibility: filtro do catalogo no seletor de modelos
 #    (settings model-visibility + pagina /models com checkboxes).
 - insert:
     - id: model-visibility
-      name: '/home/deploy/.dsh/model-visibility-plugin.js'
+      name: 'file:///C:/Users/marco/OneDrive/Documentos/projetos/dsh-h-v1/dsh_dot_dsh_config/model-visibility-plugin.js'
       config:
         enabled: true
 # 5) Compaction: usa um modelo de CONTEXTO GRANDE para resumir a conversa,
@@ -39,7 +39,7 @@
 #    do FreeLLMAPI (chaves dos provedores gratuitos) numa nova aba.
 - insert:
     - id: freellmapi-shortcut
-      name: '/home/deploy/.dsh/freellmapi-shortcut-plugin.js'
+      name: 'file:///C:/Users/marco/OneDrive/Documentos/projetos/dsh-h-v1/dsh_dot_dsh_config/freellmapi-shortcut-plugin.js'
       config:
         enabled: true
 # 7) Layout Panel: coluna direita que desloca a sessao para a esquerda e
@@ -47,6 +47,6 @@
 #    modificados + status do gateway. API /api/layout-info.
 - insert:
     - id: layout-panel
-      name: '/home/deploy/.dsh/layout-panel-plugin.js'
+      name: 'file:///C:/Users/marco/OneDrive/Documentos/projetos/dsh-h-v1/dsh_dot_dsh_config/layout-panel-plugin-v7.js'
       config:
         enabled: true

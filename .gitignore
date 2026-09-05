@@ -1,34 +1,35 @@
-# ─────────────────────────────────────────────────────────────
-# Node / dependencies
-# ─────────────────────────────────────────────────────────────
-node_modules/
+# ── Dependencias (junction para a arvore global; nunca versionar) ──────────
+source/node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# ─────────────────────────────────────────────────────────────
-# Credentials and secrets (NEVER commit)
-# ─────────────────────────────────────────────────────────────
-# Real credentials file
+# ── Segredos / credenciais (NAO versionar) ────────────────────────────────
 .credentials.yaml
-# All rotating backups of credentials
 .credentials.yaml.bak
 .credentials.yaml.bak-*
-# Same protection applied inside dsh_dot_dsh_config/
 dsh_dot_dsh_config/.credentials.yaml
-dsh_dot_dsh_config/.credentials.yaml.bak
-dsh_dot_dsh_config/.credentials.yaml.bak-*
+dsh_dot_dsh_config/.credentials.yaml.bak*
+dsh_dot_dsh_config/.anonymous-user-id
 
-# ─────────────────────────────────────────────────────────────
-# Logs
-# ─────────────────────────────────────────────────────────────
-*.log
+# ── Estado de runtime / sessoes / logs / temporarios ───────────────────────
+dsh_dot_dsh_config/sessions/
+dsh_dot_dsh_config/storages/
 dsh_dot_dsh_config/web.log
+dsh_dot_dsh_config/*.log
+dsh_dot_dsh_config/settings.yaml.bak*
+dsh_dot_dsh_config/profiles/*/node_modules/
+dsh_dot_dsh_config/profiles/*/#*
+dsh_dot_dsh_config/profiles/tui/state.json
+*.log
+*.tmp
 
-# ─────────────────────────────────────────────────────────────
-# OS / editor scratch files
-# ─────────────────────────────────────────────────────────────
+# ── Ambiente local / scratch de editores ───────────────────────────────────
+.env
+.env.local
+.env.*.local
 .DS_Store
 Thumbs.db
 .vscode/
@@ -36,18 +37,3 @@ Thumbs.db
 *.swp
 *.swo
 *~
-
-# ─────────────────────────────────────────────────────────────
-# Local environment
-# ─────────────────────────────────────────────────────────────
-.env
-.env.local
-.env.*.local
-
-# ─────────────────────────────────────────────────────────────
-# Runtime / state directories
-# ─────────────────────────────────────────────────────────────
-# Sessions, profiles storage and other runtime data live under
-# dsh_dot_dsh_config/ — keep the directory but ignore volatile state.
-dsh_dot_dsh_config/sessions/
-dsh_dot_dsh_config/storages/
