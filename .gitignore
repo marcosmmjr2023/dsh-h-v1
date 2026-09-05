@@ -41,3 +41,6 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# ── overlay/: cordis.patch.yml é GERADO pelo sync a partir do .tpl
+overlay/cordis.patch.yml

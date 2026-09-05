@@ -93,6 +93,20 @@ dsh-h-v1/
 
 ---
 
+## 🧪 Checklist de teste manual (Windows)
+
+Após instalar/clonar numa máquina Windows nova, confira (validação manual —
+o CI cobre sintaxe/estática, mas não executa Windows real):
+
+1. `installer\install.bat` conclui sem erro e cria o atalho na Área de Trabalho.
+2. Abrir o atalho: roda `sync-pull` e a GUI abre em http://127.0.0.1:3080.
+3. `%USERPROFILE%\.dsh\cordis.patch.yml` existe e aponta para `C:\Users\...` (não
+   contém `__DSH_HOME__` nem `/home/deploy`).
+4. Badges do FreeLLMAPI e o painel lateral (layout) aparecem no dashboard.
+5. Edite um plugin/setting → `tools\sync-push.ps1 "teste"` publica; outra máquina
+   recebe com `sync-pull`.
+6. `tools\rollback.ps1 list` mostra snapshots/tags; um `rollback` restaura.
+
 ## 📝 Notas Finais
 
 - Credenciais vivem em `%USERPROFILE%\.dsh\.credentials.yaml` (nunca

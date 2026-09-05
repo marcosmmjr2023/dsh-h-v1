@@ -84,8 +84,8 @@ tools/rollback.sh v1.2.0               # uma versão publicada do overlay
 tools/rollback.sh --core 0.1.1-rc.2    # core anterior (npm)
 ```
 
-Manual completo: [`docs/SYNC.md`](docs/SYNC.md) · Guia Windows:
-[`docs/WINDOWS-PT.md`](docs/WINDOWS-PT.md) · [`README.md`](README.md) (English)
+Manual completo: [`docs/SYNC.md`](docs/SYNC.md) (PT) · [`docs/SYNC.en.md`](docs/SYNC.en.md) (EN)
+· Guia Windows: [`docs/WINDOWS-PT.md`](docs/WINDOWS-PT.md) · [`README.md`](README.md) (English)
 
 ## 🆚 Comparativo
 

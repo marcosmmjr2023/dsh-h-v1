@@ -1,3 +1,11 @@
+# ═══════════════════════════════════════════════════════════════════
+# TEMPLATE do patch global do DeepSeek Harness.
+# NÃO edite o arquivo gerado (~/.dsh/cordis.patch.yml / %USERPROFILE%\.dsh\
+# cordis.patch.yml): ele é REGENERADO pelo sync em cada máquina a partir
+# deste template, substituindo __DSH_HOME__ pelo diretório de config vivo
+# daquela máquina. Para mudar o patch, edite ESTE arquivo e publique
+# (tools/sync-push.sh); o sync-pull de cada máquina reaplica.
+# ═══════════════════════════════════════════════════════════════════
 # Patch global do DeepSeek Harness (aplicado a todos os perfis)
 # 1) Ativa o provider opencode-go (pi-ai) usando a chave OPENCODE_API_KEY.
 - id: llm-pi-ai
@@ -9,21 +17,21 @@
 #    (hook agent/request, por-agente via agent/created).
 - insert:
     - id: smart-router
-      name: '/home/deploy/.dsh/smart-router-plugin.js'
+      name: '__DSH_HOME__/smart-router-plugin.js'
       config:
         enabled: true
 # 3) OpenRouter Enhanced: grupos "OpenRouter Free" (modelos gratuitos) e
 #    "OpenRouter Pro" (escolha de provedor por modelo, provider.order).
 - insert:
     - id: openrouter-enhanced
-      name: '/home/deploy/.dsh/openrouter-enhanced-plugin.js'
+      name: '__DSH_HOME__/openrouter-enhanced-plugin.js'
       config:
         enabled: true
 # 4) Model Visibility: filtro do catalogo no seletor de modelos
 #    (settings model-visibility + pagina /models com checkboxes).
 - insert:
     - id: model-visibility
-      name: '/home/deploy/.dsh/model-visibility-plugin.js'
+      name: '__DSH_HOME__/model-visibility-plugin.js'
       config:
         enabled: true
 # 5) Compaction: usa um modelo de CONTEXTO GRANDE para resumir a conversa,
@@ -39,7 +47,7 @@
 #    do FreeLLMAPI (chaves dos provedores gratuitos) numa nova aba.
 - insert:
     - id: freellmapi-shortcut
-      name: '/home/deploy/.dsh/freellmapi-shortcut-plugin.js'
+      name: '__DSH_HOME__/freellmapi-shortcut-plugin.js'
       config:
         enabled: true
 # 7) Layout Panel: coluna direita que desloca a sessao para a esquerda e
@@ -47,6 +55,6 @@
 #    modificados + status do gateway. API /api/layout-info.
 - insert:
     - id: layout-panel
-      name: '/home/deploy/.dsh/layout-panel-plugin.js'
+      name: '__DSH_HOME__/layout-panel-plugin.js'
       config:
         enabled: true

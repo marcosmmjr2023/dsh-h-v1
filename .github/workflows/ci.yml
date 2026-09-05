@@ -1,6 +1,5 @@
-# CI — guard de segredos + lint dos scripts
-# Roda em push/PR para a branch main: garante que nenhum segredo entra no repo
-# e que os scripts .sh continuam válidos.
+# CI — guard de segredos + lint + testes funcionais + sintaxe PowerShell
+# Roda em push/PR para a branch main.
 name: ci
 
 on:
@@ -46,3 +45,37 @@ jobs:
 
       - name: Valida manifest.json
         run: python3 -m json.tool manifest.json >/dev/null && echo "✔ manifest.json válido"
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testes funcionais (guard, excludes, template cordis, sync, snapshot, rollback)
+        run: |
+          ./tools/test.sh
+
+  windows-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instala PowerShell
+        run: |
+          curl -sSL -o /tmp/pwsh.deb \
+            https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell_7.4.6-1.deb_amd64.deb
+          sudo dpkg -i /tmp/pwsh.deb || sudo apt-get install -y -f -qq >/dev/null
+          pwsh --version
+      - name: Parse de sintaxe dos scripts PowerShell
+        run: |
+          pwsh -NoProfile -Command '
+            $errs = New-Object System.Collections.Generic.List[object]
+            foreach ($pat in @("tools/*.ps1", "installer/*.ps1")) {
+              Get-ChildItem -Path $pat | ForEach-Object {
+                $null = [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errs)
+              }
+            }
+            if ($errs.Count -gt 0) {
+              $errs | ForEach-Object { Write-Error $_.Message }
+              exit 1
+            }
+            Write-Host "✔ Sintaxe PowerShell OK"
+          '

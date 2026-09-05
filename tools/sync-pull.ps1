@@ -29,7 +29,7 @@ if (Test-Path $LIVE) {
     robocopy $LIVE $snapDir /E /IS /IT /NFL /NDL /NJH /NJS `
         /XD sessions storages `
         /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
-            *.log *.bak *.bak-* state.json | Out-Null
+            *.log *.bak *.bak-* state.json *.tpl | Out-Null
     Write-Host "✔ snapshot criado: $snapName"
 }
 # manutenção: mantém só as 8 mais recentes
@@ -44,6 +44,9 @@ robocopy (Join-Path $CLONE "overlay") $LIVE /E /IS /IT /NFL /NDL /NJH /NJS `
     /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
         *.log *.bak *.bak-* state.json
 if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy reportou erros (código $LASTEXITCODE)" -ForegroundColor Yellow }
+
+# Gera cordis.patch.yml local a partir do template (caminhos desta máquina)
+& (Join-Path $SELF "render-cordis.ps1")
 
 & (Join-Path $SELF "check-core.ps1") 2>$null
 Write-Host "✔ sync-pull concluído. Rollback disponível: tools\rollback.ps1 list"

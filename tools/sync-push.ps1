@@ -18,8 +18,11 @@ git -C $CLONE pull --rebase 2>$null
 robocopy $LIVE (Join-Path $CLONE "overlay") /E /IS /IT /NFL /NDL /NJH /NJS `
     /XD sessions storages `
     /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
-        *.log *.bak *.bak-* state.json
+        *.log *.bak *.bak-* state.json *.tpl
 if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy reportou erros (código $LASTEXITCODE)" -ForegroundColor Yellow }
+
+# cordis.patch.yml é GERADO por máquina (nunca volta para o repo)
+Remove-Item -Force (Join-Path $CLONE "overlay\cordis.patch.yml") -ErrorAction SilentlyContinue
 
 git -C $CLONE add -A overlay
 

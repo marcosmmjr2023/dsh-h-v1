@@ -14,6 +14,11 @@ DeepSeek Harness, sempre na última versão publicada.
 > Regra de ouro: **edite sempre na config viva** (`~/.dsh` no Linux,
 > `%USERPROFILE%\.dsh` no Windows) e use `sync-push` para publicar. O
 > `overlay/` dentro do clone é um espelho — não edite nele direto.
+>
+> O patch global `cordis.patch.yml` é **gerado por máquina** a partir do
+> template `overlay/cordis.patch.yml.tpl` (o `sync-pull`/`rollback`
+> substitui `__DSH_HOME__` pelo diretório vivo daquela máquina). Para mudar
+> o patch, edite o **.tpl** e publique — nunca edite o arquivo gerado.
 
 ## Instalar numa máquina nova
 
@@ -51,6 +56,7 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\dsh-h-v1\tools\sync-p
 | Ver versão do core vs npm | `tools/check-core.sh` |
 | Ver o que mudaria (ensaio) | `git -C ~/dsh-h-v1 pull --ff-only --dry-run` |
 | Listar versões anteriores disponíveis | `tools/rollback.sh list` |
+| Rodar os testes funcionais | `tools/test.sh` (também roda no CI) |
 
 ### Push precisa de autenticação (uma vez por máquina)
 
@@ -152,5 +158,5 @@ Crie uma tarefa diária (ou a cada hora):
 | `sync-pull` falha no pull | Há alterações locais não commitadas no clone: `git -C ~/dsh-h-v1 status` e resolva |
 | `sync-push` falha no push | Sem autenticação: `gh auth login` |
 | Plugins quebram após update do core | Volte: `npm install -g @deepseek-ai/dsh@<versão anterior>` |
-| Plugin não carrega após sync em outra máquina | Arquivos com caminho absoluto da máquina (ex.: `cordis.patch.yml`, com `/home/deploy/...` ou `C:/Users/...`) precisam de ajuste local — edite no `~/.dsh`/`%USERPROFILE%\.dsh` e rode `sync-push` |
+| `cordis.patch.yml` com caminhos de outra máquina | Ele é REGENERADO do template `overlay/cordis.patch.yml.tpl` (placeholder `__DSH_HOME__`) a cada `sync-pull`/`rollback` com o caminho local — para alterar o patch, edite o `.tpl` e publique |
 | Guard bloqueou algo | Revise `git diff --cached`, remova o arquivo do índice (`git reset HEAD <arquivo>`) e apague o segredo do disco |

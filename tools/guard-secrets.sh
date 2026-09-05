@@ -43,7 +43,9 @@ if [ "${1:-}" = "--staged" ]; then
   if [ -n "$bad_names" ]; then
     echo "✋ Arquivos de credencial no staged:"; echo "$bad_names"; found=1
   fi
-  out="$(scan_text "$(git diff --cached)")"
+  # tools/test.sh contém FIXTURES intencionais (chaves falsas sk-... e o caminho
+  # .credentials.yaml) usadas pelos testes do guard — varre tudo exceto ele.
+  out="$(scan_text "$(git diff --cached -- . ':(exclude)tools/test.sh')")"
   if [ -n "$out" ]; then echo "✋ Conteúdo suspeito no staged:"; echo "$out"; found=1; fi
 elif [ -n "${1:-}" ]; then
   echo "🔎 guard: varrendo $1"

@@ -17,7 +17,7 @@ if (-not (Test-Path (Join-Path $CLONE ".git"))) { Write-Host "ERRO: $CLONE não 
 
 $XD = "/XD", "sessions", "storages"
 $XF = "/XF", ".credentials.yaml", ".credentials.yaml.bak", ".credentials.yaml.bak-*", ".anonymous-user-id",
-          "*.log", "*.bak", "*.bak-*", "state.json"
+          "*.log", "*.bak", "*.bak-*", "state.json", "*.tpl"
 
 function New-Snapshot {
     $hash = (git -C $CLONE rev-parse --short HEAD 2>$null)
@@ -91,6 +91,8 @@ switch ($Cmd) {
         robocopy (Join-Path $tmp "overlay") $MANAGED /E /IS /IT /NFL /NDL /NJH /NJS | Out-Null
         robocopy $MANAGED $LIVE /E /IS /IT $XD $XF /NFL /NDL /NJH /NJS | Out-Null
         Remove-Item -Recurse -Force $tmp
+        # regenera cordis.patch.yml local (caminhos desta máquina) conforme o ref
+        & (Join-Path $SELF "render-cordis.ps1")
         Write-Host "✔ Overlay restaurado para $Cmd. Reinicie o harness."
         $pinned = (git -C $CLONE show "${Cmd}:manifest.json" 2>$null | ConvertFrom-Json).core.pinned
         if ($pinned) { Write-Host "  core pinado em $Cmd = $pinned — se precisar: tools\rollback.ps1 --core $pinned" }

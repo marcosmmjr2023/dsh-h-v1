@@ -116,6 +116,8 @@ case "${1:-list}" in
     # conteúdo do ref → espelho → config viva
     rsync -ac --exclude-from="$EXCL" "$tmp/overlay/" "$MANAGED/"
     rsync -ac --exclude-from="$EXCL" "$MANAGED/" "$LIVE/"
+    # regenera cordis.patch.yml local (caminhos desta máquina) conforme o ref
+    "$SELF_DIR/render-cordis.sh"
     echo "✔ Overlay restaurado para $ref."
     core_warn "$ref"
     echo "  (Reinicie o harness para carregar a versão antiga.)"

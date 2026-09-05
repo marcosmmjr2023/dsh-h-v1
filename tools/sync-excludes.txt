@@ -11,3 +11,5 @@ storages/
 *.bak-*
 state.json
 .git
+*.tpl
+/cordis.patch.yml

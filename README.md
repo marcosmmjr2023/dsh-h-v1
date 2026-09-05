@@ -78,8 +78,8 @@ tools/rollback.sh v1.2.0               # a published overlay version
 tools/rollback.sh --core 0.1.1-rc.2    # previous core (npm)
 ```
 
-Full manual: [`docs/SYNC.md`](docs/SYNC.md) (PT-BR) · Windows guide:
-[`docs/WINDOWS-PT.md`](docs/WINDOWS-PT.md) · [`README.pt-BR.md`](README.pt-BR.md)
+Manuals: [`docs/SYNC.en.md`](docs/SYNC.en.md) (EN) · [`docs/SYNC.md`](docs/SYNC.md) (PT-BR)
+· Windows guide: [`docs/WINDOWS-PT.md`](docs/WINDOWS-PT.md) · [`README.pt-BR.md`](README.pt-BR.md)
 
 ## 🆚 How it compares
 

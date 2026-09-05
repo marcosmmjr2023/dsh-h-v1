@@ -31,6 +31,9 @@ mkdir -p "$LIVE"
 rsync -ac --exclude-from="$EXCL" "$CLONE/overlay/" "$LIVE/"
 echo "✔ overlay aplicado em $LIVE"
 
+# Gera cordis.patch.yml local a partir do template (caminhos desta máquina)
+"$SELF_DIR/render-cordis.sh"
+
 # Aviso sobre o core (L1) — informativo, não bloqueia
 if [ -x "$SELF_DIR/check-core.sh" ]; then "$SELF_DIR/check-core.sh" || true; fi
 echo "✔ sync-pull concluído. Rollback disponível: tools/rollback.sh list"
