@@ -35,6 +35,9 @@ jobs:
               # caminho, não segredo); a entrada do arquivo em si é bloqueada
               # pelo check de nome no guard --staged e pelo .gitignore
               overlay/regenerate-openrouter-data.py) continue ;;
+              # fixtures INTENCIONAIS dos testes (chaves falsas sk-... e o
+              # caminho .credentials.yaml) — validadas por tools/test.sh
+              tools/test.sh) continue ;;
             esac
             tools/guard-secrets.sh "$f" >/dev/null 2>&1 || {
               echo "::error::possível segredo em $f — rode tools/guard-secrets.sh $f"
