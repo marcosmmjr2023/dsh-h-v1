@@ -66,23 +66,33 @@ const BADGE_JS = `
 `;
 
 module.exports = function versionBadgePlugin(ctx) {
-  const webServer = ctx.get("webServer");
-  if (webServer) {
-    ctx.effect(() => {
-      const dispose = webServer.register({
-        kind: "exact",
-        path: "/api/dsh-version",
-        handler: (_req, res) => {
-          res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
-          res.end(JSON.stringify(versionPayload()));
-        },
-      });
-      console.log("[VersionBadge] rota /api/dsh-version registrada");
-      return dispose;
-    }, "version-badge: api");
-  } else {
-    console.log("[VersionBadge] webServer indisponível — rota não registrada");
-  }
+  // O host webserver pode ativar DEPOIS do apply deste plugin — espera ficar
+  // disponível antes de registrar (mesmo padrão do LayoutPanel).
+  let tries = 0;
+  const waitForWebServer = () => {
+    const webServer = ctx.get("webServer");
+    if (webServer) {
+      ctx.effect(() => {
+        const dispose = webServer.register({
+          kind: "exact",
+          path: "/api/dsh-version",
+          handler: (_req, res) => {
+            res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify(versionPayload()));
+          },
+        });
+        console.log("[VersionBadge] rota /api/dsh-version registrada");
+        return dispose;
+      }, "version-badge: api");
+      return;
+    }
+    if (++tries > 60) {
+      console.log("[VersionBadge] webServer não ficou disponível — rota não registrada");
+      return;
+    }
+    setTimeout(waitForWebServer, 250);
+  };
+  waitForWebServer();
 
   ctx.on("webserver/index-inject", (table) => {
     table.push({ kind: "script", placement: "body", text: BADGE_JS });
