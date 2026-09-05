@@ -1,0 +1,43 @@
+# ═════════════════════════════════════════════════════════════════
+# dsh-h-v1 — .gitignore
+# Este repo versiona APENAS a camada personalizada (overlay/),
+# os scripts de sync (tools/) e os instaladores (installer/).
+# O core do DeepSeek Harness NÃO é distribuído aqui (vem do npm).
+# ═════════════════════════════════════════════════════════════════
+
+# ── Core do harness / dependências (instalados via npm, não versionados)
+node_modules/
+source/
+
+# ── Empacotamentos antigos / arquivos locais
+*.tar.gz
+*.zip
+
+# ── overlay/: segredos e estado local da máquina (NUNCA versionar)
+overlay/.credentials.yaml
+overlay/.credentials.yaml.bak
+overlay/.credentials.yaml.bak-*
+overlay/sessions/
+overlay/storages/
+overlay/web.log
+overlay/*.log
+overlay/.anonymous-user-id
+overlay/profiles/*/state.json
+
+# ── overlay/: backups de configuração (em qualquer profundidade)
+*.bak
+*.bak-*
+
+# ── Sistema operacional / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Ambiente local
+.env
+.env.local
+.env.*.local

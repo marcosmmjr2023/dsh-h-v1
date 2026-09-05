@@ -1,0 +1,77 @@
+{
+  "name": "dsh-h-v1",
+  "description": "Camada personalizada (overlay) + ferramentas de sync para o DeepSeek Harness, distribuída entre máquinas via git.",
+  "version": "0.2.0",
+  "layers": {
+    "overlay": {
+      "description": "Conteúdo espelhado 1:1 na config viva do harness em cada máquina",
+      "live": {
+        "linux": "~/.dsh",
+        "windows": "%USERPROFILE%\\.dsh"
+      }
+    },
+    "tools": {
+      "description": "Scripts de sync (pull/push), checagem do core e guard de segredos"
+    }
+  },
+  "core": {
+    "package": "@deepseek-ai/dsh",
+    "pinned": "0.1.1-rc.2",
+    "policy": "notify-and-manual",
+    "policy_note": "O sync apenas NOTIFICA sobre versões novas do core; a atualização é manual e testada (plugins do overlay dependem de internals do core).",
+    "registry": "https://registry.npmjs.org",
+    "upstream": "https://github.com/deepseek-ai/deepseek-harness"
+  },
+  "envVars": [
+    "OPENROUTER_API_KEY",
+    "FREELLMAPI_API_KEY",
+    "OPENCODE_GO_API_KEY",
+    "DEEPSEEK_API_KEY"
+  ],
+  "integrations": {
+    "freellmapi": {
+      "gateway": "http://127.0.0.1:3002",
+      "env": "FREELLMAPI_API_KEY",
+      "plugins": [
+        "overlay/freellmapi-shortcut-plugin.js"
+      ],
+      "note": "Gateway local para adicionar chaves de provedores gratuitos (Groq, Cerebras, Mistral, ...)."
+    },
+    "openrouter": {
+      "env": "OPENROUTER_API_KEY",
+      "freeTierSuffix": ":free"
+    },
+    "opencode": {
+      "env": "OPENCODE_GO_API_KEY"
+    },
+    "smartRouter": {
+      "virtualProvider": "smart-router",
+      "modes": [
+        "auto",
+        "eco",
+        "ultra"
+      ],
+      "freeFallbackChain": [
+        "freellmapi",
+        "openrouter",
+        "opencode free",
+        "opencode zen/deepseek-v4-flash",
+        "deepseek official"
+      ]
+    }
+  },
+  "sync": {
+    "exclude_file": "tools/sync-excludes.txt",
+    "never_sync": [
+      ".credentials.yaml",
+      ".credentials.yaml.bak*",
+      ".anonymous-user-id",
+      "sessions/",
+      "storages/",
+      "*.log",
+      "*.bak",
+      "*.bak-*",
+      "state.json"
+    ]
+  }
+}

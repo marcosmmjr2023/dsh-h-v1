@@ -1,0 +1,48 @@
+# CI — guard de segredos + lint dos scripts
+# Roda em push/PR para a branch main: garante que nenhum segredo entra no repo
+# e que os scripts .sh continuam válidos.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bash syntax check (bash -n)
+        run: |
+          set -e
+          for f in tools/*.sh; do bash -n "$f" && echo "OK $f"; done
+
+      - name: ShellCheck (lint)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck >/dev/null
+          shellcheck tools/*.sh
+
+      - name: Guard de segredos — todos os arquivos versionados
+        run: |
+          set -e
+          fail=0
+          while IFS= read -r f; do
+            case "$f" in
+              # arquivos de REGRAS que citam nomes de credenciais por propósito
+              .gitignore|tools/sync-excludes.txt) continue ;;
+              # lê o .credentials.yaml LOCAL para regenerar dados (referência a
+              # caminho, não segredo); a entrada do arquivo em si é bloqueada
+              # pelo check de nome no guard --staged e pelo .gitignore
+              overlay/regenerate-openrouter-data.py) continue ;;
+            esac
+            tools/guard-secrets.sh "$f" >/dev/null 2>&1 || {
+              echo "::error::possível segredo em $f — rode tools/guard-secrets.sh $f"
+              fail=1
+            }
+          done < <(git ls-files)
+          [ "$fail" -eq 0 ] && echo "✔ guard limpo nos arquivos versionados"
+
+      - name: Valida manifest.json
+        run: python3 -m json.tool manifest.json >/dev/null && echo "✔ manifest.json válido"

@@ -1,0 +1,13 @@
+# Exclusões compartilhadas do sync (formato rsync)
+# Arquivos/dirs que NUNCA saem da máquina local (credenciais, estado, backups)
+.credentials.yaml
+.credentials.yaml.bak
+.credentials.yaml.bak-*
+.anonymous-user-id
+sessions/
+storages/
+*.log
+*.bak
+*.bak-*
+state.json
+.git
