@@ -152,4 +152,5 @@ Crie uma tarefa diária (ou a cada hora):
 | `sync-pull` falha no pull | Há alterações locais não commitadas no clone: `git -C ~/dsh-h-v1 status` e resolva |
 | `sync-push` falha no push | Sem autenticação: `gh auth login` |
 | Plugins quebram após update do core | Volte: `npm install -g @deepseek-ai/dsh@<versão anterior>` |
+| Plugin não carrega após sync em outra máquina | Arquivos com caminho absoluto da máquina (ex.: `cordis.patch.yml`, com `/home/deploy/...` ou `C:/Users/...`) precisam de ajuste local — edite no `~/.dsh`/`%USERPROFILE%\.dsh` e rode `sync-push` |
 | Guard bloqueou algo | Revise `git diff --cached`, remova o arquivo do índice (`git reset HEAD <arquivo>`) e apague o segredo do disco |

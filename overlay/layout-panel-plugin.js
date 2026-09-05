@@ -1,5 +1,6 @@
 /**
- * Layout Panel — coluna de informações à direita no DeepSeek Harness
+ * Layout Panel — coluna de informações à direita
+ * Versão: 1.1 (multi-dir + junctions) no DeepSeek Harness
  *
  * Cria uma coluna fixa à direita do dashboard para abrigar os badges
  * flutuantes (FreeLLMAPI, ⚡ Roteador, Modelos, consumo...) e outras
@@ -42,7 +43,7 @@ const MIME = {
   ".map": "application/json; charset=utf-8",
 };
 
-const PANEL_DIR = process.env.LAYOUT_PANEL_DIR || "/home/deploy/projects";
+// Diretórios monitorados (LAYOUT_PANEL_DIRS ou LAYOUT_PANEL_DIR) — ver monitoredDirs().
 const PANEL_WIDTH = Math.min(Math.max(parseInt(process.env.LAYOUT_PANEL_WIDTH || "300", 10) || 300, 220), 420);
 
 // diretórios/arquivos que nunca aparecem na lista de recentes
@@ -53,11 +54,26 @@ const IGNORED_DIRS = new Set([
 ]);
 const IGNORED_EXT = new Set([".db", ".sqlite", ".lock", ".log", ".env", ".pid", ".map"]);
 const MAX_DEPTH = 5;
-const MAX_FILES = 14;
+const MAX_FILES = 100; // lista com rolagem propria: mostra os 100 mais recentes
 
-/** Varre o diretório (profundidade limitada) e devolve arquivos com mtime. */
+/**
+ * Diretórios monitorados. Aceita LAYOUT_PANEL_DIRS (lista separada por ";" —
+ * prioridade) ou LAYOUT_PANEL_DIR (um único diretório). Default:
+ * /home/deploy/projects (Linux) ou %USERPROFILE%\projects (Windows).
+ */
+function monitoredDirs() {
+  const multi = process.env.LAYOUT_PANEL_DIRS || "";
+  if (multi.trim()) {
+    return multi.split(";").map((s) => s.trim()).filter(Boolean);
+  }
+  const single = process.env.LAYOUT_PANEL_DIR;
+  if (single && single.trim()) return [single.trim()];
+  return [process.platform === "win32" ? path.join(os.homedir(), "projects") : "/home/deploy/projects"];
+}
+
+/** Varre um diretório (profundidade limitada) e devolve arquivos com mtime. */
 function walkFiles(root, depth, out) {
-  if (depth > MAX_DEPTH || out.length >= MAX_FILES * 6) return;
+  if (depth > MAX_DEPTH) return;
   let entries;
   try {
     entries = fs.readdirSync(root, { withFileTypes: true });
@@ -69,13 +85,16 @@ function walkFiles(root, depth, out) {
     const full = path.join(root, ent.name);
     let st;
     try {
+      // statSync segue junctions/symlinks: um junction apontando para outro
+      // diretorio e tratado como diretorio (isDirectory() do dirent sozinho
+      // retorna false para junction no Windows).
       st = fs.statSync(full);
     } catch {
       continue;
     }
-    if (ent.isDirectory()) {
+    if (st.isDirectory()) {
       walkFiles(full, depth + 1, out);
-    } else if (ent.isFile()) {
+    } else if (st.isFile()) {
       const ext = path.extname(ent.name).toLowerCase();
       if (IGNORED_EXT.has(ext)) continue;
       out.push({
@@ -89,23 +108,30 @@ function walkFiles(root, depth, out) {
 }
 
 function layoutInfoPayload() {
+  const dirs = monitoredDirs();
   const files = [];
-  try {
-    walkFiles(PANEL_DIR, 0, files);
-  } catch (e) {
-    /* sem acesso: lista vazia */
+  for (const dir of dirs) {
+    try {
+      walkFiles(dir, 0, files);
+    } catch (e) {
+      /* sem acesso: lista vazia */
+    }
   }
   files.sort((a, b) => b.mtimeMs - a.mtimeMs);
-  const top = files.slice(0, MAX_FILES).map((f) => ({
-    path: f.path,
-    rel: path.relative(PANEL_DIR, f.path),
-    name: f.name,
-    mtimeMs: f.mtimeMs,
-    size: f.size,
-  }));
+  const top = files.slice(0, MAX_FILES).map((f) => {
+    const owned = dirs.find((d) => f.path.startsWith(d + path.sep)) || dirs[0] || "";
+    return {
+      path: f.path,
+      rel: path.relative(owned, f.path),
+      name: f.name,
+      mtimeMs: f.mtimeMs,
+      size: f.size,
+    };
+  });
   return {
     ok: true,
-    dir: PANEL_DIR,
+    dir: dirs.join(" ; "),
+    dirs: dirs,
     hostname: os.hostname(),
     uptimeSec: Math.round(process.uptime()),
     files: top,
@@ -114,12 +140,16 @@ function layoutInfoPayload() {
 
 const MAX_EDIT_SIZE = 1024 * 1024; // 1MB — acima disso recusa abrir no editor
 
-/** Resolve um caminho relativo dentro de PANEL_DIR (anti path-traversal). */
+/** Resolve um caminho relativo dentro dos diretórios monitorados (anti path-traversal). */
 function resolveInside(rel) {
   if (typeof rel !== "string" || rel.length === 0) return null;
-  const resolved = path.resolve(PANEL_DIR, rel);
-  if (resolved !== PANEL_DIR && !resolved.startsWith(PANEL_DIR + path.sep)) return null;
-  return resolved;
+  const dirs = monitoredDirs();
+  for (const dir of dirs) {
+    const resolved = path.resolve(dir, rel);
+    if (resolved !== dir && !resolved.startsWith(dir + path.sep)) continue;
+    return resolved;
+  }
+  return null;
 }
 
 /** Lê um arquivo de texto com limite de tamanho; rejeita binários. */
@@ -172,10 +202,20 @@ const PANEL_CSS = `
 #dsh-layout-panel .dlp-toggle{background:transparent;border:0;color:#8b949e;
   cursor:pointer;font:13px/1 system-ui,sans-serif;padding:4px 8px;border-radius:6px;}
 #dsh-layout-panel .dlp-toggle:hover{background:#21262d;color:#fff;}
-#dsh-layout-panel .dlp-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 12px 16px;}
+#dsh-layout-panel .dlp-body{flex:1;display:flex;flex-direction:column;min-height:0;}
 #dsh-layout-panel .dlp-section{margin-bottom:14px;}
 #dsh-layout-panel .dlp-section h3{margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:.05em;
   text-transform:uppercase;color:#8b949e;}
+/* Zona superior FIXA (badges/atalhos) */
+#dsh-layout-panel .dlp-top{flex:none;padding:10px 12px 4px;border-bottom:1px solid #21262d;}
+/* Zona do MEIO: lista de arquivos com rolagem propria */
+#dsh-layout-panel .dlp-files-zone{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+#dsh-layout-panel .dlp-files-zone .dlp-files-head{flex:none;padding:10px 12px 2px;}
+#dsh-layout-panel .dlp-files-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:4px 12px 8px;}
+/* Zona inferior FIXA (gateway + sistema) */
+#dsh-layout-panel .dlp-bottom{flex:none;padding:8px 12px 12px;border-top:1px solid #21262d;}
+#dsh-layout-panel .dlp-bottom .dlp-section{margin-bottom:8px;}
+#dsh-layout-panel .dlp-bottom .dlp-section:last-child{margin-bottom:0;}
 #dsh-layout-panel .dlp-badges{display:flex;flex-direction:column;gap:6px;margin-bottom:2px;}
 #dsh-layout-panel .dlp-badges > *{position:static !important;right:auto !important;bottom:auto !important;
   left:auto !important;top:auto !important;z-index:auto !important;transform:none !important;
@@ -184,8 +224,10 @@ const PANEL_CSS = `
 #dsh-layout-panel .dlp-file{display:flex;flex-direction:column;gap:1px;padding:5px 8px;border-radius:6px;
   cursor:pointer;border:1px solid transparent;}
 #dsh-layout-panel .dlp-file:hover{background:#161b22;border-color:#21262d;}
-#dsh-layout-panel .dlp-file .fl-name{font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#e6edf3;
+#dsh-layout-panel .dlp-file .fl-dir{font:10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#8b949e;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#dsh-layout-panel .dlp-file .fl-name{font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#e6edf3;
+  font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #dsh-layout-panel .dlp-file .fl-meta{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:#8b949e;}
 #dsh-layout-panel .dlp-sys{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11px;}
 #dsh-layout-panel .dlp-sys b{color:#8b949e;font-weight:600;}
@@ -260,7 +302,7 @@ const PANEL_CSS = `
 
 const PANEL_JS = `(function () {
   "use strict";
-  var PANEL_DIR = ${JSON.stringify(PANEL_DIR)};
+  var PANEL_DIRS = ${JSON.stringify((() => { try { return monitoredDirs(); } catch (e) { return [process.platform === "win32" ? (os.homedir() + "\\projects") : "/home/deploy/projects"]; } })())};
   var API = "/api/layout-info";
   var API_FILE = "/api/layout-file";
   var FREELMAPI = "http://127.0.0.1:3002";
@@ -291,12 +333,21 @@ const PANEL_JS = `(function () {
       '<div class="dlp-head"><span class="dlp-title">Painel</span>' +
       '<button class="dlp-toggle" id="dlp-collapse" title="Recolher painel">»</button></div>' +
       '<div class="dlp-body">' +
-        '<div class="dlp-section"><h3>Atalhos</h3><div class="dlp-badges" id="dlp-badges"></div></div>' +
-        '<div class="dlp-section"><h3>Últimos arquivos modificados</h3>' +
-          '<ul class="dlp-files" id="dlp-files"><li class="dlp-empty">carregando…</li></ul></div>' +
-        '<div class="dlp-section"><h3>Gateway FreeLLMAPI</h3>' +
-          '<div class="dlp-status"><span class="dlp-dot" id="dlp-fl-dot"></span><span id="dlp-fl-txt">verificando…</span></div></div>' +
-        '<div class="dlp-section"><h3>Sistema</h3><div class="dlp-sys" id="dlp-sys">…</div></div>' +
+        // Zona superior FIXA: atalhos/badges
+        '<div class="dlp-top">' +
+          '<div class="dlp-section"><h3>Atalhos</h3><div class="dlp-badges" id="dlp-badges"></div></div>' +
+        '</div>' +
+        // Zona do meio: lista de arquivos COM ROLAGEM propria (100 recentes)
+        '<div class="dlp-files-zone">' +
+          '<div class="dlp-files-head"><div class="dlp-section" style="margin-bottom:0"><h3>Últimos arquivos modificados</h3></div></div>' +
+          '<div class="dlp-files-scroll"><ul class="dlp-files" id="dlp-files"><li class="dlp-empty">carregando…</li></ul></div>' +
+        '</div>' +
+        // Zona inferior FIXA: gateway + sistema
+        '<div class="dlp-bottom">' +
+          '<div class="dlp-section"><h3>Gateway FreeLLMAPI</h3>' +
+            '<div class="dlp-status"><span class="dlp-dot" id="dlp-fl-dot"></span><span id="dlp-fl-txt">verificando…</span></div></div>' +
+          '<div class="dlp-section"><h3>Sistema</h3><div class="dlp-sys" id="dlp-sys">…</div></div>' +
+        '</div>' +
       '</div>';
     document.body.appendChild(panel);
     document.getElementById("dlp-collapse").onclick = function () { setClosed(true); };
@@ -356,7 +407,19 @@ const PANEL_JS = `(function () {
       if (r.right < window.innerWidth - 260) continue;
       if (r.left < window.innerWidth - 340) continue;
       if (r.top > window.innerHeight - 40 && r.bottom > window.innerHeight) continue;
-      host.appendChild(el);
+      // Badge do FreeLLMAPI sempre no TOPO da lista de atalhos.
+      if (el.classList && el.classList.contains("freellmapi-badge")) {
+        host.insertBefore(el, host.firstChild);
+      } else {
+        host.appendChild(el);
+      }
+    }
+    // Garante que o FreeLLMAPI fique em primeiro, mesmo se ja estiver na lista
+    // e outro badge for adicionado depois (re-insere no topo).
+    var first = host.firstElementChild;
+    if (first && !first.classList.contains("freellmapi-badge")) {
+      var fl = host.querySelector(".freellmapi-badge");
+      if (fl) host.insertBefore(fl, host.firstChild);
     }
   }
 
@@ -368,15 +431,27 @@ const PANEL_JS = `(function () {
       .then(function (data) {
         var files = (data && data.files) || [];
         if (files.length === 0) {
-          ul.innerHTML = '<li class="dlp-empty">nenhum arquivo encontrado em ' + esc(PANEL_DIR) + "</li>";
+          ul.innerHTML = '<li class="dlp-empty">nenhum arquivo encontrado em ' + esc(PANEL_DIRS.join(" ; ")) + "</li>";
         } else {
           ul.innerHTML = "";
           files.forEach(function (f) {
             var li = document.createElement("li");
             li.className = "dlp-file";
             li.title = f.path + " (" + new Date(f.mtimeMs).toLocaleString() + ")";
+            // Divide o caminho relativo em diretorio (linha de cima, cinza,
+            // truncado) e nome do arquivo (linha de baixo, em destaque), para
+            // que o nome do arquivo seja visivel mesmo com caminho longo.
+            var relStr = String(f.rel || "");
+            var dirStr = "";
+            var nameStr = String(f.name || relStr);
+            var idx = Math.max(relStr.lastIndexOf("\\\\"), relStr.lastIndexOf("/"));
+            if (idx >= 0) {
+              dirStr = relStr.slice(0, idx);
+              if (relStr.slice(idx + 1) === nameStr) { /* nome ja separado */ }
+            }
             li.innerHTML =
-              '<span class="fl-name">' + esc(f.rel) + "</span>" +
+              '<span class="fl-dir">' + esc(dirStr || ".") + "</span>" +
+              '<span class="fl-name">' + esc(nameStr) + "</span>" +
               '<span class="fl-meta"><span>' + fmtAgo(f.mtimeMs) + "</span><span>" + fmtSize(f.size) + "</span></span>";
             li.onclick = function () { openEditor(f); };
             ul.appendChild(li);
@@ -387,7 +462,7 @@ const PANEL_JS = `(function () {
           sys.innerHTML =
             "<span><b>Host:</b> " + esc(data.hostname || "-") + "</span>" +
             "<span><b>Uptime:</b> " + fmtAgo(Date.now() - (data.uptimeSec || 0) * 1000) + "</span>" +
-            "<span style='grid-column:1/-1'><b>Dir:</b> " + esc(data.dir || PANEL_DIR) + "</span>";
+            "<span style='grid-column:1/-1'><b>Dir:</b> " + esc(data.dir || PANEL_DIRS.join(" ; ")) + "</span>";
         }
       })
       .catch(function () {
@@ -783,9 +858,12 @@ const layoutPanelPlugin = {
       table.push({ kind: "script", placement: "body", text: PANEL_JS });
     });
 
-    console.log(`[LayoutPanel] coluna direita (${PANEL_WIDTH}px) monitorando ${PANEL_DIR}`);
+    console.log(`[LayoutPanel] coluna direita (${PANEL_WIDTH}px) monitorando ${monitoredDirs().join(" ; ")}`);
   }
 };
 
 module.exports = layoutPanelPlugin;
 module.exports.default = layoutPanelPlugin;
+// touched 20260901-222745
+
+// hmr-probe 1788313221185

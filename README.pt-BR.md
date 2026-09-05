@@ -96,6 +96,16 @@ Manual completo: [`docs/SYNC.md`](docs/SYNC.md) · Guia Windows:
 | Guard de segredos | assume | nunca exporta | rejeita | guard **bloqueia no commit** |
 | Sync de plugins JS customizados | n/a | — | não (só dados) | **sim** |
 
+## 🗄️ Linhagem arquivada (preservada, não canônica)
+
+O `main` segue o modelo overlay + sync acima. A **linhagem legada de pacote Windows**
+(`source/` antigo, launchers `bin.js`, ícones, `preload.cjs`, `start-parallel-dsh.bat`)
+está preservada para referência, sem manutenção:
+- branches `versao-pc1`, `versao-pc2` · tag `main-anterior-e553f9b`
+
+Melhorias úteis dessa linhagem já foram migradas para o `main` (ex.: `layout-panel-plugin`
+v1.1 multi-dir/junctions, badge FreeLLMAPI atualizado).
+
 ## 🛡️ Segurança
 
 - Nenhuma credencial neste repo — chaves vêm de env vars ou do `.credentials.yaml`

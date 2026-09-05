@@ -25,7 +25,7 @@ const INJECT = `(function () {
   "use strict";
   var URL = ${JSON.stringify(FREELMAPI_DASHBOARD_URL)};
   var css = [
-    "#freellmapi-badge{position:fixed;right:16px;bottom:176px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;background:#0d1117;border:1px solid #30363d;border-radius:999px;padding:3px 11px 3px 9px;font:11px/1.7 system-ui,sans-serif;color:#9ecbff;text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,.5);white-space:nowrap;cursor:pointer;letter-spacing:.01em;}",
+    "#freellmapi-badge{position:fixed;right:16px;top:16px;z-index:2147483647;display:inline-flex;align-items:center;gap:6px;background:#0d1117;border:1px solid #30363d;border-radius:999px;padding:3px 11px 3px 9px;font:11px/1.7 system-ui,sans-serif;color:#9ecbff;text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,.5);white-space:nowrap;cursor:pointer;letter-spacing:.01em;}",
     "#freellmapi-badge:hover{border-color:#238636;color:#c9e6ff;}",
     "#freellmapi-badge .fl-dot{width:7px;height:7px;border-radius:50%;background:#d29922;flex:none;}",
     "#freellmapi-badge .fl-dot.ok{background:#3fb950;}",
@@ -101,8 +101,14 @@ const INJECT = `(function () {
     if (!badge) return;
     // dentro da coluna do layout-panel: o CSS !important já força static
     if (badge.closest && badge.closest("#dsh-layout-panel")) return;
-    var h = highestCornerTop(badge);
-    badge.style.bottom = (h == null ? 176 : Math.max(8, window.innerHeight - h + 8)) + "px";
+    var t = highestCornerTop(badge);
+    // badge height ~28px; posiciona logo ABAIXO do elemento mais alto + 8px de gap
+    var badgeH = 28;
+    if (t == null) {
+      badge.style.top = "16px";
+    } else {
+      badge.style.top = (t + badgeH + 8) + "px";
+    }
   }
 
   /**

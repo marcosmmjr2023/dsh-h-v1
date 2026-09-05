@@ -90,6 +90,16 @@ Full manual: [`docs/SYNC.md`](docs/SYNC.md) (PT-BR) · Windows guide:
 | Secrets guard | assumes | never exports | rejects | guard **blocks at commit time** |
 | Custom JS plugins sync | n/a | — | no (data-only) | **yes** |
 
+## 🗄️ Archived lineage (preserved, not canonical)
+
+`main` follows the overlay + sync model above. The earlier **Windows-bundle lineage**
+(legacy `source/` bundle, `bin.js` launchers, icons, `preload.cjs`,
+`start-parallel-dsh.bat`) is preserved for reference, not maintained:
+- branches `versao-pc1`, `versao-pc2` · tag `main-anterior-e553f9b`
+
+Useful improvements from that lineage were already migrated into `main` (e.g.
+`layout-panel-plugin` v1.1 multi-dir/junctions, updated FreeLLMAPI badge).
+
 ## 🛡️ Security
 
 - No credentials in this repo — keys come from env vars or the local `.credentials.yaml`
