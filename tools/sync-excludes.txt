@@ -14,3 +14,4 @@ state.json
 *.tpl
 /cordis.patch.yml
 .dsh-version.json
+.dsh-autoupdate.off

@@ -129,6 +129,16 @@ de abrir a GUI.
 Crie uma tarefa diária (ou a cada hora):
 `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\dsh-h-v1\tools\sync-pull.ps1"`
 
+## Ligar/desligar a atualização automática
+
+- **Pelo painel:** o badge de versão (plugin `version-badge-plugin.js`) tem o
+  botão `🔄 auto: ON/OFF` — ele cria/remove `<config viva>/.dsh-autoupdate.off`.
+- **Pela linha de comando:**
+  `touch ~/.dsh/.dsh-autoupdate.off`   → desliga
+  `rm ~/.dsh/.dsh-autoupdate.off`      → liga
+- O agendador local (cron/autoupdate) **não sincroniza nem reinicia** enquanto
+  o flag existir. O flag é local da máquina (nunca vai ao repo).
+
 ## Atualizar o CORE (L1) — manual e com teste
 
 1. `tools/check-core.sh` mostra instalado × pinado × latest.

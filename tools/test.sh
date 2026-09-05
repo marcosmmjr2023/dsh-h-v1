@@ -77,6 +77,11 @@ git -C "$CLONE" ls-files | grep -q '.credentials.yaml' \
   && fail "credencial entrou no repo!" || ok "credencial não entra no repo"
 git -C "$CLONE" ls-files --error-unmatch overlay/.dsh-version.json >/dev/null 2>&1 \
   && fail ".dsh-version.json entrou no repo!" || ok "stamp de versão não entra no repo"
+touch "$LIVE/.dsh-autoupdate.off"
+"$REPO_DIR/tools/sync-push.sh" "flag test" >/dev/null 2>&1 || true
+git -C "$CLONE" ls-files --error-unmatch overlay/.dsh-autoupdate.off >/dev/null 2>&1 \
+  && fail "flag .dsh-autoupdate.off entrou no repo!" || ok "flag de auto-update não entra no repo"
+rm -f "$LIVE/.dsh-autoupdate.off"
 
 echo "── snapshot (unicidade, list, prune, restore)"
 printf 'v2\n' > "$LIVE/settings.yaml"
