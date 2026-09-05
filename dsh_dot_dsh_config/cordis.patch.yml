@@ -47,6 +47,6 @@
 #    modificados + status do gateway. API /api/layout-info.
 - insert:
     - id: layout-panel
-      name: 'file:///C:/Users/marco/OneDrive/Documentos/projetos/dsh-h-v1/dsh_dot_dsh_config/layout-panel-plugin.js'
+      name: 'file:///C:/Users/marco/OneDrive/Documentos/projetos/dsh-h-v1/dsh_dot_dsh_config/layout-panel-plugin-v7.js'
       config:
         enabled: true

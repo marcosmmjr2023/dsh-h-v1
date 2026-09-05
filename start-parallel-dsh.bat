@@ -4,7 +4,9 @@ title DeepSeek Harness dsh-h-v1 servidor
 rem Instancia paralela do bundle dsh-h-v1: usa o proprio config (DSH_HOME)
 rem apontando para dsh_dot_dsh_config, sem tocar no .dsh da instalacao atual.
 set "DSH_HOME=%~dp0dsh_dot_dsh_config"
-if not defined LAYOUT_PANEL_DIR set "LAYOUT_PANEL_DIR=%USERPROFILE%\OneDrive\Documentos\projetos"
+rem LAYOUT_PANEL_DIRS: diretorios monitorados pelo painel lateral (lista ;).
+rem Inclui o workspace da sessao E a pasta projects (onde ficam os repositorios).
+if not defined LAYOUT_PANEL_DIRS set "LAYOUT_PANEL_DIRS=%USERPROFILE%\OneDrive\Documentos\projetos;%USERPROFILE%\projects"
 rem DSH_CLI_LIB: onde os plugins (smart-router, openrouter-enhanced, model-visibility)
 rem procuram schemastery/dsh-settings/dsh-llm-pi-ai (aponta para o lib/ do source).
 set "DSH_CLI_LIB=%~dp0source\lib"
