@@ -43,7 +43,7 @@ case "$cmd" in
     while IFS= read -r old; do
       count=$((count + 1))
       if [ "$count" -gt "$KEEP" ]; then
-        rm -rf "$SNAP_ROOT/$old"
+        rm -rf "${SNAP_ROOT:?}/$old"
         echo "  (removido snapshot antigo: $old)"
       fi
     done < <(snap_names_sorted)
@@ -65,7 +65,7 @@ case "$cmd" in
     count=0
     while IFS= read -r old; do
       count=$((count + 1))
-      if [ "$count" -gt "$KEEP" ]; then rm -rf "$SNAP_ROOT/$old"; fi
+      if [ "$count" -gt "$KEEP" ]; then rm -rf "${SNAP_ROOT:?}/$old"; fi
     done < <(snap_names_sorted)
     echo "✔ prune concluído (mantidos $KEEP)."
     ;;
