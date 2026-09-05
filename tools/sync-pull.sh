@@ -34,6 +34,9 @@ echo "✔ overlay aplicado em $LIVE"
 # Gera cordis.patch.yml local a partir do template (caminhos desta máquina)
 "$SELF_DIR/render-cordis.sh"
 
+# Grava versão instalada + instante (para o badge de versão)
+"$SELF_DIR/stamp-version.sh"
+
 # Aviso sobre o core (L1) — informativo, não bloqueia
 if [ -x "$SELF_DIR/check-core.sh" ]; then "$SELF_DIR/check-core.sh" || true; fi
 echo "✔ sync-pull concluído. Rollback disponível: tools/rollback.sh list"

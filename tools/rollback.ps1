@@ -93,6 +93,7 @@ switch ($Cmd) {
         Remove-Item -Recurse -Force $tmp
         # regenera cordis.patch.yml local (caminhos desta máquina) conforme o ref
         & (Join-Path $SELF "render-cordis.ps1")
+        & (Join-Path $SELF "stamp-version.ps1")
         Write-Host "✔ Overlay restaurado para $Cmd. Reinicie o harness."
         $pinned = (git -C $CLONE show "${Cmd}:manifest.json" 2>$null | ConvertFrom-Json).core.pinned
         if ($pinned) { Write-Host "  core pinado em $Cmd = $pinned — se precisar: tools\rollback.ps1 --core $pinned" }

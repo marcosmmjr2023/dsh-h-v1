@@ -47,6 +47,8 @@ if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy reportou erros (código $LAS
 
 # Gera cordis.patch.yml local a partir do template (caminhos desta máquina)
 & (Join-Path $SELF "render-cordis.ps1")
+# Grava versão instalada + instante (para o badge de versão)
+& (Join-Path $SELF "stamp-version.ps1")
 
 & (Join-Path $SELF "check-core.ps1") 2>$null
 Write-Host "✔ sync-pull concluído. Rollback disponível: tools\rollback.ps1 list"

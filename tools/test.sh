@@ -62,6 +62,7 @@ grep -q 'model: v1' "$LIVE/settings.yaml"           && ok "pull atualizou settin
 grep -q "__DSH_HOME__" "$LIVE/cordis.patch.yml"     && fail "patch gerado ainda tem placeholder" || ok "patch gerado sem placeholder"
 grep -q "$LIVE" "$LIVE/cordis.patch.yml"            && ok "patch gerado aponta p/ config viva desta máquina" || fail "patch gerado não aponta p/ esta máquina"
 [ ! -f "$LIVE/cordis.patch.yml.tpl" ]               && ok "template não vaza p/ config viva" || fail "template foi copiado p/ config viva"
+grep -q '"version":"v1.0.0"' "$LIVE/.dsh-version.json" 2>/dev/null && ok "stamp de versão gravado (v1.0.0)" || fail "stamp de versão ausente/errado: $(cat "$LIVE/.dsh-version.json" 2>/dev/null)"
 
 echo "── sync-push (publica edições locais, NUNCA segredos nem patch gerado)"
 printf 'model: v2-local\n' > "$LIVE/settings.yaml"
@@ -74,6 +75,8 @@ git -C "$CLONE" ls-files --error-unmatch overlay/cordis.patch.yml >/dev/null 2>&
   && fail "cordis.patch.yml gerado entrou no repo!" || ok "patch gerado não entra no repo"
 git -C "$CLONE" ls-files | grep -q '.credentials.yaml' \
   && fail "credencial entrou no repo!" || ok "credencial não entra no repo"
+git -C "$CLONE" ls-files --error-unmatch overlay/.dsh-version.json >/dev/null 2>&1 \
+  && fail ".dsh-version.json entrou no repo!" || ok "stamp de versão não entra no repo"
 
 echo "── snapshot (unicidade, list, prune, restore)"
 printf 'v2\n' > "$LIVE/settings.yaml"

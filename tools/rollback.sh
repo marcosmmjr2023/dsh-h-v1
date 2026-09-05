@@ -118,6 +118,7 @@ case "${1:-list}" in
     rsync -ac --exclude-from="$EXCL" "$MANAGED/" "$LIVE/"
     # regenera cordis.patch.yml local (caminhos desta máquina) conforme o ref
     "$SELF_DIR/render-cordis.sh"
+    "$SELF_DIR/stamp-version.sh"
     echo "✔ Overlay restaurado para $ref."
     core_warn "$ref"
     echo "  (Reinicie o harness para carregar a versão antiga.)"

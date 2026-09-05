@@ -58,3 +58,10 @@
       name: '__DSH_HOME__/layout-panel-plugin.js'
       config:
         enabled: true
+# 8) Version Badge: mostra a versão instalada do overlay e quando foi
+#    atualizado (lê .dsh-version.json, gerado pelo sync em cada máquina).
+- insert:
+    - id: dsh-version-badge
+      name: '__DSH_HOME__/version-badge-plugin.js'
+      config:
+        enabled: true
