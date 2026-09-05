@@ -21,6 +21,11 @@ EXCL="$SELF_DIR/sync-excludes.txt"
 [ -f "$EXCL" ] || { echo "ERRO: $EXCL ausente"; exit 1; }
 [ -d "$LIVE" ] || { echo "ERRO: config viva $LIVE não existe"; exit 1; }
 
+# Lista snapshots do mais recente para o mais antigo (nomes têm timestamp)
+snap_names_sorted() {
+  find "$SNAP_ROOT" -maxdepth 1 -type d -name 'snap-*' -printf '%f\n' | sort -r
+}
+
 cmd="${1:-list}"
 
 case "$cmd" in
@@ -35,32 +40,33 @@ case "$cmd" in
     echo "✔ snapshot criado: $dest"
     # manutenção: mantém apenas as $KEEP mais recentes
     count=0
-    for d in $(ls -1dt "$SNAP_ROOT"/snap-* 2>/dev/null); do
+    while IFS= read -r old; do
       count=$((count + 1))
       if [ "$count" -gt "$KEEP" ]; then
-        rm -rf "$d"
-        echo "  (removido snapshot antigo: $(basename "$d"))"
+        rm -rf "$SNAP_ROOT/$old"
+        echo "  (removido snapshot antigo: $old)"
       fi
-    done
+    done < <(snap_names_sorted)
     ;;
   list)
-    if ! ls -1dt "$SNAP_ROOT"/snap-* >/dev/null 2>&1; then
+    mapfile -t snaps < <(snap_names_sorted)
+    if [ "${#snaps[@]}" -eq 0 ]; then
       echo "ℹ  Nenhum snapshot em $SNAP_ROOT ainda."
       exit 0
     fi
     echo "Snapshots em $SNAP_ROOT (mais recente primeiro):"
     i=0
-    for d in $(ls -1dt "$SNAP_ROOT"/snap-* 2>/dev/null); do
+    for name in "${snaps[@]}"; do
       i=$((i + 1))
-      echo "  $i) $(basename "$d")"
+      echo "  $i) $name"
     done
     ;;
   prune)
     count=0
-    for d in $(ls -1dt "$SNAP_ROOT"/snap-* 2>/dev/null); do
+    while IFS= read -r old; do
       count=$((count + 1))
-      if [ "$count" -gt "$KEEP" ]; then rm -rf "$d"; fi
-    done
+      if [ "$count" -gt "$KEEP" ]; then rm -rf "$SNAP_ROOT/$old"; fi
+    done < <(snap_names_sorted)
     echo "✔ prune concluído (mantidos $KEEP)."
     ;;
   *)

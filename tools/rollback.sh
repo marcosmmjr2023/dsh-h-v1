@@ -73,7 +73,8 @@ case "${1:-list}" in
     auto_snapshot
     sel="$1"
     if [[ "$sel" =~ ^[0-9]+$ ]]; then
-      dest="$(ls -1dt "$SNAP_ROOT"/snap-* 2>/dev/null | sed -n "${sel}p")"
+      picked="$(find "$SNAP_ROOT" -maxdepth 1 -type d -name 'snap-*' -printf '%f\n' | sort -r | sed -n "${sel}p")"
+      dest="${picked:+$SNAP_ROOT/$picked}"
     else
       dest="$SNAP_ROOT/$sel"
     fi
