@@ -34,12 +34,16 @@ Credentials, sessions, logs and runtime state **never** enter the repo.
 - `sync-pull` — pulls the repo and applies the overlay **after snapshotting** the
   current working state into `~/.dsh-snapshots/` (last 8 kept).
 - `sync-push` — publishes local edits back (`--tag vX.Y.Z` marks a known-good version).
-- `auto-push` — **routine publisher** (cron, master machine only): when your live config
-  has new local content or the clone has unpushed commits, it mirrors, commits and pushes
-  to GitHub by itself — other machines pick it up on their next `sync-pull`. Guardrails:
-  never force-push, never auto-tags, secret guard blocks the commit, and the same
-  `.dsh-autoupdate.off` ON/OFF switch (badge in the panel) disables it. Run
-  `tools/auto-push.sh --dry-run` to preview. Manuals: `docs/SYNC.md`.
+- `auto-push` — **two-way routine publisher on every machine you edit**: pulls what the
+  others published and pushes your local live-config changes by itself — each release is
+  **documented over the last version** (descriptive commit with the changed files, an
+  automatic `vX.Y.Z` tag, and a `CHANGELOG.md` entry). If two machines edit the same
+  file before syncing, the machine that syncs last becomes the current version and the
+  other stays preserved in history/tags — never force-pushed, never lost. Guardrails:
+  the `.dsh-autoupdate.off` ON/OFF switch (panel badge) disables it, secret guard blocks
+  bad commits. Schedule once per machine (`tools/auto-sync.sh` or Windows Task Scheduler
+  with `tools\auto-sync.ps1`); preview with `tools/auto-push.sh --dry-run`.
+  Manuals: `docs/SYNC.md`.
 - `rollback` — `--snapshot <name>` restores the exact pre-update machine state,
   `<tag|commit>` reverts the overlay to a published version (removing files added by
   newer versions too), `--core <version>` reinstalls a previous npm core.
@@ -77,9 +81,11 @@ tools/sync-pull.sh
 # publish your local edits (add --tag vX.Y.Z for a known-good release)
 tools/sync-push.sh "what changed"
 
-# publish automatically, every 30 min on the master machine (cron):
-#   tools/auto-push.sh            (dry-run: tools/auto-push.sh --dry-run)
-# details and cron line: docs/SYNC.md → "Publicação automática (auto-push)"
+# full auto cycle on EVERY machine you edit (cron 30 min / Task Scheduler):
+#   tools/auto-sync.sh            (Linux; dry-run: tools/auto-push.sh --dry-run)
+#   tools\auto-sync.ps1           (Windows)
+# each publish documents itself: descriptive commit + automatic vX.Y.Z tag + CHANGELOG.md
+# details: docs/SYNC.md → "Sincronização automática via de mão dupla em TODAS as máquinas"
 
 # something broke after an update? go back
 tools/rollback.sh list

@@ -50,9 +50,9 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\dsh-h-v1\tools\sync-p
 
 | Ação | Comando |
 |---|---|
+| Ciclo completo automático (recebe + publica) | `tools/auto-sync.sh` (ensaio: `tools/auto-push.sh --dry-run`) |
 | Atualizar esta máquina com o que há de novo | `tools/sync-pull.sh` |
 | Publicar edições feitas nesta máquina | `tools/sync-push.sh "descrição do que mudou"` |
-| Publicar automaticamente o que mudou (máquina mestra — cron 30min) | `tools/auto-push.sh` (ensaio: `tools/auto-push.sh --dry-run`) |
 | Publicar e marcar como versão conhecida | `tools/sync-push.sh "descrição" --tag v1.2.0` |
 | Ver versão do core vs npm | `tools/check-core.sh` |
 | Ver o que mudaria (ensaio) | `git -C ~/dsh-h-v1 pull --ff-only --dry-run` |
@@ -103,32 +103,37 @@ tools/rollback.sh --core 0.1.1-rc.2
 - Após o rollback, **reinicie o harness** para carregar a versão antiga.
 - Windows: use `tools\rollback.ps1` com os mesmos argumentos.
 
-## Agendar a atualização automática ("os dois" — ao iniciar + agendado)
+## Agendar o sync automático ("os dois" — ao iniciar + agendado)
+
+> Ciclo completo (recebe **e** publica) numa linha: **`tools/auto-sync.sh`**
+> (Linux) / **`tools\auto-sync.ps1`** (Windows). Detalhes do auto-push,
+> versionamento e conflitos na seção "Sincronização automática via de mão
+> dupla" mais abaixo.
 
 ### Linux — ao iniciar o harness
-Adicione `tools/sync-pull.sh` ao comando que sobe o harness, ou crie um alias:
+Adicione `tools/auto-sync.sh` ao comando que sobe o harness, ou crie um alias:
 
 ```bash
-alias dsh-up="~/dsh-h-v1/tools/sync-pull.sh && dsh"
+alias dsh-up="~/dsh-h-v1/tools/auto-sync.sh && dsh"
 ```
 
 ### Linux — agendado (cron, a cada 30 min)
 ```bash
 crontab -e
 # linha:
-*/30 * * * * /home/deploy/projects/dsh-h-v1/tools/sync-pull.sh >> ~/.dsh-sync.log 2>&1
+*/30 * * * * ~/dsh-h-v1/tools/auto-sync.sh >> ~/.dsh-sync.log 2>&1
 ```
-> O `sync-pull` aplica `overlay/` sobre `~/.dsh` sem `--delete`: nunca apaga
+> O `sync-pull` aplica `overlay/` sobre a config viva sem `--delete`: nunca apaga
 > arquivos que existam só na máquina. Seguro rodar com o harness aberto; a
 > GUI só passa a usar o novo conteúdo ao reiniciar sessões.
 
 ### Windows — ao iniciar (start-dsh-gui.bat)
-O `start-dsh-gui.bat` (raiz do clone) já chama `tools\sync-pull.ps1` antes
-de abrir a GUI.
+O `start-dsh-gui.bat` (raiz do clone) já chama `tools\auto-sync.ps1` (recebe +
+publica) antes de abrir a GUI.
 
 ### Windows — agendado (Task Scheduler)
-Crie uma tarefa diária (ou a cada hora):
-`powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\dsh-h-v1\tools\sync-pull.ps1"`
+Crie uma tarefa a cada 30 min (ou diária):
+`powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\dsh-h-v1\tools\auto-sync.ps1"`
 
 ## Ligar/desligar a atualização automática
 
@@ -141,34 +146,98 @@ Crie uma tarefa diária (ou a cada hora):
   o flag existir. O flag é local da máquina (nunca vai ao repo). O flag desliga
   **as duas direções**: receber (sync-pull) e publicar (auto-push).
 
-## Publicação automática (auto-push) — só na máquina mestra
+## Sincronização automática VIA DE MÃO DUPLA em TODAS as máquinas
 
-O `auto-push` fecha o ciclo: **você edita a config viva aqui, e a versão nova
-sobe sozinha para o GitHub** — as outras máquinas recebem no próximo `sync-pull`
-delas (não precisam de nada além do pull que já fazem).
+O `auto-sync` (receber + publicar) roda em **qualquer máquina onde você edita** o
+harness. Assim, se você editar a config viva aqui **ou** em outra máquina, a versão
+nova sobe sozinha para o GitHub e **todas** as máquinas sincronizam a última versão.
 
-- O que ele checa a cada rodada:
-  1. a config viva (`~/.dsh` no Linux, `%USERPROFILE%\.dsh` no Windows) tem
-     conteúdo diferente do `overlay/` publicado? → espelha, comita e envia;
-  2. o clone tem **commits locais ainda não enviados**? → envia.
-- Onde roda: **agendado a cada 30 min na máquina mestra** (a que você edita),
-  na MESMA rotina do `sync-pull` (ex.: depois do pull no `dsh-v2-autoupdate.sh`
-  ou como `*/30 * * * * ~/dsh-v2/tools/auto-push.sh`). As demais máquinas são
-  só receptoras — não agende o auto-push nelas.
-- **Guardrails** (sempre):
-  - nunca faz push forçado e nunca cria tag (versões/tags continuam manuais);
-  - roda o guard de segredos — se detectar credencial, **aborta** e restaura o
-    espelho `overlay/` no clone (a config viva não é tocada; corrija o arquivo lá);
-  - trava com `flock` para não concorrer com um `sync-pull`/`sync-push` manual;
-  - o flag `.dsh-autoupdate.off` desliga o auto-push também;
-  - só comita o espelho `overlay/` — edições estruturais do repo (tools/, docs/)
-    continuam sendo publicadas com `sync-push` e mensagem própria.
-- Ensaie antes: `tools/auto-push.sh --dry-run` (mostra o que subiria, não altera nada).
-- Log: o auto-push fala no stdout — no cron, redirecione para o mesmo log do pull
-  (ex.: `>> ~/.dsh-sync-v2.log 2>&1`).
+Modelo (uma rotina por máquina):
+
+| Direção | Script | O que faz |
+|---|---|---|
+| Receber | `sync-pull.sh` / `sync-pull.ps1` | puxa o repo, snapshot + aplica `overlay/` na config viva |
+| Publicar | `auto-push.sh` / `auto-push.ps1` | publica as edições locais, **documentadas** (abaixo) |
+| Ciclo completo (1 linha) | `auto-sync.sh` / `auto-sync.ps1` | `sync-pull` **seguido de** `auto-push` |
+
+### O que cada publicação sobe (documentação sobre a última versão)
+
+1. **Commit descritivo** com os arquivos alterados — ex.:
+   `sync(auto): v0.2.3 — settings.yaml,smart-router-plugin.js`.
+2. **Versão automática `vX.Y.Z`** (patch incrementado sobre a maior tag; se não
+   houver tag, parte do `version` no `manifest.json`) com **tag âncora** no GitHub —
+   o badge de versão do painel mostra a evolução a cada publicação.
+3. **`CHANGELOG.md`** no repo: cada publicação acrescenta a entrada da versão
+   (data, máquina, arquivos alterados e commits locais incorporados) — ordem
+   cronológica, a versão mais recente fica no fim do arquivo.
+
+> Publicações estruturais do repo (tools/, docs/, este manual) continuam manuais
+> com `sync-push.sh "mensagem"` — só a camada personalizada (overlay) é automática.
+
+### Quando duas máquinas editam o mesmo arquivo (política de conflito)
+
+Duas versões diferentes do sistema nunca se perdem:
+
+- A rotina **primeiro recebe** (pull/rebase) o que as outras máquinas publicaram e
+  depois publica as suas edições.
+- Se a **mesma região do mesmo arquivo** mudou nas duas (conflito), a rotina mantém
+  a versão da máquina que está sincronizando por último — **a última sincronização
+  vira a última versão do sistema** — e a versão da outra máquina fica **preservada
+  no histórico e na tag anterior** (`git log`/`rollback` para recuperar).
+- Nunca há push forçado; nada é apagado.
+
+### Agendar em cada máquina (Linux/WSL)
+
+```bash
+crontab -e
+# linha (clone em ~/dsh-h-v1, config viva ~/.dsh):
+*/30 * * * * ~/dsh-h-v1/tools/auto-sync.sh >> ~/.dsh-sync.log 2>&1
+# se o clone/config usam outro caminho (ex.: ~/dsh-v2 e ~/.dsh-v2):
+*/30 * * * * DSH_CLONE=~/dsh-v2 DSH_LIVE=~/.dsh-v2 ~/dsh-v2/tools/auto-sync.sh >> ~/.dsh-sync-v2.log 2>&1
+```
+
+### Agendar em cada máquina (Windows — Task Scheduler)
+
+1. Clone (uma vez): `git clone https://github.com/marcosmmjr2023/dsh-h-v1.git "%USERPROFILE%\dsh-h-v1"`
+2. Crie uma tarefa (ou use o `start-dsh-gui.bat`, que já chama o `auto-sync` ao abrir a GUI):
+   - Ação: `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\dsh-h-v1\tools\auto-sync.ps1"`
+   - Gatilho: a cada 30 min (e/ou "ao fazer logon") — rodar com privilégios do usuário.
+3. O clone em `tools\` é o mesmo espelho: `sync-pull.ps1` aplica em
+   `%USERPROFILE%\.dsh` e `auto-push.ps1` publica de lá.
+
+### Autenticação para PUBLICAR (uma vez por máquina)
+
+Puxar funciona sem login (repo público), mas **publicar exige credencial** em cada
+máquina que for rodar o auto-push:
+
+```bash
+gh auth login                     # recomendado (Linux/WSL/Git Bash)
+# ou um PAT clássico no credential helper:
+git config --global credential.helper store   # e entre o usuário/PAT uma vez
+```
+Windows: `gh auth login` ou o Gerenciador de Credenciais do Git (que já cuida do HTTPS).
+
+### Guardrails (sempre, em qualquer máquina)
+
+- flag `<config viva>/.dsh-autoupdate.off` desliga a rotina **nas duas direções**
+  (mesmo botão `🔄 auto: ON/OFF` do painel; o flag é local da máquina);
+- nunca usa `--force`; tags nunca são sobrescritas (corrida rara = a próxima
+  versão é usada e avisada no log);
+- guard de segredos bloqueia o commit suspeito (bash: `guard-secrets.sh`; Windows:
+  guard simples no próprio `.ps1`) e restaura o espelho `overlay/`;
+- trava de concorrência (`flock` no Linux, lock de arquivo no Windows);
+- só o espelho `overlay/` + `CHANGELOG.md` entram no commit automático.
+
+### Ensaio, log e regra com o agente
+
+- Ensaie antes: `tools/auto-push.sh --dry-run` (ou `auto-push.ps1 -DryRun`) —
+  mostra o que subiria, não altera nada.
+- Log: o auto-push fala no stdout — no cron/Task Scheduler, redirecione para o
+  mesmo log do pull (ex.: `>> ~/.dsh-sync.log 2>&1`).
 - **Regra ao trabalhar com um agente/harness:** depois de uma modificação pedida
-  na config viva, publique na hora com `tools/sync-push.sh "descrição"` (ou rode o
-  `auto-push`) para o outro PC receber imediatamente — o cron é a rede de segurança.
+  na config viva, publique na hora (`tools/sync-push.sh "descrição"` ou rode o
+  `auto-sync`) para as outras máquinas receberem imediatamente — o agendado é a
+  rede de segurança.
 
 ## Atualizar o CORE (L1) — manual e com teste
 
