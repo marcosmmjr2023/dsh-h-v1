@@ -47,6 +47,9 @@ Credentials, sessions, logs and runtime state **never** enter the repo.
 - `rollback` — `--snapshot <name>` restores the exact pre-update machine state,
   `<tag|commit>` reverts the overlay to a published version (removing files added by
   newer versions too), `--core <version>` reinstalls a previous npm core.
+  **From the GUI:** click the version badge (or its ↩ button) to list versions/snapshots
+  and go back if an update broke something — auto-update is switched OFF and the harness
+  restarts itself (pm2).
 - `check-core` — notifies when the official core (`@deepseek-ai/dsh`) has a new
   version; applying core updates is **manual and tested** (plugins hook DSH internals).
 - `guard-secrets` — pre-commit hook that **blocks** any commit containing a key/credential.

@@ -51,6 +51,9 @@ no repo.
 - `rollback` — `--snapshot <nome>` restaura o estado exato pré-update da máquina;
   `<tag|commit>` reverte o overlay para uma versão publicada (removendo também arquivos
   que versões novas adicionaram); `--core <versão>` reinstala o core npm anterior.
+  **Pelo painel:** clique no badge de versão (ou no botão ↩) para listar tags/snapshots
+  e voltar se uma atualização quebrou — o auto-update é desligado e o harness reinicia
+  sozinho (pm2).
 - `check-core` — avisa quando o core oficial (`@deepseek-ai/dsh`) tem versão nova;
   aplicar update do core é **manual e testado** (plugins usam internals do DSH).
 - `guard-secrets` — hook de pre-commit que **bloqueia** qualquer commit com chave/credencial.

@@ -89,6 +89,11 @@ tools/rollback.sh --core 0.1.1-rc.2
 
 **Como funciona a proteção:**
 
+- **Pelo painel (GUI):** no badge de versão (canto inferior direito), clique na
+  versão ou no botão **↩** → abre a lista com a versão anterior sugerida, as tags
+  `vX.Y.Z` publicadas e os snapshots locais. "Voltar" restaura, **desliga o
+  auto-update** (painel mostra `🔄 auto: OFF` — o sync de 30 min não reaplica a
+  versão que quebrou) e **reinicia o harness sozinho** (quando roda sob pm2).
 - **Snapshots automáticos:** antes de **cada** atualização (`sync-pull`) o
   estado atual da config viva é copiado para `~/.dsh-snapshots/`
   (as últimas 8 são mantidas; credenciais/sessões nunca entram no snapshot).
@@ -96,11 +101,16 @@ tools/rollback.sh --core 0.1.1-rc.2
 - **Histórico git no clone:** todo `sync-pull` só adiciona commits — as
   versões antigas do overlay continuam no clone local para sempre. Voltar a
   uma tag/commit remove também arquivos que versões novas tinham adicionado.
-- **Tags = âncoras de versões conhecidas:** publique com
-  `tools/sync-push.sh "msg" --tag vX.Y.Z` quando testar e aprovar um estado.
+- **Tags = âncoras de versões:** o `auto-push` cria uma tag `vX.Y.Z` a cada
+  publicação automática; publique manualmente com
+  `tools/sync-push.sh "msg" --tag vX.Y.Z` quando quiser marcar um estado bom.
 - **Todo rollback também cria snapshot do estado atual primeiro** — você
   sempre pode desfazer o rollback.
-- Após o rollback, **reinicie o harness** para carregar a versão antiga.
+- Após o rollback, **reinicie o harness** (o painel reinicia sozinho sob pm2;
+  no terminal, reinicie a GUI) para carregar a versão antiga — o badge mostra
+  a versão para a qual você voltou.
+- Para **voltar à versão mais nova** depois de testar: religue o auto
+  (`🔄 auto: OFF` → ON) — o próximo sync aplica a versão publicada mais recente.
 - Windows: use `tools\rollback.ps1` com os mesmos argumentos.
 
 ## Agendar o sync automático ("os dois" — ao iniciar + agendado)
