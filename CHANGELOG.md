@@ -43,3 +43,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.5.
 ## [v0.2.7] — 2026-09-06 23:49 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.6.
   - ecbfcc2 docs(i18n-pt): validação de boot en/zh/pt do núcleo patcheado (instância de teste)
+
+## [v0.2.8] — 2026-09-06 23:52 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.7.
+  - c3ec2f3 feat(i18n-pt): aplicação nos núcleos reais (sudo) + verify-pt (paridade pt/en) verde
