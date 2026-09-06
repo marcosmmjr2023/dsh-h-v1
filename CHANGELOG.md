@@ -39,3 +39,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.4.
 ## [v0.2.6] — 2026-09-06 23:40 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.5.
   - e444c3b feat(i18n-pt): dicionários pt-BR em TODOS os 26 arquivos de UI do núcleo (patches 19–27)
+
+## [v0.2.7] — 2026-09-06 23:49 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.6.
+  - ecbfcc2 docs(i18n-pt): validação de boot en/zh/pt do núcleo patcheado (instância de teste)
