@@ -1,0 +1,60 @@
+--- a/dsh-client-locale/lib/client.js
++++ b/dsh-client-locale/lib/client.js
+@@ -867,6 +867,33 @@
+ 			"none": "None",
+ 			"truncated": "Truncated"
+ 		};
++		const pt$1 = {
++			"ok": "OK",
++			"cancel": "Cancelar",
++			"close": "Fechar",
++			"copy": "Copiar",
++			"copied": "Copiado",
++			"retry": "Tentar novamente",
++			"loading": "Carregando…",
++			"load.failed": "Falha ao carregar",
++			"submit": "Enviar",
++			"submitting": "Enviando…",
++			"next": "Próximo",
++			"previous": "Anterior",
++			"skip": "Pular",
++			"delete": "Excluir",
++			"edit": "Editar",
++			"save": "Salvar",
++			"search": "Buscar",
++			"more": "Mais",
++			"collapse": "Recolher",
++			"expand": "Expandir",
++			"back": "Voltar",
++			"unknown": "Desconhecido",
++			"none": "Nenhum",
++			"truncated": "Truncado",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/locales/settings.js
+ 		/** `settings.locale` namespace dictionaries (the Language row's copy). */
+@@ -874,6 +901,10 @@
+ 		const zh = { "language.title": "语言" };
+ 		/** English dictionary, checked complete against the zh key set. */
+ 		const en = { "language.title": "Language" };
++		const pt = {
++			"language.title": "Idioma",
++		};
++
+ 		//#endregion
+ 		//#region \0dsh-css:/home/runner/work/deepseek-harness/deepseek-harness/packages/client/locale/src/client/LanguageRow.module.css.mjs
+ 		const css = ".hVGvvW_row{border-bottom:1px solid var(--dsw-alias-border-l2);align-items:center;gap:8px;padding:16px 0;display:flex}.hVGvvW_rowText{flex-direction:column;flex:1;gap:4px;min-width:0;padding-right:48px;display:flex}.hVGvvW_title{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:400;line-height:22px}.hVGvvW_selector{background:var(--dsw-alias-bg-module-platform);height:36px;font:inherit;color:var(--dsw-alias-label-primary);cursor:pointer;border:none;border-radius:18px;align-items:center;gap:12px;padding:0 14px;font-size:14px;line-height:22px;display:inline-flex}.hVGvvW_selector:hover{background:var(--dsw-alias-interactive-bg-hover)}.hVGvvW_chevron{flex:none}";
+@@ -1225,10 +1256,12 @@
+ 			const locale = new LocaleRuntime(ctx, ctx.settingsScope.bind({ namespace: LOCALE_SETTINGS_NAMESPACE }));
+ 			locale.register(COMMON_NS, {
+ 				zh: zh$1,
++				pt: pt,
+ 				en: en$1
+ 			});
+ 			locale.register(SETTINGS_NS, {
+ 				zh,
++				pt,
+ 				en
+ 			});
+ 			ctx.provide("locale", locale);
