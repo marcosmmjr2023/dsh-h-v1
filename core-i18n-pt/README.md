@@ -71,10 +71,16 @@ sudo core-i18n-pt/tools/apply-pt-core.sh          # Linux, install global root
       valores-constante e caminhos (`WELCOME_NOTICE_COPY.en.title`).
       Validação: árvore limpa completa → **27/27 patches aplicam em ordem**,
       sintaxe OK, `apply --check` verde no core real.
-- [ ] **Validação em instância de teste** (boot do núcleo patcheado em outra porta
-      com home próprio) e em máquina real após aplicar.
-- [ ] Regressão visual nas 3 línguas + paridade de chaves pt×en (textos inline
-      fora dos dicionários — limitação conhecida do upstream — ficam en/zh).
+- [x] **Boot de teste do núcleo patcheado** (cópia própria, portas 3091–3093,
+      via pm2): com `locale.preference: en|zh|pt` o servidor sobe **online**
+      (http 200) nas 3 línguas e serve os módulos patcheados (locale contém
+      "Português"/`"pt"`; settings-general em PT "Configurações"); a
+      preferência **persiste no settings.yaml** de cada home. GUI real (3081)
+      permanece íntegra.
+- [ ] **Regressão visual (clique real)** na máquina após aplicar com sudo
+      (`apply-pt-core.sh`) — o render headless não é viável (a GUI exige
+      sessão WebSocket); + textos inline fora de dicionários (limitação do
+      upstream) seguem en/zh.
 
 > Observação honesta: traduzir TODA a UI do núcleo é um projeto grande
 > (dezenas de pacotes `dsh-client-ui-*` com dicionários e textos inline). A
