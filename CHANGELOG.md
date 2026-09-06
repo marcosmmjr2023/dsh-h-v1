@@ -19,3 +19,7 @@ Release manual/estrutural — 13 commit(s) desde v0.2.0.
   - aba6efb fix(ci): SC2115 — protege rm -rf com ${SNAP_ROOT:?}
   - 4f29847 fix(ci): corrige shellcheck SC2045/SC2012 nos loops de snapshot/rollback
   - e8312d6 Migração PC1/PC2: layout-panel v1.1 + badge FreeLLMAPI atualizado
+
+## [v0.2.2] — 2026-09-06 23:15 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.1.
+  - 876d6a2 docs(i18n): paridade PT/EN dos manuais — SYNC.en.md atualizado (auto-sync/auto-push/release/rollback GUI) + guia Windows EN (docs/WINDOWS.md)
