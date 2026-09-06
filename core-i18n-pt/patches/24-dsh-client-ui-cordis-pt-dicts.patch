@@ -1,0 +1,69 @@
+--- a/dsh-client-ui-cordis/lib/client.js
++++ b/dsh-client-ui-cordis/lib/client.js
+@@ -1257,6 +1257,58 @@
+ 			"body.copy": "Copy",
+ 			"body.copied": "Copied"
+ 		};
++		const pt = {
++			"row.defineTitle": "Registrar Plugin Cordis",
++			"row.runTitle": "Executar Plugin Cordis",
++			"row.updateTitle": "Atualizar Plugin Cordis",
++			"row.stopTitle": "Parar Plugin Cordis",
++			"row.removeTitle": "Remover Plugin Cordis",
++			"purpose.missing": "(nenhum propósito informado)",
++			"status.idle": "Pronto",
++			"status.awaitingApproval": "Aguardando aprovação",
++			"status.failed": "Execução falhou",
++			"status.clientPending": "Cliente pronto para ativar",
++			"status.running": "Em execução",
++			"status.removed": "Removido",
++			"status.superseded": "Nova execução disponível",
++			"run.removed": "Este pacote não existe mais",
++			"run.superseded": "Um cartão de execução mais recente está disponível abaixo",
++			"panel.hint": "Os controles de execução ficam no painel Cordis acima de Configurações",
++			"panel.plugins.aria": "Plugins Cordis",
++			"panel.approvals.aria": "Aprovações Cordis",
++			"panel.trigger": "Plugin Cordis",
++			"panel.runningCount": "{count} em execução",
++			"panel.title": "Plugins Cordis",
++			"panel.empty": "Nenhum plugin definido ainda",
++			"panel.loading": "Lendo…",
++			"panel.readFailed": "Falha ao ler o inventário de plugins: {message}",
++			"panel.group.current": "Esta sessão",
++			"panel.group.others": "Outras sessões",
++			"panel.version": "Versão",
++			"panel.current": "Atual: {packageId}",
++			"panel.next": "Próximo: {packageId}",
++			"action.approve": "Permitir",
++			"action.approveOnce": "Permitir apenas esta versão",
++			"action.approvePlugin": "Permitir versões futuras deste plugin",
++			"action.decline": "Recusar",
++			"action.run": "Executar",
++			"action.stop": "Parar",
++			"action.remove": "Remover",
++			"action.retry": "Tentar novamente",
++			"action.rollback": "Reverter",
++			"render.failedAbdicated": "Falha na renderização em {slot}; a interface padrão foi restaurada:",
++			"render.failedHeld": "Falha na renderização em {slot}:",
++			"a11y.defining": "Definindo o plugin",
++			"a11y.failed": "Falha na definição",
++			"a11y.stopped": "Definição interrompida",
++			"body.source": "Origem do plugin",
++			"body.hostCode": "Host",
++			"body.clientCode": "Cliente",
++			"body.output": "Resultado",
++			"body.copy": "Copiar",
++			"body.copied": "Copiado",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Cordis dynamic-plugin cards, inventory panel, business-view host, and `@pluginId` source. */
+@@ -1273,6 +1325,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-cordis: dictionaries");
+ 			const port = {

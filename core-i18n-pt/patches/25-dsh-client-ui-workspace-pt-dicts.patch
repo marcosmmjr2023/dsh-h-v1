@@ -1,0 +1,82 @@
+--- a/dsh-client-ui-workspace/lib/client.js
++++ b/dsh-client-ui-workspace/lib/client.js
+@@ -2341,6 +2341,71 @@
+ 			"time.years": "{n}y",
+ 			"time.ago": "{t} ago"
+ 		};
++		const pt = {
++			"group.ungrouped": "Sem grupo",
++			"session.new": "Nova sessão",
++			"section.workspaces": "Workspaces",
++			"section.sessions": "Sessões",
++			"viewOptions.label": "Opções de visualização",
++			"groupBy.label": "Agrupar por",
++			"groupBy.workspace": "Workspace",
++			"groupBy.flat": "Em uma lista",
++			"orderBy.label": "Ordenar por",
++			"orderBy.manual": "Manual",
++			"orderBy.updated": "Última atualização",
++			"sessions.expand": "Mostrar mais {n} sessões",
++			"sessions.collapse": "Mostrar menos",
++			"empty.none": "Nenhuma sessão ainda",
++			"empty.noMatches": "Nenhum resultado",
++			"workspace.add": "Adicionar workspace",
++			"search.sessions.aria": "Buscar sessões",
++			"search.placeholder": "Buscar sessões...",
++			"search.clear": "Limpar busca",
++			"search.results.aria": "Resultados da busca",
++			"search.pending": "Buscando histórico de sessões…",
++			"search.unavailable": "A busca de conteúdo está temporariamente indisponível. Mostrando correspondências de nome.",
++			"search.noMatches": "Nenhuma sessão correspondente",
++			"search.hasMore": "Mostrando os primeiros {n} resultados. Refine sua busca.",
++			"menu.addWorkspace": "Adicionar workspace…",
++			"picker.loading": "Carregando workspaces…",
++			"conflict.named": "Já existe um workspace chamado “{name}”.",
++			"folderError.title": "Não foi possível abrir a pasta",
++			"folderError.retry": "Escolha novamente",
++			"rename": "Renomear",
++			"rename.workspace.title": "Renomear workspace",
++			"rename.session.title": "Renomear sessão",
++			"field.workspaceName": "Nome do workspace",
++			"field.sessionName": "Nome da sessão",
++			"delete.workspace": "Excluir workspace",
++			"delete.desc": "Isso remove “{name}” da lista de workspaces. A pasta e os registros de sessão serão mantidos. As sessões dele aparecerão em Sem grupo.",
++			"delete.pending": "Excluindo workspace…",
++			"menu.fork": "Duplicar sessão",
++			"menu.archiveSession": "Arquivar sessão",
++			"sessions.count.one": "{n} sessão",
++			"sessions.count.other": "{n} sessões",
++			"actions.workspace.aria": "Ações do workspace para {name}",
++			"actions.session.aria": "Ações da sessão para {name}",
++			"actions.newSession.aria": "Nova sessão em {name}",
++			"status.running": "Em execução",
++			"status.subagentsRunning.one": "{n} subagente em execução",
++			"status.subagentsRunning.other": "{n} subagentes em execução",
++			"status.idle": "Ocioso",
++			"status.waitingApproval": "Aguardando aprovação",
++			"status.planReview": "Plano aguardando revisão",
++			"status.waitingAnswer": "Aguardando resposta",
++			"status.completed": "Concluído",
++			"hover.created": "Criado {time}",
++			"hover.copied": "Copiado",
++			"date.ymd": "{y}-{m}-{d}",
++			"time.now": "agora",
++			"time.minutes": "{n}min",
++			"time.hours": "{n}h",
++			"time.days": "{n}d",
++			"time.months": "{n}mês",
++			"time.years": "{n}a",
++			"time.ago": "há {t}",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Dictionary namespace owned by this plugin. */
+@@ -2370,6 +2435,7 @@
+ 			const hostDescription = ctx.get("connection").hostDescription;
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-workspace: dictionaries");
+ 			const searchSessions = async (query, signal) => {

@@ -1,0 +1,38 @@
+--- a/dsh-client-ui-settings-plugin-inventory/lib/client.js
++++ b/dsh-client-ui-settings-plugin-inventory/lib/client.js
+@@ -257,6 +257,27 @@
+ 			failed: "Mount failed",
+ 			unloading: "Unloading"
+ 		};
++		const pt = {
++			"tab": "Lista de plugins",
++			"loading": "Lendo plugins…",
++			"error": "Os plugins estão temporariamente indisponíveis.",
++			"retry": "Tentar novamente",
++			"search": "Pesquisar plugins",
++			"catalog": "Lista de plugins",
++			"empty": "Nenhum plugin disponível.",
++			"emptySearch": "Nenhum plugin correspondente.",
++			"enabledTag": "Ativado",
++			"disabledTag": "Desativado",
++			"configuration": "Configuração",
++			"cordis": "Status do Cordis",
++			"unobserved": "Não montado",
++			"pending": "Aguardando dependências",
++			"loadingPhase": "Carregando",
++			"active": "Montado",
++			"failed": "Falha na montagem",
++			"unloading": "Descarregando",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Read-only Host plugin inventory registered into Web Settings. */
+@@ -273,6 +294,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-settings-plugin-inventory: dictionaries");
+ 			const t = ctx.locale.bind(NS);

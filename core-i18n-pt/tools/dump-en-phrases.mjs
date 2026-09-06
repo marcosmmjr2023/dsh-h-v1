@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { findObject, parseDict } from "./ptlib.mjs";
 /**
  * dump-en-phrases.mjs — extrai as frases em inglês dos dicionários compilados
  * de um/dois arquivos de locale do núcleo (para alimentar en-phrases.json).
@@ -25,40 +26,13 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === "--only-new") onlyNew = args[++i];
 }
 
-function stripComments(src) {
-  let out = "";
-  for (let i = 0; i < src.length; i++) {
-    if (src[i] === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
-    if (src[i] === "/" && src[i + 1] === "*") { const e = src.indexOf("*/", i + 2); i = e === -1 ? src.length : e + 1; continue; }
-    out += src[i];
-  }
-  return out;
-}
-function findObject(text, openIdx) {
-  let depth = 0, inStr = false;
-  for (let i = openIdx; i < text.length; i++) {
-    const c = text[i];
-    if (inStr) { if (c === "\\") i++; else if (c === '"') inStr = false; continue; }
-    if (c === '"') { inStr = true; continue; }
-    if (c === "{") depth++;
-    else if (c === "}") { depth--; if (depth === 0) return { end: i + 1 }; }
-  }
-  throw new Error("objeto sem fechamento");
-}
-function parseDict(text, openIdx) {
-  const { end } = findObject(text, openIdx);
-  const body = text.slice(openIdx + 1, end - 1);
-  try { return { map: JSON.parse("{" + stripComments(body) + "}"), end }; }
-  catch { return { map: null, end }; }
-}
-
 let existing = {};
 if (onlyNew) { try { existing = JSON.parse(fs.readFileSync(onlyNew, "utf8")); } catch {} }
 
 const catalog = [];
 for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
-  const re = /const (en)(\$?\w*)\s*=\s*\{/g;
+  const re = /const (en)(?:\$\d+)?\s*=\s*\{/g;
   let m;
   while ((m = re.exec(text)) !== null) {
     const decl = m[0];

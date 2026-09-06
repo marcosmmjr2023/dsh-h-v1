@@ -1,0 +1,57 @@
+--- a/dsh-client-ui-settings-plugins/lib/client.js
++++ b/dsh-client-ui-settings-plugins/lib/client.js
+@@ -1159,6 +1159,46 @@
+ 			webSearchMaxUses: "Max searches per request",
+ 			webSearchMaxUsesHint: "How many times one request may search before it must answer."
+ 		};
++		const pt = {
++			"nav": "Plugins",
++			"title": "Plugins",
++			"intro": "Configure e inspecione os plugins instalados nesta implantação.",
++			"tabs": "Visualizações de plugin",
++			"configurableTab": "Configuração do plugin",
++			"empty": "Esta implantação não expõe nenhuma configuração de plugin.",
++			"overridden": "Substituído",
++			"reset": "Redefinir para o padrão",
++			"readOnly": "Esta implantação armazena as configurações como somente leitura.",
++			"expand": "Mostrar configurações",
++			"collapse": "Ocultar configurações",
++			"save": "Salvar",
++			"saving": "Salvando…",
++			"discard": "Descartar",
++			"unsaved": "Não salvo",
++			"saveFailed": "A implantação não aceitou estes valores; eles foram deixados para você corrigir.",
++			"invalidNumber": "Insira um número ou deixe em branco para usar o padrão.",
++			"bashTitle": "Shell",
++			"bashDescription": "Limita cada comando que o agente executa.",
++			"bashTimeoutMs": "Tempo limite de comando (ms)",
++			"bashTimeoutMsHint": "Quanto tempo um comando pode ser executado antes de ser encerrado.",
++			"bashMaxOutputBytes": "Limite de saída por fluxo (bytes)",
++			"bashMaxOutputBytesHint": "A saída além disso é direcionada para um arquivo temporário em vez de ser perdida.",
++			"agentLoopTitle": "Loop do agente",
++			"agentLoopDescription": "Como o agente despacha chamadas de ferramentas.",
++			"agentLoopMaxParallel": "Chamadas de ferramentas paralelas",
++			"agentLoopMaxParallelHint": "Limite superior de chamadas seguras em paralelo executadas simultaneamente em uma única etapa.",
++			"webSearchTitle": "Pesquisa na web",
++			"webSearchDescription": "O provedor de pesquisa DeepSeek.",
++			"webSearchApiKey": "Chave de API",
++			"webSearchApiKeyHint": "Armazenado fora do arquivo de configurações. Deixe em branco para manter a chave atual.",
++			"webSearchApiKeySet": "Uma chave está configurada.",
++			"webSearchApiKeyUnset": "Nenhuma chave está configurada; a pesquisa ficará indisponível até que uma seja configurada.",
++			"webSearchBaseUrl": "Endpoint",
++			"webSearchBaseUrlHint": "Deixe em branco para usar o padrão do provedor.",
++			"webSearchMaxUses": "Máximo de pesquisas por requisição",
++			"webSearchMaxUsesHint": "Quantas vezes uma requisição pode pesquisar antes de precisar responder.",
++		};
++
+ 		/** Simplified Chinese copy. */
+ 		const zh = {
+ 			nav: "插件",
+@@ -1230,6 +1270,7 @@
+ 			const t = ctx.locale.bind(NS);
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-settings-plugins: section dictionaries");
+ 			const bash = new BashCardController(ctx.settingsScope.bind({ namespace: SHELL_NS }));

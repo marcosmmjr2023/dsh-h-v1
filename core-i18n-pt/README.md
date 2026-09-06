@@ -63,14 +63,18 @@ sudo core-i18n-pt/tools/apply-pt-core.sh          # Linux, install global root
       todos com **cobertura total das chaves en** (0 no fallback). Validação:
       aplicação sequencial 01→18 numa árvore limpa completa (byte-a-byte) +
       `node --check`.
-- [ ] **19+ — Pacotes restantes**: `conversation` (~749), `cordis` (~218),
-      `workspace` (~216), `trajectory` (~327), e os 5 com dicionário compilado não
-      parseável como JSON puro (`agent-preset`, `settings-models`,
-      `settings-plugins`, `settings-plugin-inventory`, `skill`) — exigem tratamento
-      customizado/extração específica.
+- [x] **19–27 — Pacotes restantes** (patches 19–27): conversation (170/170),
+      trajectory, agent-preset, settings-plugins, settings-plugin-inventory,
+      cordis, workspace, settings-models, skill — **dicionários de TODOS os
+      26 arquivos de UI cobertos** (0 frases en sem tradução; tabela com 624
+      frases). O parser (`ptlib.mjs`) passou a entender chaves sem aspas,
+      valores-constante e caminhos (`WELCOME_NOTICE_COPY.en.title`).
+      Validação: árvore limpa completa → **27/27 patches aplicam em ordem**,
+      sintaxe OK, `apply --check` verde no core real.
 - [ ] **Validação em instância de teste** (boot do núcleo patcheado em outra porta
       com home próprio) e em máquina real após aplicar.
-- [ ] Verificação de paridade de chaves pt×en e regressão visual nas 3 línguas.
+- [ ] Regressão visual nas 3 línguas + paridade de chaves pt×en (textos inline
+      fora dos dicionários — limitação conhecida do upstream — ficam en/zh).
 
 > Observação honesta: traduzir TODA a UI do núcleo é um projeto grande
 > (dezenas de pacotes `dsh-client-ui-*` com dicionários e textos inline). A

@@ -1,0 +1,73 @@
+--- a/dsh-client-ui-agent-preset/lib/client.js
++++ b/dsh-client-ui-agent-preset/lib/client.js
+@@ -66,6 +66,62 @@
+ 			deleteConfirm: "Delete",
+ 			deleting: "Deleting…"
+ 		};
++		const pt = {
++			"title": "Predefinição de agente",
++			"description": "Aplica-se às sessões iniciadas a partir de agora. Sessões em execução mantêm a predefinição com que começaram.",
++			"loading": "Carregando predefinições…",
++			"error": "Não foi possível carregar as predefinições de agente.",
++			"userTrust": "Personalizado",
++			"seatHint": "Predefinição de agente para a sessão que você está prestes a iniciar",
++			"headerHint": "A predefinição de agente que esta sessão executa, definida ao iniciar",
++			"nav": "Predefinições de agente",
++			"sectionIntro": "Uma predefinição é a composição de plugins executada pelo agente de uma sessão — suas ferramentas, prompt e recursos. Duplique uma existente e personalize-a, ou deixe o agente redigir uma para você no modo Criador.",
++			"builtIn": "Integrado",
++			"setDefault": "Definir como padrão",
++			"view": "Visualizar",
++			"presetStandardName": "Modo Padrão",
++			"presetStandardDescription": "Agente de programação completo com edição de arquivos, shell, pesquisa de arquivos e web, habilidades, planejamento, objetivos, subagentes e fluxos de trabalho.",
++			"presetCodeName": "Modo PTC",
++			"presetCodeDescription": "Todos os recursos do modo Padrão, com ferramentas expostas por meio do SDK do Code Mode para que o modelo possa combinar operações em várias etapas em um único programa TypeScript.",
++			"presetMinimalName": "Modo Mínimo",
++			"presetMinimalDescription": "Agente de programação de duas ferramentas com bash persistente e str_replace_editor.",
++			"presetCordisName": "Modo Criador",
++			"presetCordisDescription": "Criado para criar predefinições de agente personalizadas, com todos os recursos do modo Padrão, além de inspeção em tempo de execução, experimentos de plugin e orientação para criação de predefinições.",
++			"duplicate": "Duplicar",
++			"duplicateUnavailable": "Esta implantação não possui diretório de predefinições gravável",
++			"delete": "Excluir",
++			"presetId": "Identificador",
++			"presetIdPlaceholder": "meu-agente",
++			"displayName": "Nome",
++			"displayNamePlaceholder": "Exibido no seletor; o padrão é o identificador",
++			"inUse": "Em uso",
++			"builtInGroup": "Integrado",
++			"customGroup": "Personalizado",
++			"noDescription": "Sem descrição.",
++			"brokenBadge": "Falha ao carregar",
++			"brokenNoCopy": "Uma predefinição que falhou ao carregar não pode ser duplicada",
++			"copyOf": "Copiado de",
++			"composition": "Composição (agent.cordis.yml)",
++			"cancel": "Cancelar",
++			"close": "Fechar",
++			"retry": "Tentar novamente",
++			"copyTitle": "Duplicar predefinição",
++			"copyIntro": "Toda a predefinição é copiada nesta máquina. O identificador se torna o nome do seu diretório e não poderá ser alterado depois; todo o resto é editado nos arquivos da própria predefinição.",
++			"create": "Criar",
++			"creating": "Criando…",
++			"creatorDraft": "Esboçar uma predefinição personalizada com o modo Criador",
++			"openLocation": "Abrir pasta",
++			"showLocation": "Mostrar local",
++			"revealedPathLabel": "Arquivos de predefinição:",
++			"idRequired": "Atribua um identificador à predefinição.",
++			"idInvalid": "Use letras minúsculas, dígitos e hífens, começando com uma letra ou dígito.",
++			"idTaken": "Já existe uma predefinição com este identificador.",
++			"deleteTitle": "Excluir esta predefinição?",
++			"deleteDescription": "O diretório da predefinição é excluído. Sessões já em execução nela continuarão funcionando; novas sessões não poderão selecioná-la.",
++			"deleteConfirm": "Excluir",
++			"deleting": "Excluindo…",
++		};
++
+ 		/** Simplified Chinese copy. */
+ 		const zh = {
+ 			title: "Agent 预设",
+@@ -1573,6 +1629,7 @@
+ 			});
+ 			ctx.effect(() => ctx.locale.register("settings.agentPreset", {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-agent-preset: settings row dictionaries");
+ 			const injected = () => ({

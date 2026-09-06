@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { findObject, parseDict } from "./ptlib.mjs";
 /**
  * build-pt-patches.mjs — injeta dicionários pt-BR nos arquivos compilados de
  * locale do núcleo (@deepseek-ai/dsh, core-i18n-pt).
@@ -43,51 +44,35 @@ let phrases = {};
 try { phrases = JSON.parse(fs.readFileSync(PHRASES_PATH, "utf8")); } catch (e) { console.error("não li frases:", e.message); }
 
 /** Remove comentários // e /* *​/ de um trecho de objeto. */
-function stripComments(src) {
+
+/** Transforma chaves identificadoras (nav: ...) em chaves com aspas p/ JSON.parse. */
+function quoteKeys(src) {
   let out = "";
+  let inStr = false;
   for (let i = 0; i < src.length; i++) {
-    if (src[i] === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
-    if (src[i] === "/" && src[i + 1] === "*") {
-      const end = src.indexOf("*/", i + 2);
-      i = end === -1 ? src.length : end + 1;
+    const c = src[i];
+    if (inStr) {
+      out += c;
+      if (c === "\\") { if (i + 1 < src.length) { out += src[i + 1]; i++; } }
+      else if (c === '"') inStr = false;
       continue;
     }
-    out += src[i];
+    if (c === '"') { inStr = true; out += c; continue; }
+    const prev = i === 0 ? "" : src[i - 1];
+    if (/[A-Za-z_$]/.test(c) && !/[\w$]/.test(prev)) {
+      const mm = /^[A-Za-z_$][\w$]*\s*:/.exec(src.slice(i));
+      if (mm) {
+        const name = mm[0].replace(/\s*:$/, "");
+        out += JSON.stringify(name) + ":";
+        i += mm[0].length - 1;
+        continue;
+      }
+    }
+    out += c;
   }
   return out;
 }
 
-/** Acha o corpo de "{ … }" a partir do índice do "{", devolvendo {body,end} (end = índice após o '}'). */
-function findObject(text, openIdx) {
-  let depth = 0;
-  let inStr = false;
-  for (let i = openIdx; i < text.length; i++) {
-    const c = text[i];
-    if (inStr) {
-      if (c === "\\") { i++; continue; }
-      if (c === '"') inStr = false;
-      continue;
-    }
-    if (c === '"') { inStr = true; continue; }
-    if (c === "{") depth++;
-    else if (c === "}") {
-      depth--;
-      if (depth === 0) return { body: text.slice(openIdx + 1, i), end: i + 1 };
-    }
-  }
-  throw new Error("objeto sem fechamento");
-}
-
-/** Lê um dicionário (objeto literal) como map chave→valor; devolve {map|null,end}. */
-function parseDict(text, openIdx) {
-  const { body, end } = findObject(text, openIdx);
-  const clean = stripComments(body);
-  try {
-    return { map: JSON.parse("{" + clean + "}"), end };
-  } catch {
-    return { map: null, end };
-  }
-}
 
 let problems = 0;
 for (const file of files) {
@@ -96,7 +81,7 @@ for (const file of files) {
   let text = base;
 
   const dicts = [];
-  const re = /const (zh|en)(\$?\w*)\s*=\s*\{/g;
+  const re = /const (zh|en)(?:\$\d+)?\s*=\s*\{/g;
   let m;
   while ((m = re.exec(text)) !== null) {
     const decl = m[0];

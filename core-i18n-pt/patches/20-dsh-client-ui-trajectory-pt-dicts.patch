@@ -1,0 +1,34 @@
+--- a/dsh-client-ui-trajectory/lib/client.js
++++ b/dsh-client-ui-trajectory/lib/client.js
+@@ -79,6 +79,23 @@
+ 			"toolbar.search": "Search trajectory",
+ 			"toolbar.searchPlaceholder": "Search"
+ 		};
++		const pt = {
++			"view.trajectory": "Trajetória",
++			"toolbar.aria": "Barra de ferramentas de trajetória",
++			"toolbar.duration": "Duração",
++			"toolbar.useActualDuration": "Usar duração real",
++			"toolbar.useEqualWidth": "Usar operações de largura igual",
++			"toolbar.actualTime": "Tempo real",
++			"toolbar.turns": "Turnos",
++			"toolbar.expandTurns": "Expandir turnos",
++			"toolbar.collapseTurns": "Recolher turnos",
++			"toolbar.calls": "Chamadas",
++			"toolbar.expandCalls": "Expandir chamadas",
++			"toolbar.collapseCalls": "Recolher chamadas",
++			"toolbar.search": "Pesquisar trajetória",
++			"toolbar.searchPlaceholder": "Buscar",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/trajectory-definition-common.js
+ 		/**
+@@ -7328,6 +7345,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-trajectory: dictionaries");
+ 			const t = ctx.locale.bind(NS);
