@@ -35,3 +35,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.3.
 ## [v0.2.5] — 2026-09-06 23:33 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.4.
   - 56df237 feat(i18n-pt): +15 pacotes de UI em pt-BR (patches 04–18) — total 18 patches
+
+## [v0.2.6] — 2026-09-06 23:40 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.5.
+  - e444c3b feat(i18n-pt): dicionários pt-BR em TODOS os 26 arquivos de UI do núcleo (patches 19–27)
