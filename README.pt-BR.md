@@ -96,6 +96,9 @@ tools/sync-push.sh "o que mudou"
 # cada publicação se documenta: commit descritivo + tag automática vX.Y.Z + CHANGELOG.md
 # detalhes: docs/SYNC.md → "Sincronização automática via de mão dupla em TODAS as máquinas"
 
+# mudanças estruturais já enviadas por git sem versão? publique a sub-versão:
+#   tools/release.sh              (ensaio: tools/release.sh --dry-run)
+
 # algo quebrou depois de um update? volte
 tools/rollback.sh list
 tools/rollback.sh --snapshot <nome>    # estado exato pré-update da máquina

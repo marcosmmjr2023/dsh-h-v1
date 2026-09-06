@@ -88,6 +88,9 @@ tools/sync-push.sh "what changed"
 #   tools/auto-sync.sh            (Linux; dry-run: tools/auto-push.sh --dry-run)
 #   tools\auto-sync.ps1           (Windows)
 # each publish documents itself: descriptive commit + automatic vX.Y.Z tag + CHANGELOG.md
+
+# structural changes already pushed by git without a version? publish the sub-version:
+#   tools/release.sh              (dry-run: tools/release.sh --dry-run)
 # details: docs/SYNC.md → "Sincronização automática via de mão dupla em TODAS as máquinas"
 
 # something broke after an update? go back

@@ -51,6 +51,7 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\dsh-h-v1\tools\sync-p
 | Ação | Comando |
 |---|---|
 | Ciclo completo automático (recebe + publica) | `tools/auto-sync.sh` (ensaio: `tools/auto-push.sh --dry-run`) |
+| Versionar mudanças ESTRUTURAIS já enviadas (git/sync-push sem versão) | `tools/release.sh` (ensaio: `tools/release.sh --dry-run`) |
 | Atualizar esta máquina com o que há de novo | `tools/sync-pull.sh` |
 | Publicar edições feitas nesta máquina | `tools/sync-push.sh "descrição do que mudou"` |
 | Publicar e marcar como versão conhecida | `tools/sync-push.sh "descrição" --tag v1.2.0` |
@@ -182,7 +183,13 @@ Modelo (uma rotina por máquina):
    cronológica, a versão mais recente fica no fim do arquivo.
 
 > Publicações estruturais do repo (tools/, docs/, este manual) continuam manuais
-> com `sync-push.sh "mensagem"` — só a camada personalizada (overlay) é automática.
+> com `sync-push.sh "mensagem"` ou `git push` — e, para subir a **sub-versão**
+> correspondente (o auto-push não vê mudanças estruturais), rode
+> **`tools/release.sh`** depois: ele marca o estado já enviado com a próxima
+> `vX.Y.Z` + entrada no `CHANGELOG.md` resumindo os commits desde a última tag.
+> Regra: **toda mudança publicada gera uma sub-versão nova** — edições na
+> config viva sobem sozinhas (auto-push/cron); mudanças estruturais sobem com
+> `tools/release.sh`.
 
 ### Quando duas máquinas editam o mesmo arquivo (política de conflito)
 
