@@ -38,6 +38,12 @@ no repo.
 - `sync-pull` — puxa o repo e aplica o overlay **depois de snapshottar** o estado atual
   em `~/.dsh-snapshots/` (mantém as últimas 8).
 - `sync-push` — publica as edições locais (`--tag vX.Y.Z` marca uma versão conhecida-boa).
+- `auto-push` — **publicador rotineiro** (cron, só na máquina mestra): quando a config
+  viva tem conteúdo local novo ou o clone tem commits ainda não enviados, ele espelha,
+  comita e sobe para o GitHub sozinho — as outras máquinas recebem no próximo
+  `sync-pull` delas. Guardrails: nunca força push, nunca cria tag sozinho, guard de
+  segredos bloqueia o commit e o mesmo interruptor `.dsh-autoupdate.off` (badge no
+  painel) desliga a rotina. Ensaie com `tools/auto-push.sh --dry-run`. Manual: `docs/SYNC.md`.
 - `rollback` — `--snapshot <nome>` restaura o estado exato pré-update da máquina;
   `<tag|commit>` reverte o overlay para uma versão publicada (removendo também arquivos
   que versões novas adicionaram); `--core <versão>` reinstala o core npm anterior.
@@ -76,6 +82,10 @@ tools/sync-pull.sh
 
 # publicar edições locais (adicione --tag vX.Y.Z para marcar versão conhecida)
 tools/sync-push.sh "o que mudou"
+
+# publicar automaticamente a cada 30 min na máquina mestra (cron):
+#   tools/auto-push.sh            (ensaio: tools/auto-push.sh --dry-run)
+# detalhes e linha do cron: docs/SYNC.md → "Publicação automática (auto-push)"
 
 # algo quebrou depois de um update? volte
 tools/rollback.sh list

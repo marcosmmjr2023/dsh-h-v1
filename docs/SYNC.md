@@ -52,6 +52,7 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\dsh-h-v1\tools\sync-p
 |---|---|
 | Atualizar esta máquina com o que há de novo | `tools/sync-pull.sh` |
 | Publicar edições feitas nesta máquina | `tools/sync-push.sh "descrição do que mudou"` |
+| Publicar automaticamente o que mudou (máquina mestra — cron 30min) | `tools/auto-push.sh` (ensaio: `tools/auto-push.sh --dry-run`) |
 | Publicar e marcar como versão conhecida | `tools/sync-push.sh "descrição" --tag v1.2.0` |
 | Ver versão do core vs npm | `tools/check-core.sh` |
 | Ver o que mudaria (ensaio) | `git -C ~/dsh-h-v1 pull --ff-only --dry-run` |
@@ -137,7 +138,37 @@ Crie uma tarefa diária (ou a cada hora):
   `touch ~/.dsh/.dsh-autoupdate.off`   → desliga
   `rm ~/.dsh/.dsh-autoupdate.off`      → liga
 - O agendador local (cron/autoupdate) **não sincroniza nem reinicia** enquanto
-  o flag existir. O flag é local da máquina (nunca vai ao repo).
+  o flag existir. O flag é local da máquina (nunca vai ao repo). O flag desliga
+  **as duas direções**: receber (sync-pull) e publicar (auto-push).
+
+## Publicação automática (auto-push) — só na máquina mestra
+
+O `auto-push` fecha o ciclo: **você edita a config viva aqui, e a versão nova
+sobe sozinha para o GitHub** — as outras máquinas recebem no próximo `sync-pull`
+delas (não precisam de nada além do pull que já fazem).
+
+- O que ele checa a cada rodada:
+  1. a config viva (`~/.dsh` no Linux, `%USERPROFILE%\.dsh` no Windows) tem
+     conteúdo diferente do `overlay/` publicado? → espelha, comita e envia;
+  2. o clone tem **commits locais ainda não enviados**? → envia.
+- Onde roda: **agendado a cada 30 min na máquina mestra** (a que você edita),
+  na MESMA rotina do `sync-pull` (ex.: depois do pull no `dsh-v2-autoupdate.sh`
+  ou como `*/30 * * * * ~/dsh-v2/tools/auto-push.sh`). As demais máquinas são
+  só receptoras — não agende o auto-push nelas.
+- **Guardrails** (sempre):
+  - nunca faz push forçado e nunca cria tag (versões/tags continuam manuais);
+  - roda o guard de segredos — se detectar credencial, **aborta** e restaura o
+    espelho `overlay/` no clone (a config viva não é tocada; corrija o arquivo lá);
+  - trava com `flock` para não concorrer com um `sync-pull`/`sync-push` manual;
+  - o flag `.dsh-autoupdate.off` desliga o auto-push também;
+  - só comita o espelho `overlay/` — edições estruturais do repo (tools/, docs/)
+    continuam sendo publicadas com `sync-push` e mensagem própria.
+- Ensaie antes: `tools/auto-push.sh --dry-run` (mostra o que subiria, não altera nada).
+- Log: o auto-push fala no stdout — no cron, redirecione para o mesmo log do pull
+  (ex.: `>> ~/.dsh-sync-v2.log 2>&1`).
+- **Regra ao trabalhar com um agente/harness:** depois de uma modificação pedida
+  na config viva, publique na hora com `tools/sync-push.sh "descrição"` (ou rode o
+  `auto-push`) para o outro PC receber imediatamente — o cron é a rede de segurança.
 
 ## Atualizar o CORE (L1) — manual e com teste
 
