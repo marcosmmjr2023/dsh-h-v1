@@ -27,3 +27,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.1.
 ## [v0.2.3] — 2026-09-06 23:24 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.2.
   - b257f96 feat(i18n-pt): projeto pt-BR do núcleo — scaffold core-i18n-pt + patch 01 (liberar idioma 'pt')
+
+## [v0.2.4] — 2026-09-06 23:30 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.3.
+  - c72d1e6 feat(i18n-pt): dicionários pt-BR iniciais via gerador — common/settings.locale + settings General
