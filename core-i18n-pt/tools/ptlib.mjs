@@ -91,7 +91,7 @@ export function collectConsts(text) {
     try {
       const { end } = findObject(text, open);
       const body = text.slice(open + 1, end - 1);
-      const obj = JSON.parse("{" + quoteKeys(stripComments(body)) + "}");
+      const obj = JSON.parse("{" + dropTrailingCommas(quoteKeys(stripComments(body))) + "}");
       defs[m[1]] = obj;
     } catch { /* ignora */ }
   }
@@ -137,6 +137,10 @@ export function resolveIdentifiers(body, defs) {
   return out;
 }
 
+/** Remove vírgulas finais (JS permite; JSON não) antes do parse. */
+function dropTrailingCommas(s) {
+  return s.replace(/,(\s*[}\]])/g, "$1");
+}
 /** Lê um dicionário (objeto literal) e devolve {map, end} (map=null se falhar). */
 export function parseDict(text, openIdx) {
   try {
@@ -144,7 +148,8 @@ export function parseDict(text, openIdx) {
     const body = text.slice(openIdx + 1, end - 1);
     const defs = collectConsts(text);
     const cleaned = resolveIdentifiers(quoteKeys(stripComments(body)), defs);
-    return { map: JSON.parse("{" + cleaned + "}"), end };
+    const full = dropTrailingCommas("{" + cleaned + "}");
+    return { map: JSON.parse(full), end };
   } catch {
     return { map: null, end: -1 };
   }
