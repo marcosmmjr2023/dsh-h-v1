@@ -1,0 +1,24 @@
+--- a/dsh-client-ui-sidebar/lib/client.js
++++ b/dsh-client-ui-sidebar/lib/client.js
+@@ -256,6 +256,13 @@
+ 			"toggle.open": "Open sidebar",
+ 			"toggle.collapse": "Collapse sidebar"
+ 		};
++		const pt = {
++			"session.new": "Nova sessão",
++			"session.new.label": "Nova sessão",
++			"toggle.open": "Abrir barra lateral",
++			"toggle.collapse": "Recolher barra lateral",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Dictionary namespace owned by this plugin (shell controls copy). */
+@@ -274,6 +281,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-sidebar: dictionaries");
+ 			const injectProps = () => ({

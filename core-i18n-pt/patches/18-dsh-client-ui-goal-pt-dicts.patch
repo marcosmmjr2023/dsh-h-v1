@@ -1,0 +1,31 @@
+--- a/dsh-client-ui-goal/lib/client.js
++++ b/dsh-client-ui-goal/lib/client.js
+@@ -361,6 +361,20 @@
+ 			"action.edit": "Edit goal",
+ 			"action.clear": "Clear goal"
+ 		};
++		const pt = {
++			"phase.active": "Objetivo em andamento",
++			"phase.paused": "Objetivo pausado",
++			"phase.blocked": "Objetivo bloqueado",
++			"objective.aria": "Objetivo da meta",
++			"commandInput.aria": "Entrada de comando",
++			"action.save": "Salvar meta",
++			"action.cancel": "Cancelar edição",
++			"action.pause": "Pausar meta",
++			"action.resume": "Retomar meta",
++			"action.edit": "Editar meta",
++			"action.clear": "Limpar meta",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Dictionary namespace owned by this plugin. */
+@@ -382,6 +396,7 @@
+ 			ctx.conversationEvents.register(goalCommandInputDefinition);
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-goal: dictionaries");
+ 			ctx.slots.inject("conversation.chat.node", () => ctx.slots.register({

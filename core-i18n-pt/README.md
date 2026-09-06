@@ -55,14 +55,19 @@ sudo core-i18n-pt/tools/apply-pt-core.sh          # Linux, install global root
 - [x] **01 — Encanamento pt** (patch pronto, testado com `git apply`/`patch` em cópia
       limpa + `node --check`): `Português` aparece no seletor; preferência
       `locale.preference: pt` aceita no host e no browser; `<html lang=pt-BR>`.
-- [x] **02 — Dicionários pt-BR (início)** — `common` (24/24 chaves) + `settings.locale`
-      (1/1) no `dsh-client-locale`; **03 — `settings`/General** (6/6) no
-      `dsh-client-ui-settings-general`. Validação: aplicação sequencial 01→02→03 numa
-      árvore limpa (byte-a-byte) + `node --check`.
-- [ ] **04+ — Dicionários dos demais pacotes** (gerador: `tools/build-pt-patches.mjs`
-      + dados em `dictionaries/en-phrases.json`; inventário: `tools/inventory.sh` —
-      26 arquivos, maiores: conversa ~749 chaves). Chaves ainda sem tradução caem no
-      fallback `en`.
+- [x] **02/03 — `common` + `settings.locale` + `settings`/General** (31 chaves).
+- [x] **04–18 — 15 pacotes de UI de médio porte** (≈160 frases novas em
+      `dictionaries/en-phrases.json`, total 190): sidebar, theme, plan, reference,
+      deliverables, input-trigger, jobs, message-feedback, model-selection,
+      permission-presets, commands, user-questions, subagent, workflow-run, goal —
+      todos com **cobertura total das chaves en** (0 no fallback). Validação:
+      aplicação sequencial 01→18 numa árvore limpa completa (byte-a-byte) +
+      `node --check`.
+- [ ] **19+ — Pacotes restantes**: `conversation` (~749), `cordis` (~218),
+      `workspace` (~216), `trajectory` (~327), e os 5 com dicionário compilado não
+      parseável como JSON puro (`agent-preset`, `settings-models`,
+      `settings-plugins`, `settings-plugin-inventory`, `skill`) — exigem tratamento
+      customizado/extração específica.
 - [ ] **Validação em instância de teste** (boot do núcleo patcheado em outra porta
       com home próprio) e em máquina real após aplicar.
 - [ ] Verificação de paridade de chaves pt×en e regressão visual nas 3 línguas.

@@ -1,0 +1,25 @@
+--- a/dsh-client-ui-input-trigger/lib/client.js
++++ b/dsh-client-ui-input-trigger/lib/client.js
+@@ -857,6 +857,14 @@
+ 			"loading": "Loading…",
+ 			"suggestions.aria": "Trigger suggestions"
+ 		};
++		const pt = {
++			"command": "Comandos",
++			"skill": "Habilidades",
++			"subagent": "Subagentes",
++			"loading": "Carregando…",
++			"suggestions.aria": "Acionar sugestões",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Namespace owning the candidate-menu copy. */
+@@ -872,6 +880,7 @@
+ 			ctx.plugin(InputTriggerService);
+ 			ctx.effect(() => ctx.locale.register(MENU_NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-input-trigger: menu dictionaries");
+ 			ctx.inject([

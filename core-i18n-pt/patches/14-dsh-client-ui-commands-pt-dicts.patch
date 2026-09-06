@@ -1,0 +1,28 @@
+--- a/dsh-client-ui-commands/lib/client.js
++++ b/dsh-client-ui-commands/lib/client.js
+@@ -1088,6 +1088,17 @@
+ 			"listbox.aria": "/{command} matches",
+ 			"notice.imagesUnsupported": "/{command} does not accept image attachments; remove them first"
+ 		};
++		const pt = {
++			"search.placeholder": "Buscar…",
++			"search.aria": "Filtrar opções",
++			"status.loading": "Carregando opções…",
++			"status.applying": "Aplicando…",
++			"status.empty": "Nenhuma opção",
++			"overlay.aria": "Opções de /{command}",
++			"listbox.aria": "Resultados de /{command}",
++			"notice.imagesUnsupported": "/{command} não aceita anexos de imagem; remova-os primeiro",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Dictionary namespace owned by this plugin. */
+@@ -1108,6 +1119,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-commands: dictionaries");
+ 			ctx.plugin(CommandUiRuntime);

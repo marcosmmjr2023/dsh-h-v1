@@ -1,0 +1,35 @@
+--- a/dsh-client-ui-jobs/lib/client.js
++++ b/dsh-client-ui-jobs/lib/client.js
+@@ -246,6 +246,24 @@
+ 			"duration.title.live": "Running for {duration}",
+ 			"duration.title.done": "Took {duration}"
+ 		};
++		const pt = {
++			"count.live.one": "{count} trabalho em segundo plano em execução",
++			"count.live.other": "{count} trabalhos em segundo plano em execução",
++			"count.idle.one": "{count} trabalho em segundo plano",
++			"count.idle.other": "{count} trabalhos em segundo plano",
++			"list.aria": "Trabalhos em segundo plano",
++			"status.running": "em execução",
++			"status.stopping": "parando",
++			"status.completed": "concluído",
++			"status.killed": "cancelado",
++			"status.failed": "falhou",
++			"duration.seconds": "{seconds}s",
++			"duration.minutes": "{minutes}m {seconds}s",
++			"duration.hours": "{hours}h {minutes}m",
++			"duration.title.live": "Em execução há {duration}",
++			"duration.title.done": "Levou {duration}",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Required services for locale registration and header-slot contribution. */
+@@ -261,6 +279,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register("job", {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-job: dictionaries");
+ 			ctx.slots.inject("conversation.session.header.actions", () => ctx.slots.register({

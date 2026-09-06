@@ -1,0 +1,24 @@
+--- a/dsh-client-ui-plan/lib/client.js
++++ b/dsh-client-ui-plan/lib/client.js
+@@ -95,6 +95,13 @@
+ 			"chip.off.aria": "Plan mode off, press to turn on",
+ 			"chip.off.title": "Plan mode off — click to turn on (/plan)"
+ 		};
++		const pt = {
++			"chip.on.aria": "Modo plano ativo, pressione para desativar",
++			"chip.on.title": "Modo plano ativo — clique para desativar (/plan off)",
++			"chip.off.aria": "Modo plano inativo, pressione para ativar",
++			"chip.off.title": "Modo plano inativo — clique para ativar (/plan)",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Dictionary namespace owned by this plugin. */
+@@ -113,6 +120,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-plan: dictionaries");
+ 			ctx.slots.inject("conversation.input.plan", () => ctx.slots.register({

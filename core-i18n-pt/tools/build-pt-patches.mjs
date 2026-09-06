@@ -132,6 +132,7 @@ for (const file of files) {
     }
     if (!entries.length) { console.log(`  ℹ ${en.name}: sem tradução no en-phrases.json (${enKeys.length} chaves) — sem pt por enquanto.`); continue; }
     const ptName = "pt" + en.name.slice(2);
+    if (new RegExp(`const ${ptName}\\s*=`).test(text)) { console.log(`  ℐ ${ptName} já existe — pulado (idempotente).`); continue; }
     const semi = text.indexOf(";", en.end);
     const ptBlock = `\n${en.indent}const ${ptName} = {\n` + entries.join("\n") + `\n${en.indent}};\n`;
     edits.push({ start: en.end, end: semi + 1, text: text.slice(en.end, semi + 1) + ptBlock });

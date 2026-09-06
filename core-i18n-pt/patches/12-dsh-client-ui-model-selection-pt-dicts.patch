@@ -1,0 +1,37 @@
+--- a/dsh-client-ui-model-selection/lib/client.js
++++ b/dsh-client-ui-model-selection/lib/client.js
+@@ -683,6 +683,26 @@
+ 			"blocked.composer": "This model is unavailable — select one to continue",
+ 			"empty.efforts": "This model provides no reasoning effort levels."
+ 		};
++		const pt = {
++			"command.description": "Selecionar o modelo desta conversa",
++			"option.loadError": "Falha ao carregar o catálogo: {message}",
++			"trigger.fallback": "Selecionar modelo",
++			"trigger.selectAria": "Selecionar modelo",
++			"trigger.aria": "Selecionar modelo, atual {model}",
++			"trigger.ariaEffort": "Selecionar modelo, atual {model}, esforço de raciocínio {effort}",
++			"menu.aria": "Modelo e esforço de raciocínio",
++			"menu.model": "Modelo",
++			"menu.effort": "Esforço",
++			"effort.providerDefault": "Padrão",
++			"status.loading": "Atualizando lista de modelos…",
++			"error.action": "Falha na operação do modelo: {message}",
++			"action.reload": "Recarregar",
++			"warning.groupLoad": "{name} falhou ao carregar: {message}",
++			"empty.models": "Nenhum modelo disponível.",
++			"blocked.composer": "Este modelo está indisponível — selecione um para continuar",
++			"empty.efforts": "Este modelo não oferece níveis de esforço de raciocínio.",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** One selectable row's id: an opaque row key (resolved by lookup, never parsed). */
+@@ -743,6 +763,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-model-selection: dictionaries");
+ 			const t = ctx.locale.bind(NS);

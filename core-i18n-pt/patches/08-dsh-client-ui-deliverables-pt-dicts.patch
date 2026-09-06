@@ -1,0 +1,25 @@
+--- a/dsh-client-ui-deliverables/lib/client.js
++++ b/dsh-client-ui-deliverables/lib/client.js
+@@ -325,6 +325,14 @@
+ 			"produced.open": "Open {name}",
+ 			"produced.showInFolder": "Show in folder"
+ 		};
++		const pt = {
++			"produced.label": "Produzido",
++			"produced.moreOne": "+ 1 arquivo",
++			"produced.more": "+ {count} arquivos",
++			"produced.open": "Abrir {name}",
++			"produced.showInFolder": "Mostrar na pasta",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Required services for the tail-slot registration and its dictionaries. */
+@@ -343,6 +351,7 @@
+ 			ctx.conversationEvents.register(deliverablesDefinition);
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-deliverables: dictionaries");
+ 			ctx.slots.inject("conversation.chat.turnTail", () => ctx.slots.register({

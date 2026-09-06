@@ -1,0 +1,33 @@
+--- a/dsh-client-ui-message-feedback/lib/client.js
++++ b/dsh-client-ui-message-feedback/lib/client.js
+@@ -651,6 +651,22 @@
+ 			"error.load": "Could not load feedback",
+ 			"error.generic": "Could not save feedback"
+ 		};
++		const pt = {
++			"action.like": "Boa resposta",
++			"action.likeActive": "Remover avaliação",
++			"action.dislike": "Resposta ruim",
++			"action.dislikeActive": "Remover avaliação",
++			"note.open": "Adicionar nota",
++			"note.dialog": "Feedback",
++			"note.placeholder": "O que foi bom ou o que deu errado? (opcional)",
++			"note.save": "Salvar",
++			"note.cancel": "Cancelar",
++			"note.aria": "Nota de feedback",
++			"error.conflict": "Este feedback mudou em outro lugar; o estado mais recente é mostrado",
++			"error.load": "Não foi possível carregar o feedback",
++			"error.generic": "Não foi possível salvar o feedback",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/**
+@@ -678,6 +694,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-message-feedback: dictionaries");
+ 			const controllers = /* @__PURE__ */ new Map();

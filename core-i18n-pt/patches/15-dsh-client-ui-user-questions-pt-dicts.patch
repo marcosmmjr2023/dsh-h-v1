@@ -1,0 +1,35 @@
+--- a/dsh-client-ui-user-questions/lib/client.js
++++ b/dsh-client-ui-user-questions/lib/client.js
+@@ -699,6 +699,24 @@
+ 			"plan.decline": "Refuse",
+ 			"plan.discuss": "Chat about it"
+ 		};
++		const pt = {
++			"error.incomplete": "Conclua esta pergunta primeiro.",
++			"error.unanswered": "Selecione uma opção ou digite uma resposta personalizada.",
++			"nav.prev": "Pergunta anterior",
++			"nav.next": "Próxima pergunta",
++			"nav.minimize": "Recolher o cartão de pergunta",
++			"nav.maximize": "Expandir o cartão de pergunta",
++			"nav.cancel": "Dispensar todas as perguntas",
++			"option.recommended": "Recomendado",
++			"custom.placeholder": "Digite sua resposta",
++			"action.skip": "Pular esta pergunta",
++			"action.next": "Próximo",
++			"plan.header": "Revisão do plano",
++			"plan.approve": "Aprovar",
++			"plan.decline": "Recusar",
++			"plan.discuss": "Conversar sobre",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Dictionary namespace owned by this plugin. */
+@@ -718,6 +736,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-user-questions: dictionaries");
+ 			ctx.slots.inject("conversation.composer", () => ctx.slots.register({

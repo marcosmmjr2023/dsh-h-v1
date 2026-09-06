@@ -1,0 +1,24 @@
+--- a/dsh-client-ui-theme/lib/client.js
++++ b/dsh-client-ui-theme/lib/client.js
+@@ -175,6 +175,13 @@
+ 			"appearance.dark": "Dark",
+ 			"appearance.system": "System"
+ 		};
++		const pt = {
++			"appearance.title": "Aparência",
++			"appearance.light": "Claro",
++			"appearance.dark": "Escuro",
++			"appearance.system": "Sistema",
++		};
++
+ 		//#endregion
+ 		//#region ../../../vendor/cosmokit/src/misc.ts
+ 		/** Return true when a value is `null` or `undefined`. */
+@@ -1319,6 +1326,7 @@
+ 			ctx.provide("theme", theme);
+ 			ctx.effect(() => ctx.locale.register(SETTINGS_NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-theme: settings row dictionaries");
+ 			const store = createAppearanceRowStore();

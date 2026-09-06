@@ -1,0 +1,54 @@
+--- a/dsh-client-ui-subagent/lib/client.js
++++ b/dsh-client-ui-subagent/lib/client.js
+@@ -783,6 +783,43 @@
+ 			"readonly.oneShot.body": "One-shot tasks do not accept follow-ups; review the full execution record here.",
+ 			"readonly.body": "The parent session is offline; reopen it to continue sending messages."
+ 		};
++		const pt = {
++			"diagnostic.corrupt": "registro de sessão corrompido",
++			"diagnostic.unsupported": "versão de registro de subagente não suportada",
++			"diagnostic.unavailable": "registro de sessão temporariamente indisponível",
++			"duration.seconds": "{seconds}s",
++			"duration.minutes": "{minutes}m {seconds}s",
++			"duration.hours": "{hours}h {minutes}m {seconds}s",
++			"duration.days": "{days}d",
++			"duration.daysHours": "{days}d {hours}h",
++			"duration.months": "~{months}mo",
++			"duration.monthsDays": "~{months}mo {days}d",
++			"duration.years": "~{years}y",
++			"duration.yearsMonths": "~{years}y {months}mo",
++			"duration.exactDays": "{days}d {hours}h {minutes}m {seconds}s",
++			"duration.exactTitle": "Duração ativa total: {duration}",
++			"loading.label": "Carregando subagentes…",
++			"loading.aria": "Carregando subagentes",
++			"load.error": "Não foi possível carregar os subagentes",
++			"retry": "Tentar novamente",
++			"mode.oneShot": "one-shot",
++			"mode.continuable": "continuável",
++			"activity.running": "em execução",
++			"activity.inactive": "sem execução",
++			"branch.collapse": "Recolher descendentes de {label}",
++			"branch.expand": "Expandir descendentes de {label}",
++			"count.total.one": "{count} subagente",
++			"count.total.other": "{count} subagentes",
++			"count.running.one": "{count} subagente em execução",
++			"count.running.other": "{count} subagentes em execução",
++			"switcher.aria": "Alternar subagente: {title}",
++			"tree.aria": "Sessões de subagentes",
++			"readonly.oneShot.title": "Registro de subagente one-shot",
++			"readonly.title": "Este subagente está somente leitura por enquanto",
++			"readonly.oneShot.body": "Tarefas one-shot não aceitam continuação; revise o registro completo de execução aqui.",
++			"readonly.body": "A sessão pai está offline; reabra-a para continuar enviando mensagens.",
++		};
++
+ 		//#endregion
+ 		//#region lib/types/client/index.js
+ 		/** Required services for conversation slots and session navigation. */
+@@ -806,6 +843,7 @@
+ 		function apply(ctx) {
+ 			ctx.effect(() => ctx.locale.register(NS, {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-subagent: dictionaries");
+ 			const sessions = ctx.sessions;

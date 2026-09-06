@@ -1,0 +1,29 @@
+--- a/dsh-client-ui-permission-presets/lib/client.js
++++ b/dsh-client-ui-permission-presets/lib/client.js
+@@ -173,6 +173,18 @@
+ 			"confirm.cancel": "Cancel",
+ 			"confirm.enable": "Enable Full access"
+ 		};
++		const pt = {
++			"title": "Permissão",
++			"description": "Escolha o modo de permissão padrão para novas sessões",
++			"loading": "Carregando",
++			"unavailable": "Indisponível",
++			"confirm.title": "Ativar acesso total?",
++			"confirm.description": "O acesso total permite que novas sessões reduzam etapas de confirmação e executem mais ações diretamente, incluindo operações sensíveis, alterações de arquivos ou comandos externos. Use apenas quando você confiar nas tarefas seguintes.",
++			"confirm.acknowledge": "Entendo os riscos e quero continuar",
++			"confirm.cancel": "Cancelar",
++			"confirm.enable": "Ativar acesso total",
++		};
++
+ 		/** Simplified Chinese dictionary for the current-session popup gate. */
+ 		const accessZh = {
+ 			"confirm.title": "确认启用 Full access？",
+@@ -424,6 +436,7 @@
+ 			const sessionFor = (session) => sessions.binding(session.sessionId)?.session;
+ 			ctx.effect(() => ctx.locale.register("settings.permission", {
+ 				zh,
++				pt,
+ 				en
+ 			}), "ui-permission: settings row dictionaries");
+ 			const connection = ctx.get("connection");
