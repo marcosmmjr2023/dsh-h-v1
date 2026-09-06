@@ -101,7 +101,8 @@ tools/rollback.sh --core 0.1.1-rc.2    # previous core (npm)
 ```
 
 Manuals: [`docs/SYNC.en.md`](docs/SYNC.en.md) (EN) · [`docs/SYNC.md`](docs/SYNC.md) (PT-BR)
-· Windows guide: [`docs/WINDOWS-PT.md`](docs/WINDOWS-PT.md) · [`README.pt-BR.md`](README.pt-BR.md)
+· Windows guide: [`docs/WINDOWS.md`](docs/WINDOWS.md) (EN) · [`docs/WINDOWS-PT.md`](docs/WINDOWS-PT.md) (PT-BR)
+· [`README.pt-BR.md`](README.pt-BR.md)
 
 ## 🆚 How it compares
 

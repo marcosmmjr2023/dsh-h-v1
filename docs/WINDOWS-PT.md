@@ -2,12 +2,13 @@
 
 Instalação da camada personalizada do DeepSeek Harness no Windows 10/11,
 **sincronizada por git** — esta máquina recebe sempre a última versão
-publicada no repositório.
+publicada no repositório **e também publica** as suas edições (mão dupla).
 
 > ⚠️ Caminhos como `installer\install.bat` e `tools\...` são **relativos à raiz
 > do repositório** (a pasta do clone), não a esta pasta de documentação.
 >
-> Leia também o manual de sincronização: [`SYNC.md`](SYNC.md)
+> Leia também o manual de sincronização: [`SYNC.md`](SYNC.md) (PT) ·
+> [`SYNC.en.md`](SYNC.en.md) (EN) · versão EN deste guia: [`WINDOWS.md`](WINDOWS.md)
 
 ---
 
@@ -52,7 +53,8 @@ powershell -ExecutionPolicy Bypass -File tools\sync-pull.ps1
 ## ▶️ Como Executar
 
 - Dê dois cliques no `start-dsh-gui.bat` (gerado pelo instalador) — ele já
-  roda o sync (`sync-pull.ps1`) antes de abrir a GUI.
+  roda o sync de **mão dupla** (`auto-sync.ps1`: recebe + publica) antes de
+  abrir a GUI.
 - Ou manualmente, dentro da pasta de instalação do harness:
   ```cmd
   dsh web --port 3080
@@ -61,13 +63,22 @@ powershell -ExecutionPolicy Bypass -File tools\sync-pull.ps1
 
 ---
 
-## 🔄 Sincronizar
+## 🔄 Sincronizar (mão dupla)
 
 | Ação | Comando (PowerShell) |
 |---|---|
+| Ciclo completo: recebe + publica | `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\dsh-h-v1\tools\auto-sync.ps1"` |
 | Receber a última versão | `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\dsh-h-v1\tools\sync-pull.ps1"` |
 | Publicar edições locais | `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\dsh-h-v1\tools\sync-push.ps1" "o que mudou"` |
 | Ver versão do core | `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\dsh-h-v1\tools\check-core.ps1"` |
+| Listar versões p/ voltar | `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\dsh-h-v1\tools\rollback.ps1" list` |
+
+> Cada publicação automática sobe uma versão `vX.Y.Z`, uma entrada no
+> `CHANGELOG.md` e uma tag (âncora de rollback) — só o que está na sua
+> **config viva** (`%USERPROFILE%\.dsh`) é publicado, nunca credenciais/sessões/logs.
+> Se uma atualização quebrar algo, clique no botão **↩** do badge de versão
+> (painel) ou rode `rollback.ps1` para voltar — o auto-update é desligado e a
+> GUI reinicia.
 
 ---
 
@@ -79,7 +90,7 @@ dsh-h-v1/
 ├── tools/                  → Scripts de sync + guard
 ├── installer/              → install.bat, install.ps1, start-dsh-gui.bat
 ├── manifest.json           → Versão do core pinada
-└── docs/SYNC.md            → Manual de sincronização
+└── docs/                   → SYNC.md / SYNC.en.md / WINDOWS-PT.md / WINDOWS.md
 ```
 
 ## 🧰 Solução de Problemas Comuns
@@ -99,7 +110,7 @@ Após instalar/clonar numa máquina Windows nova, confira (validação manual �
 o CI cobre sintaxe/estática, mas não executa Windows real):
 
 1. `installer\install.bat` conclui sem erro e cria o atalho na Área de Trabalho.
-2. Abrir o atalho: roda `sync-pull` e a GUI abre em http://127.0.0.1:3080.
+2. Abrir o atalho: roda o `auto-sync` (recebe + publica) e a GUI abre em http://127.0.0.1:3080.
 3. `%USERPROFILE%\.dsh\cordis.patch.yml` existe e aponta para `C:\Users\...` (não
    contém `__DSH_HOME__` nem `/home/deploy`).
 4. Badges do FreeLLMAPI e o painel lateral (layout) aparecem no dashboard.
