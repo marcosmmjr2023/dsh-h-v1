@@ -1,0 +1,50 @@
+--- a/dsh-client-locale/lib/index.js
++++ b/dsh-client-locale/lib/index.js
+@@ -7,7 +7,7 @@
+ /** Field carrying an explicit locale selection; absence delegates to the browser. */
+ const LOCALE_PREFERENCE_FIELD = "preference";
+ /** Locale identifiers shipped by the browser client. */
+-const LOCALE_IDS = ["zh", "en"];
++const LOCALE_IDS = ["zh", "en", "pt"];
+ /** Durable locale schema; also the wire envelope the browser scope validates against. */
+ const LocaleSettingsSchema = z.object({ [LOCALE_PREFERENCE_FIELD]: z.union([...LOCALE_IDS]).required(false) });
+ //#endregion
+--- a/dsh-client-locale/lib/client.js
++++ b/dsh-client-locale/lib/client.js
+@@ -807,7 +807,7 @@
+ 		/** Field carrying an explicit locale selection; absence delegates to the browser. */
+ 		const LOCALE_PREFERENCE_FIELD = "preference";
+ 		/** Locale identifiers shipped by the browser client. */
+-		const LOCALE_IDS = ["zh", "en"];
++		const LOCALE_IDS = ["zh", "en", "pt"];
+ 		Schema.object({ [LOCALE_PREFERENCE_FIELD]: Schema.union([...LOCALE_IDS]).required(false) });
+ 		//#endregion
+ 		//#region lib/types/locales/zh.js
+@@ -989,13 +989,16 @@
+ 		const COMMON_NS = "common";
+ 		/** Namespace owning this feature's settings-row copy. */
+ 		const SETTINGS_NS = "settings.locale";
+-		/** The two shipped locales. */
++		/** The shipped locales. */
+ 		const LOCALES = Object.freeze([{
+ 			id: "zh",
+ 			label: "中文"
+ 		}, {
+ 			id: "en",
+ 			label: "English"
++		}, {
++			id: "pt",
++			label: "Português"
+ 		}]);
+ 		/**
+ 		* `<html lang>` tag per shipped locale. The locale id is the app's own
+@@ -1007,7 +1010,8 @@
+ 		*/
+ 		const DOCUMENT_LANGUAGE = {
+ 			zh: "zh-CN",
+-			en: "en"
++			en: "en",
++			pt: "pt-BR"
+ 		};
+ 		/**
+ 		* Point `<html lang>` at the active locale. Called on every locale change,

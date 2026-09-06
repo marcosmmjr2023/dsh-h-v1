@@ -142,3 +142,5 @@ v1.1 multi-dir/junctions, badge FreeLLMAPI atualizado).
 - Assets de terceiros (`overlay/editor-assets/`): MIT — [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 - Core do DeepSeek Harness: **MIT © DeepSeek**, instalado via npm, não redistribuído aqui
   ([github.com/deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness))
+
+> Núcleo em pt-BR (experimental): [`core-i18n-pt/README.md`](core-i18n-pt/README.md)

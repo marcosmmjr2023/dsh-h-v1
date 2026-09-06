@@ -136,3 +136,5 @@ Useful improvements from that lineage were already migrated into `main` (e.g.
 - Third-party assets (`overlay/editor-assets/`): MIT — [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 - DeepSeek Harness core: **MIT © DeepSeek**, installed from npm, not redistributed here
   ([github.com/deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness))
+
+> Núcleo em pt-BR (experimental): [`core-i18n-pt/README.md`](core-i18n-pt/README.md)
