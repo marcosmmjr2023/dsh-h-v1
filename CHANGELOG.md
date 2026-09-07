@@ -176,3 +176,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.37.
 ## [v0.2.39] — 2026-09-07 15:34 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.38.
   - 25f31b6 feat(ui): pills Roteador e Modelos abrem em MODAL interno (iframe) em vez de sair do app
+
+## [v0.2.40] — 2026-09-07 15:36 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.39.
+  - c2466b5 fix(ci): padroes duplicados no case do rollback.sh quebravam o ShellCheck (SC2221/2222)
