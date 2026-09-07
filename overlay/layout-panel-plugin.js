@@ -763,38 +763,32 @@ const PANEL_JS = `(function () {
   else boot();
 
   // ── Rodapé: desinstalar a instância (somente quando rodar numa instância) ──
-  function uninstallAction(envName) {
-    if (!window.confirm('Desinstalar a instância ' + envName + '? Ela sera encerrada e os atalhos/perfil serao removidos. O sistema principal nao e afetado.')) return;
+  function envLabel() { return DSH_INSTANCE || 'esta instância'; }
+  function runUninstall() {
+    if (!window.confirm('Desinstalar a instância ' + envLabel() + '? Ela sera encerrada, a janela fechada, e os atalhos/pasta/perfil removidos. O sistema principal nao e afetado.')) return;
+    function setState(t) { var el = document.getElementById('dsh-uninstall-bar-btn'); if (el) el.textContent = t; }
+    setState('Desinstalando...')
     fetch('/api/dsh-core', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'uninstall' }) })
-      .then(function (r) { try { return r.json(); } catch (e) { return {}; } }).then(function (res) {
-        if (document.getElementById('dsh-uninstall-fab')) document.getElementById('dsh-uninstall-fab').textContent = 'Desinstalando...';
-        if (document.getElementById('dsh-uninstall-row')) document.getElementById('dsh-uninstall-row').innerHTML = 'Instância sendo encerrada...';
-        try { window.close(); } catch (e) {}
-      })
-      .catch(function () { if (document.getElementById('dsh-uninstall-fab')) document.getElementById('dsh-uninstall-fab').textContent = 'Erro ao desinstalar'; });
+      .then(function () { setState('Desinstalando...'); try { window.close(); } catch (e) {} })
+      .catch(function () { setState('Erro ao desinstalar (veja logs)'); });
   }
   function ensureUninstallUI() {
     if (!DSH_INSTANCE) return;
-    var host = document.getElementById('dlp-body');
-    if (host && !document.getElementById('dsh-uninstall-row')) {
-      var row = document.createElement('div');
-      row.id = 'dsh-uninstall-row';
-      row.style.cssText = 'margin-top:10px;padding-top:8px;border-top:1px solid #f85149;';
-      var b = document.createElement('button');
-      b.type = 'button'; b.textContent = '🗑 Desinstalar esta instância e os atalhos';
-      b.style.cssText = 'width:100%;padding:7px 8px;border:0;border-radius:8px;background:#f85149;color:#fff;font:11px/1.4 system-ui,sans-serif;cursor:pointer;';
-      b.onclick = function () { uninstallAction(DSH_INSTANCE); };
-      row.appendChild(b); host.appendChild(row);
-    }
-    if (!document.getElementById('dsh-uninstall-fab')) {
-      var fab = document.createElement('button');
-      fab.id = 'dsh-uninstall-fab'; fab.type = 'button';
-      fab.textContent = '🗑 Desinstalar';
-      fab.style.cssText = 'position:fixed;right:16px;bottom:80px;z-index:2147483647;background:#f85149;color:#fff;border:0;border-radius:12px;padding:5px 10px;font:10px/1.4 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
-      fab.onclick = function () { uninstallAction(DSH_INSTANCE); };
-      (document.body || document.documentElement).appendChild(fab);
-    }
+    var panel = document.getElementById('dsh-layout-panel');
+    if (!panel || document.getElementById('dsh-uninstall-bar')) return;
+    var bar = document.createElement('div');
+    bar.id = 'dsh-uninstall-bar';
+    bar.style.cssText = 'flex:0 0 auto;padding:5px 8px 8px;border-top:1px solid #30363d;';
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'dsh-uninstall-bar-btn';
+    b.textContent = '🗑 Desinstalar a instância ' + DSH_INSTANCE + ' (e os atalhos)';
+    b.title = 'Desinstala SOMENTE esta instância: ' + DSH_INSTANCE + '.';
+    b.style.cssText = 'width:100%;padding:4px 6px;border:0;border-radius:6px;background:#2d1418;color:#ff9580;font:10px/1.4 system-ui,sans-serif;cursor:pointer;text-align:center;';
+    b.onclick = runUninstall;
+    bar.appendChild(b);
+    panel.appendChild(bar);
   }
+  setInterval(ensureUninstallUI, 2000);
   setInterval(ensureUninstallUI, 2500);
   setInterval(maybeAddUninstall, 3000);
   })();`;
