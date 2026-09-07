@@ -91,3 +91,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.17.
 ## [v0.2.19] — 2026-09-07 12:51 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.18.
   - ebed24f fix(pt-ride/core-env): nunca quebrar a UI ao aplicar pt em core novo
+
+## [v0.2.20] — 2026-09-07 12:59 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.19.
+  - 7b29af9 feat(core-safe): testes de sanidade na 1ª subida + FreeLLMAPI com CORS loopback
