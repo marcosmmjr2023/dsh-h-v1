@@ -461,6 +461,16 @@ const CORE_UI_JS = [
   "  chip.addEventListener('click', open);",
   "  refresh();",
   "  setInterval(refresh, 120000);",
+  "  function ensureX(p) {",
+  "    if (!p || p.querySelector('[data-x]')) return;",
+  "    var x = document.createElement('button');",
+  "    x.type='button'; x.setAttribute('data-x','1'); x.textContent='✕';",
+  "    x.setAttribute('aria-label','Fechar');",
+  "    x.style.cssText='position:absolute;top:4px;right:6px;background:transparent;border:0;color:#8b949e;font-size:13px;cursor:pointer;padding:2px 5px;';",
+  "    x.onclick=function(){ p.style.display='none'; };",
+  "    p.appendChild(x);",
+  "  }",
+  "  setInterval(function(){ var pp=document.getElementById('dsh-core-panel'); if (pp && pp.style.display !== 'none') ensureX(pp); }, 350);",
   "})();",
 ].join("\n");
 
@@ -609,6 +619,16 @@ const BADGE_JS = [
   "  };",
   "  refresh();",
   "  setInterval(refresh, 60000);",
+  "  function ensureX(p) {",
+  "    if (!p || p.querySelector('[data-x]')) return;",
+  "    var x = document.createElement('button');",
+  "    x.type='button'; x.setAttribute('data-x','1'); x.textContent='✕';",
+  "    x.setAttribute('aria-label','Fechar');",
+  "    x.style.cssText='position:absolute;top:4px;right:6px;background:transparent;border:0;color:#8b949e;font-size:13px;cursor:pointer;padding:2px 5px;';",
+  "    x.onclick=function(){ p.style.display='none'; };",
+  "    p.appendChild(x);",
+  "  }",
+  "  setInterval(function(){ var pp=document.getElementById('dsh-rollback-panel'); if (pp && pp.style.display !== 'none') ensureX(pp); }, 350);",
   "})();",
 ].join("\n");
 
