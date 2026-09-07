@@ -12,7 +12,7 @@ param(
   [Parameter(ValueFromRemainingArguments = $true)][string[]]$Rest
 )
 $ErrorActionPreference = "Stop"
-$Repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$Repo = Split-Path $PSScriptRoot -Parent   # dsh-cli.ps1 fica em <repo>/tools
 
 switch ($Action) {
   "up" {
