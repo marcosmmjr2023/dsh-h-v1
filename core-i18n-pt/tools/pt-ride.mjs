@@ -119,6 +119,25 @@ for (const f of ["index.js", "client.js"]) {
 }
 report(`etapas de encanamento: ${steps}`);
 
+// ── 4) dup-guard: locale.register tolera locale repetido (mantém o primeiro) ──
+{
+  const f = path.join(loc, "client.js");
+  if (fs.existsSync(f)) {
+    let t = fs.readFileSync(f, "utf8");
+    const before = t;
+    const old = 'for (const [locale] of pairs) if (locales.has(locale)) throw new Error(`locale namespace "${ns}" already has locale "${locale}"`);';
+    if (t.includes(old)) {
+      t = t.replace(old, 'for (const [locale] of pairs) if (locales.has(locale)) continue; // dup-safe: mantém o primeiro');
+    } else {
+      // forma sem backticks/curinga
+      const re = /for \(const \[locale\] of pairs\) if \(locales\.has\(locale\)\) throw new Error\([^;]+\);/;
+      if (re.test(t)) t = t.replace(re, 'for (const [locale] of pairs) if (locales.has(locale)) continue; // dup-safe: mantém o primeiro');
+    }
+    if (t !== before) { fs.writeFileSync(f, t); report("✔ dup-guard aplicado (locale.register tolera duplicata)"); }
+    else report("ℹ dup-guard: padrão não encontrado (versão nova do locale?)");
+  }
+}
+
 // ── 3) reparo de chaves: preenche no dict `pt` qualquer chave `en`
 //    traduzível (por valor) que ainda faltar ────────────────────────────
 let fixed = 0;
