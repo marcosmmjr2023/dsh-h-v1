@@ -26,10 +26,28 @@ SOURCE_HOME="/home/deploy/.dsh-v2"
 SYSTEM_VER="$(git -C /home/deploy/dsh-v2 describe --tags --abbrev=0 2>/dev/null || echo dev)"
 
 usage() { sed -n '3,16p' "$0" | sed 's/^# \{0,1\}//'; }
-port_free() { # porta candidata
-  local p="$1"
-  while ss -ltn 2>/dev/null | grep -q ":${p} "; do p=$((p + 1)); done
-  echo "$p"
+# ── Alocador de portas com FAIXA + verificação de conflitos ────────────
+# Range configurável (DSH_PORT_RANGE_START/END) e portas reservadas
+# (DSH_RESERVED_PORTS). Evita conflito com: serviços escutando (ss),
+# portas reservadas (3000/3001/3002 FreeLLMAPI, 3080/3081 GUIs, etc.) e
+# portas já usadas por outros ambientes (~/.dsh-envs/*/meta.json).
+PORT_RANGE_START="${DSH_PORT_RANGE_START:-3110}"
+PORT_RANGE_END="${DSH_PORT_RANGE_END:-3900}"
+RESERVED_PORTS="${DSH_RESERVED_PORTS:-3000,3001,3002,3003,3080,3081,8125}"
+alloc_env_port() {
+  local p
+  for ((p=PORT_RANGE_START; p<=PORT_RANGE_END; p++)); do
+    case ",$RESERVED_PORTS," in *",$p,"*) continue;; esac
+    ss -ltn 2>/dev/null | grep -q ":$p " && continue
+    if grep -rlE "\"port\": ?$p[,}]" "$BASE"/*/meta.json 2>/dev/null | grep -q .; then continue; fi
+    echo "$p"
+    return 0
+  done
+  echo "0"
+}
+free_ports_help() {
+  echo "  faixa alocável: $PORT_RANGE_START–$PORT_RANGE_END (env DSH_PORT_RANGE_START/END)"
+  echo "  reservadas: $RESERVED_PORTS (env DSH_RESERVED_PORTS)"
 }
 
 
@@ -160,7 +178,7 @@ case "$cmd" in
     case "$ver" in *[!0-9A-Za-z._-]*|"") echo "ERRO: versão inválida"; exit 2 ;; esac
     envdir="$BASE/$name"
     [ -e "$envdir" ] && { echo "✋ ambiente '$name' já existe (core-env.sh remove $name)"; exit 1; }
-    [ -z "$port" ] && port="$(port_free 3110)"
+    [ -z "$port" ] && { port="$(alloc_env_port)"; [ "$port" = "0" ] && { echo "✋ nenhuma porta livre na faixa $PORT_RANGE_START–$PORT_RANGE_END — aumente DSH_PORT_RANGE_END"; exit 1; }; }
     # por padrão, pule pacotes com conflito interno no core novo (conversation no 0.1.2)
     if [ -z "${DSH_PT_SKIP:-}" ]; then export DSH_PT_SKIP="dsh-client-ui-conversation"; fi
     mkdir -p "$envdir/core" "$envdir/home"
@@ -261,6 +279,18 @@ EOF
     name="${2:-}"
     [ -n "$name" ] || { echo "uso: core-env.sh test <nome>"; exit 2; }
     sanity_test "$name"
+    ;;
+  ports)
+    echo "══ Portas dos ambientes DeepSeek Harness ══"
+    for m in "$BASE"/*/meta.json; do
+      [ -f "$m" ] || continue
+      node -e 'const m=require(process.argv[1]);console.log(`  ${m.name.padEnd(18)} porta ${m.port}  ${m.url}`)' "$m"
+    done
+    [ -z "$(ls -d "$BASE"/*/meta.json 2>/dev/null)" ] && echo "  (nenhum ambiente)"
+    echo
+    free_ports_help
+    nxt="$(alloc_env_port)"
+    echo "  próxima porta livre na faixa: ${nxt:-—}"
     ;;
   -h|--help) usage ;;
   *) echo "opção desconhecida: $1"; usage; exit 2 ;;

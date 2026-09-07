@@ -126,3 +126,10 @@ O botão **Atualizar para X** do painel do núcleo agora executa
 funcional (pasta/porta/atalho próprios, pt-BR + FreeLLMAPI) SEM tocar na GUI
 atual. Aprovou? `promote` aplica como padrão. ↩ continua sendo o rollback
 manual do core canônico (emergência).
+
+
+## Portas das instâncias (sem conflito)
+Cada instância aloca a próxima porta livre numa **faixa** (padrão 3110–3900),
+verificando serviços escutando (`ss`), portas reservadas (3000–3003, 3080/3081,
+8125) e portas de outras instâncias. Ajuste com DSH_PORT_RANGE_START/END e
+DSH_RESERVED_PORTS. Consulte: `core-env.sh ports`.
