@@ -3,7 +3,7 @@
 #   irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 | iex
 # Opcoes: -NoDshAlias (nao instala o comando 'dsh' no perfil)
 [CmdletBinding()]
-param([switch]$NoDshAlias)
+param([switch]$NoDshAlias,[switch]$NoGui)
 $ErrorActionPreference = "Stop"
 
 Write-Host "== Instalador DeepSeek Harness (dsh) =="
@@ -76,6 +76,14 @@ try {
     Write-Host "[OK] atalho criado: $lnkPath"
   }
 } catch { Write-Host "[i] nao foi possivel criar atalhos (Desktop/Menu Iniciar)" }
+
+# 7) Abre a GUI (automatico)
+if (-not $NoGui) {
+  Write-Host "Abrindo a GUI..."
+  try {
+    & (Join-Path $Repo "tools\run-gui.ps1")
+  } catch { Write-Host "[i] Nao foi possivel abrir a GUI automaticamente - rode: dsh up" }
+}
 
 Write-Host ""
 Write-Host "== Pronto! =="

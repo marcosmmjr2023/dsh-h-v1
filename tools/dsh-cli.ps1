@@ -16,7 +16,7 @@ $Repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 
 switch ($Action) {
   "up" {
-    Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "$Repo\start-dsh-gui.bat"
+    & (Join-Path $Repo "tools\run-gui.ps1")
   }
   "update" {
     git -C $Repo pull --ff-only

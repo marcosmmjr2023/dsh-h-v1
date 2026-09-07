@@ -16,13 +16,6 @@ if exist "%~dp0tools\auto-sync.ps1" (
     echo [!] tools\auto-sync.ps1 nao encontrado — pulando sync.
 )
 
-echo [2/2] Iniciando DeepSeek Harness GUI na porta 3081...
-where dsh >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [X] Comando 'dsh' nao encontrado no PATH.
-    echo     Instale o core:  npm install -g @deepseek-ai/dsh
-    pause
-    exit /b 1
-)
-dsh --profile web --no-open --port 3081 --host 127.0.0.1
+echo [2/2] Iniciando DeepSeek Harness GUI (porta 3081)...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\run-gui.ps1"
 pause
