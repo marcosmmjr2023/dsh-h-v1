@@ -232,3 +232,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.51.
 ## [v0.2.53] — 2026-09-07 22:37 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.52.
   - 7bbfa8e feat(win): launcher GUI robusto (run-gui.ps1) + instalador abre GUI automaticamente
+
+## [v0.2.54] — 2026-09-07 22:40 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.53.
+  - 81820a8 fix(win): dsh up resolvia repo errado (faltava dsh-h-v1) — Split-Path simples
