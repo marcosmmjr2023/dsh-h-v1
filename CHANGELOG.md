@@ -172,3 +172,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.36.
 ## [v0.2.38] — 2026-09-07 15:31 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.37.
   - 700bf3c feat(panel): botão ✕ para fechar os painéis do núcleo e do rollback (sem precisar clicar de novo no badge)
+
+## [v0.2.39] — 2026-09-07 15:34 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.38.
+  - 25f31b6 feat(ui): pills Roteador e Modelos abrem em MODAL interno (iframe) em vez de sair do app
