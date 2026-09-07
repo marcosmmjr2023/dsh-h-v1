@@ -256,3 +256,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.57.
 ## [v0.2.59] — 2026-09-07 23:24 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.58.
   - 2875f0f fix(win): cordis.patch.yml usa file:/// p/ plugins (loader ESM do Windows exige URL)
+
+## [v0.2.60] — 2026-09-07 23:25 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.59.
+  - 447a951 fix(win): dsh-cli usa file:/// no cordis.patch.yml (plugins carregam no Windows)
