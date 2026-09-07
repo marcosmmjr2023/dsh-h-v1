@@ -328,10 +328,11 @@ EOF
       stop) /usr/bin/pm2 stop "dsh-env-$name" >/dev/null 2>&1 && echo "✔ parado (ambiente preservado)";;
       remove)
         /usr/bin/pm2 delete "dsh-env-$name" >/dev/null 2>&1 || true
+        /usr/bin/pm2 delete "flm-$name" >/dev/null 2>&1 || true
         rm -f "/home/deploy/.local/share/applications/dsh-env-$name.desktop"
-        rm -rf "$BASE/$name"
+        rm -rf "$BASE/$name" "/home/deploy/.config/dsh-env-$name"
         update-desktop-database /home/deploy/.local/share/applications >/dev/null 2>&1 || true
-        echo "✔ ambiente '$name' removido (incluindo atalho do menu)";;
+        echo "✔ ambiente '$name' removido (harness + gateway FreeLLMAPI + atalho + perfil Chrome)";;
     esac
     ;;
   promote)
