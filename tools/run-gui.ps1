@@ -27,6 +27,7 @@ $started = $false
 if (-not (Test-Up)) {
   $env:DSH_HOME = $homeCfg
   $env:DSH_WEB_URL = "http://127.0.0.1:$Port"
+  $env:DSH_CLI_LIB = Split-Path $bin -Parent   # plugins acham schemastery/dsh-settings no core
   # resolve bare requires dos plugins p/ os modulos do core (schemastery etc.)
   $npmRoot = (& npm root -g).Trim()
   $nested  = Join-Path $npmRoot "@deepseek-ai\dsh\node_modules"
