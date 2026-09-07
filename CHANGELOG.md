@@ -260,3 +260,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.58.
 ## [v0.2.60] — 2026-09-07 23:25 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.59.
   - 447a951 fix(win): dsh-cli usa file:/// no cordis.patch.yml (plugins carregam no Windows)
+
+## [v0.2.61] — 2026-09-07 23:31 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.60.
+  - d79b885 fix(win): NODE_PATH p/ modulos do core (plugins resolvem schemastery/dsh-settings)
