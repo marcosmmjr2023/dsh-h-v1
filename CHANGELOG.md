@@ -47,3 +47,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.6.
 ## [v0.2.8] — 2026-09-06 23:52 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.7.
   - c3ec2f3 feat(i18n-pt): aplicação nos núcleos reais (sudo) + verify-pt (paridade pt/en) verde
+
+## [v0.2.9] — 2026-09-07 04:32 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.8.
+  - 6e22685 feat(core-chip): chip do núcleo no painel — versão instalada + checagem automática de nova versão + atualização/rollback MANUAL
