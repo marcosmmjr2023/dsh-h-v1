@@ -224,3 +224,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.49.
 ## [v0.2.51] — 2026-09-07 22:21 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.50.
   - c6f931f fix(win): .ps1 em ASCII puro (sem BOM o PowerShell 5.1 quebrava com acentos/emoji)
+
+## [v0.2.52] — 2026-09-07 22:28 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.51.
+  - e03eb12 fix(win): pt-ride multiplataforma (fileURLToPath), GUI com --profile web, atalhos Desktop/Menu Iniciar
