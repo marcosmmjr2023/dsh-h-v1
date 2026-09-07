@@ -192,3 +192,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.41.
 ## [v0.2.43] — 2026-09-07 15:55 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.42.
   - 8564ec2 fix(uninstall): botão de desinstalar garantido em instância — linha no menu lateral + FAB vermelho
+
+## [v0.2.44] — 2026-09-07 15:59 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.43.
+  - 5f003c9 fix(uninstall): passa res no json (erro 000/TypeError) + FAB pequeno ao lado do settings
