@@ -280,3 +280,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.63.
 ## [v0.2.65] — 2026-09-07 23:43 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.64.
   - 96177c1 fix(win): execSync npm root -g com shell:true (resolve .cmd no Windows)
+
+## [v0.2.66] — 2026-09-07 23:49 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.65.
+  - 4728ba4 fix(win): run-gui define DSH_CLI_LIB (lib do core) p/ plugins resolverem schemastery/dsh-settings
