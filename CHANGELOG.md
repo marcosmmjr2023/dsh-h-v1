@@ -160,3 +160,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.33.
 ## [v0.2.35] — 2026-09-07 15:02 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.34.
   - 1da0db2 fix(badge): chip detecta pt em instâncias (DSH_ENV_NAME/DSH_HOME) — falso 'sem pt'
+
+## [v0.2.36] — 2026-09-07 15:11 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.35.
+  - 985c6d4 feat(import): botão na instância nova p/ importar histórico/configs da instância anterior
