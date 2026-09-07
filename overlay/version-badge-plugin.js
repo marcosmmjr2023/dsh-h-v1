@@ -228,6 +228,28 @@ function coreLatest(force, cb) {
   });
 }
 function corePatchesOk(installed) {
+  // ambiente paralelo (core-env): pt aplicado por pt-ride — checa o arquivo real
+  if (process.env.DSH_CORE_VERSION) {
+    const roots = [];
+    if (process.env.DSH_ENV_NAME) {
+      roots.push(path.join("/home/deploy/.dsh-envs", process.env.DSH_ENV_NAME, "core", "lib", "node_modules", "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
+    }
+    try {
+      const base = "/home/deploy/.dsh-envs";
+      for (const e of fs.readdirSync(base)) {
+        if (e.startsWith("dsh-env") || fs.existsSync(path.join(base, e, "meta.json"))) {
+          roots.push(path.join(base, e, "core", "lib", "node_modules", "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
+        }
+      }
+    } catch { /* sem envs */ }
+    for (const dep of roots) {
+      try {
+        const text = fs.readFileSync(path.join(dep, "dsh-client-locale", "lib", "client.js"), "utf8");
+        if (text.includes("Português") && text.includes('"pt"')) return { ok: true, note: "pt-BR (pt-ride)" };
+      } catch { /* não existe */ }
+    }
+    return { ok: false, note: "sem pt-BR no ambiente (pt-ride)" };
+  }
   // marcador deixado pelo apply-pt-core.sh junto aos pacotes do core
   const roots = [
     "/opt/dsh-tui/node/lib/node_modules/@deepseek-ai/dsh/node_modules",
