@@ -144,3 +144,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.29.
 ## [v0.2.31] — 2026-09-07 14:42 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.30.
   - a96f42c fix(core-env): ports mostra harness + gateway de cada instância
+
+## [v0.2.32] — 2026-09-07 14:44 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.31.
+  - 7f8eba3 fix(core-env): remove limpa gateway flm-<nome> e perfil Chrome da instância
