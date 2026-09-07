@@ -120,3 +120,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.23.
 ## [v0.2.25] — 2026-09-07 14:05 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.24.
   - a17fc66 docs(map): cron auto-update confirmado ativo; pm2 save
+
+## [v0.2.26] — 2026-09-07 14:09 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.25.
+  - c484e72 refactor(paths): remove symlink ~/dsh-v2 — caminho único ~/projects/dsh/dsh-h-v1
