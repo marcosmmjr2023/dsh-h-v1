@@ -23,7 +23,7 @@
  * coluna direita (.dlp-badges).
  *
  * Localização dos arquivos: mesmo diretório deste plugin (= config viva).
- * Clone do repo: env DSH_CLONE ou ~/dsh-v2 ou ~/dsh-h-v1 (primeiro com .git).
+ * Clone do repo: env DSH_CLONE ou ~/projects/dsh/dsh-h-v1 (canônico) / legado ~/dsh-v2.
  */
 "use strict";
 
@@ -43,7 +43,8 @@ function autoUpdateEnabled() {
 function cloneDir() {
   if (process.env.DSH_CLONE) return process.env.DSH_CLONE;
   const candidates = [
-    path.join(HOME, "dsh-v2"),
+    path.join(HOME, "projects", "dsh", "dsh-h-v1"), // canônico nesta máquina
+    path.join(HOME, "dsh-v2"),                       // legado
     path.join(HOME, "dsh-h-v1"),
   ];
   for (const c of candidates) {

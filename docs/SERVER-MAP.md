@@ -15,7 +15,7 @@ Guia único para não confundir pastas, versões e sistemas. (English:
 │     └── manifest.json             ← versões pinadas (sistema + core)
 └── _archive/2026-09-07/            ← antigos/redundantes (README explica)
 
-/home/deploy/dsh-v2                 ← SYMLINK → projects/dsh/dsh-h-v1 (caminho legado)
+~/projects/dsh/dsh-h-v1             ← caminho CANÔNICO (sem symlink em ~/dsh-v2 — removido em 2026-09-07)
 ```
 
 Config viva (dados do usuário, NÃO versionados):
@@ -38,8 +38,8 @@ global do root). Ambientes têm o próprio core em `~/.dsh-envs/<nome>/core`.
 ## 3. Regras de uso (para nunca mais confundir)
 
 1. **Desenvolver:** sempre em `~/projects/dsh/dsh-h-v1`. Commits → GitHub → as
-   máquinas recebem por `sync-pull` (cron `*/30`, wrapper
-   `~/.local/bin/dsh-v2-autoupdate.sh`; ⚠ **verificar se o cron está ativo**).
+   máquinas recebem por `sync-pull` (cron `*/30` ativo, wrapper `~/.local/bin/dsh-v2-autoupdate.sh`; o caminho `~/dsh-v2` foi removido —
+   tudo usa `~/projects/dsh/dsh-h-v1`).
 2. **Plugins do painel (overlay):** a fonte é `overlay/*.js`; os 7 plugins
    vivos (`version-badge`, `freellmapi-shortcut`, `layout-panel`,
    `model-visibility`, `openrouter-enhanced`, `router-settings-helper`,
@@ -57,7 +57,7 @@ global do root). Ambientes têm o próprio core em `~/.dsh-envs/<nome>/core`.
 
 ## 4. Ferramentas que você usa todo dia
 
-- `~/projects/dsh/dsh-h-v1/tools/` (via symlink também em `~/dsh-v2/tools/`):
+- `~/projects/dsh/dsh-h-v1/tools/` :
   `check-core.sh`, `sync-pull/push/auto-sync`, `rollback.sh`, `release.sh`,
   `snapshot.sh`, `stamp-version.sh`.
 - `core-i18n-pt/tools/`: `apply-pt-core.sh`, `pt-ride.mjs`, `verify-pt.mjs`,

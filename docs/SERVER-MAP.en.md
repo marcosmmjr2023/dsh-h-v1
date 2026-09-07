@@ -4,9 +4,9 @@ Companion to the PT version ([SERVER-MAP.md](SERVER-MAP.md)). Short form.
 
 ## Single source of truth
 - **Active repo:** `/home/deploy/projects/dsh/dsh-h-v1` → GitHub
-  `marcosmmjr2023/dsh-h-v1`. Legacy path `/home/deploy/dsh-v2` is a **symlink**
-  to it (keeps cron/wrappers/tools working).
-- **Live config** (user data, not versioned): `~/.dsh` (v1 GUI), `~/.dsh-v2`
+  `marcosmmjr2023/dsh-h-v1`. The old `/home/deploy/dsh-v2` symlink was **removed** (2026-09-07) — always use the canonical path
+  `~/projects/dsh/dsh-h-v1`.
+- **Live config** (unchanged) (user data, not versioned): `~/.dsh` (v1 GUI), `~/.dsh-v2`
   (main GUI), `~/.dsh-envs/<env>` (A/B test homes+core).
 - **Old/redundant copies** were archived under `~/projects/dsh/_archive/2026-09-07/`
   (stale v0.2.0 clone, pt translation scratch, dsh-turbo Windows adaptation,
