@@ -763,28 +763,35 @@ const PANEL_JS = `(function () {
   else boot();
 
   // ── Rodapé: desinstalar a instância (somente quando rodar numa instância) ──
-  function maybeAddUninstall() {
-    if (!DSH_INSTANCE || document.getElementById('dsh-uninstall-row')) return;
-    var host = document.getElementById('dlp-body');
-    if (!host) return;
-    var row = document.createElement('div');
-    row.id = 'dsh-uninstall-row';
-    row.style.cssText = 'margin-top:10px;padding-top:8px;border-top:1px solid #f85149;';
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = '🗑 Desinstalar esta instância e os atalhos';
-    b.style.cssText = 'width:100%;padding:7px 8px;border:0;border-radius:8px;background:#f85149;color:#fff;font:11px/1.4 system-ui,sans-serif;cursor:pointer;';
-    b.onclick = function () {
-      if (!window.confirm('Desinstalar a instância ' + DSH_INSTANCE + '? Ela sera encerrada e os atalhos/perfil serao removidos. O sistema principal nao e afetado.')) return;
-      b.disabled = true;
-      b.textContent = 'Desinstalando...';
-      fetch('/api/dsh-core', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'uninstall' }) })
-        .then(function () { row.innerHTML = 'Instância sendo encerrada... volte para a principal.'; })
-        .catch(function () { row.innerHTML = 'Erro ao desinstalar (veja os logs).'; });
-    };
-    row.appendChild(b);
-    host.appendChild(row);
+  function uninstallAction(envName) {
+    if (!window.confirm('Desinstalar a instância ' + envName + '? Ela sera encerrada e os atalhos/perfil serao removidos. O sistema principal nao e afetado.')) return;
+    fetch('/api/dsh-core', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'uninstall' }) })
+      .then(function () { if (document.getElementById('dsh-uninstall-fab')) document.getElementById('dsh-uninstall-fab').textContent = 'Desinstalando...'; })
+      .catch(function () { if (document.getElementById('dsh-uninstall-fab')) document.getElementById('dsh-uninstall-fab').textContent = 'Erro ao desinstalar'; });
   }
+  function ensureUninstallUI() {
+    if (!DSH_INSTANCE) return;
+    var host = document.getElementById('dlp-body');
+    if (host && !document.getElementById('dsh-uninstall-row')) {
+      var row = document.createElement('div');
+      row.id = 'dsh-uninstall-row';
+      row.style.cssText = 'margin-top:10px;padding-top:8px;border-top:1px solid #f85149;';
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = '🗑 Desinstalar esta instância e os atalhos';
+      b.style.cssText = 'width:100%;padding:7px 8px;border:0;border-radius:8px;background:#f85149;color:#fff;font:11px/1.4 system-ui,sans-serif;cursor:pointer;';
+      b.onclick = function () { uninstallAction(DSH_INSTANCE); };
+      row.appendChild(b); host.appendChild(row);
+    }
+    if (!document.getElementById('dsh-uninstall-fab')) {
+      var fab = document.createElement('button');
+      fab.id = 'dsh-uninstall-fab'; fab.type = 'button';
+      fab.textContent = '🗑 Desinstalar esta instância';
+      fab.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:2147483647;background:#f85149;color:#fff;border:0;border-radius:18px;padding:8px 12px;font:11px/1.4 system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.5);';
+      fab.onclick = function () { uninstallAction(DSH_INSTANCE); };
+      (document.body || document.documentElement).appendChild(fab);
+    }
+  }
+  setInterval(ensureUninstallUI, 2500);
   setInterval(maybeAddUninstall, 3000);
   })();`;
 
