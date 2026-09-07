@@ -409,7 +409,7 @@ const CORE_UI_JS = [
   "    });",
   "  };",
   "  var actImport = function () {",
-  "    if (!window.confirm('Importar historico/conversas + configs (credenciais FreeLLMAPI etc.) da instancia anterior para esta?\n\nMescla com o que ja existe; nada e apagado. Depois recarregue (F5).')) return;",
+  "    if (!window.confirm('Importar historico/conversas + configs (credenciais FreeLLMAPI etc.) da instancia anterior para esta? (mescla com o que ja existe; nada e apagado — depois recarregue com F5).')) return;",
   "    panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Importando historico/configs da instancia anterior\u2026</div>';",
   "    fetch('/api/dsh-core', {",
   "      method: 'POST',",
