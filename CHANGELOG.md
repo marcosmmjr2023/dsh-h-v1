@@ -200,3 +200,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.43.
 ## [v0.2.45] — 2026-09-07 16:00 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.44.
   - 8fe073d fix(uninstall): remove reordenado — limpa gateway/atalho/pasta/perfil PRIMEIRO e apaga a instância por último
+
+## [v0.2.46] — 2026-09-07 16:04 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.45.
+  - 0698fcd fix(uninstall): janela fecha sozinha (pkill perfil Chrome + window.close) e FAB fora do settings
