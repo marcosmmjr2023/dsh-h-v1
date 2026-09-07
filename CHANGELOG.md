@@ -216,3 +216,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.47.
 ## [v0.2.49] — 2026-09-07 22:08 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.48.
   - cc191f1 fix(win): core-env.ps1 usa herança de env (Start-Process -Environment só existe no PS7) — compatível com PowerShell 5.1
+
+## [v0.2.50] — 2026-09-07 22:12 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.49.
+  - b476f58 feat(win-install): instalador de 1 linha + comando 'dsh' (estilo apt) para Windows
