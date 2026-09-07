@@ -212,3 +212,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.46.
 ## [v0.2.48] — 2026-09-07 16:32 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.47.
   - 69400f8 feat(win): fluxo Windows do ambiente paralelo (core-env/core-update/apply em PowerShell) + roteamento por SO no painel
+
+## [v0.2.49] — 2026-09-07 22:08 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.48.
+  - cc191f1 fix(win): core-env.ps1 usa herança de env (Start-Process -Environment só existe no PS7) — compatível com PowerShell 5.1
