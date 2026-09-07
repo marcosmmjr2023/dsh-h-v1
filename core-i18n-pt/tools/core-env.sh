@@ -34,6 +34,16 @@ port_free() { # porta candidata
 
 
 # ── atalho X11 (menu): wrapper + .desktop por ambiente
+deps_root() { # node_modules-root -> dir @deepseek-ai que contém dsh-client-locale (aninhado ou plano)
+  local r="$1"
+  if [ -d "$r/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-locale" ]; then
+    echo "$r/@deepseek-ai/dsh/node_modules/@deepseek-ai"
+  elif [ -d "$r/@deepseek-ai/dsh-client-locale" ]; then
+    echo "$r/@deepseek-ai"
+  else
+    echo "$r/@deepseek-ai"
+  fi
+}
 write_launcher() {
   local name="$1" m="$BASE/$name/meta.json"
   [ -f "$m" ] || { echo "ambiente '$name' não existe"; return 1; }
@@ -42,11 +52,16 @@ write_launcher() {
   sys="$(node -e 'console.log(require(process.argv[1]).sys)' "$m")"
   port="$(node -e 'console.log(require(process.argv[1]).port)' "$m")"
   url="http://127.0.0.1:$port"
+  local datept; datept="$(node -e 'try{console.log((process.argv[1]||"").slice(0,10))}catch{}' "$(node -e 'console.log(require(process.argv[1]).created)' "$m")")"
+  local tagline="$sys · c$core (novo core · ${datept:-data})"
   local wrapper="$BASE/$name/launch-gui.sh"
   cat > "$wrapper" <<'TPL'
 #!/usr/bin/env bash
-# Abre a GUI do ambiente @NAME@ (@SYS@ · c@CORE@) pelo menu/atalho X11.
-# A URL é calculada a cada abertura (algumas versões do core exigem ?token).
+# Abre a GUI do ambiente @NAME@ — @TAGLINE@.
+# Garante o servidor do FreeLLMAPI (dashboard :3002) e usa a URL real do
+# boot (alguns cores exigem ?token).
+curl -fsS --max-time 2 http://127.0.0.1:3002/api/ping >/dev/null 2>&1 || \
+  (cd /home/deploy/projects/freellmapi && pm2 start server/dist/index.js --name freellmapi >/dev/null 2>&1 || pm2 restart freellmapi >/dev/null 2>&1)
 pm2 describe dsh-env-@NAME@ >/dev/null 2>&1 || \
   (cd /home/deploy && DSH_ENV_NAME="@NAME@" DSH_CORE_VERSION="@CORE@" DSH_HOME="@HOME@" \
    DSH_WEB_URL="@URL@" pm2 start @NODEBIN@ --name "dsh-env-@NAME@" -- \
@@ -57,7 +72,7 @@ FULL="$(pm2 logs "dsh-env-@NAME@" --nostream --lines 200 2>/dev/null | grep -oE 
 [ -n "$FULL" ] || FULL="@URL@"
 exec /opt/google/chrome/chrome --app="$FULL" --user-data-dir="/home/deploy/.config/dsh-env-@NAME@" --no-first-run --no-default-browser-check
 TPL
-  sed -e "s|@NAME@|$name|g" -e "s|@SYS@|$sys|g" -e "s|@CORE@|$core|g"       -e "s|@PORT@|$port|g" -e "s|@URL@|$url|g" -e "s|@HOME@|$BASE/$name/home|g"       -e "s|@BIN@|$BASE/$name/core/lib/node_modules/@deepseek-ai/dsh/lib/bin.js|g"       -e "s|@NODEBIN@|$(command -v node)|g" "$wrapper" > "$wrapper.tmp" && mv "$wrapper.tmp" "$wrapper"
+  sed -e "s|@NAME@|$name|g" -e "s|@TAGLINE@|$tagline|g" -e "s|@SYS@|$sys|g" -e "s|@CORE@|$core|g"       -e "s|@PORT@|$port|g" -e "s|@URL@|$url|g" -e "s|@HOME@|$BASE/$name/home|g"       -e "s|@BIN@|$BASE/$name/core/lib/node_modules/@deepseek-ai/dsh/lib/bin.js|g"       -e "s|@NODEBIN@|$(command -v node)|g" "$wrapper" > "$wrapper.tmp" && mv "$wrapper.tmp" "$wrapper"
   chmod +x "$wrapper"
   mkdir -p /home/deploy/.local/share/applications
   local desk="/home/deploy/.local/share/applications/dsh-env-$name.desktop"
@@ -65,7 +80,7 @@ TPL
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=DeepSeek Harness $name ($sys · c$core)
+Name=DeepSeek Harness $name — c$core (novo · ${datept:-data})
 Comment=Abre o ambiente paralelo '$name' ($sys · c$core) — porta $port (sistema atual intacto)
 Exec=$wrapper
 Icon=/opt/google/chrome/product_logo_256.png
@@ -75,7 +90,7 @@ StartupNotify=false
 EOF
   chmod 644 "$desk"
   desktop-file-validate "$desk" >/dev/null 2>&1 && echo "✔ atalho X11 criado: $desk"
-  echo "   (no menu: 'DeepSeek Harness $name ($sys · c$core)')"
+  echo "   (no menu: 'DeepSeek Harness $name — c$core (novo · ${datept:-data})')"
 }
 
 
@@ -123,11 +138,13 @@ case "$cmd" in
     fi
     coreRoot="$(npm root -g --prefix "$envdir/core" 2>/dev/null)"
     # 3) patches pt-BR no core do ambiente
-    if DSH_CORE_PKGS="$coreRoot/@deepseek-ai" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
-      echo "  ✔ pt-BR aplicado no core do ambiente"
+    DEP="$(deps_root "$coreRoot")"
+    if DSH_CORE_PKGS="$DEP" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
+      echo "  ✔ patches pt-BR aplicados ($DEP)"
     else
-      echo "  ⚠ pt-BR não aplicou limpo no ambiente (contexto?) — siga mesmo assim para teste."
+      echo "  ℹ patches antigos não encaixaram (normal p/ core novo) — regenerando via pt-ride…"
     fi
+    node "$REPO/core-i18n-pt/tools/pt-ride.mjs" --root "$DEP" >/dev/null 2>&1 && echo "  ✔ pt-BR garantido via pt-ride (tabela de traduções)"
     # 4) perfis → deps do próprio ambiente (isolado do core antigo)
     mkdir -p "$envdir/home/profiles/node_modules/@deepseek-ai"
     for pkg in "$coreRoot"/@deepseek-ai/*; do

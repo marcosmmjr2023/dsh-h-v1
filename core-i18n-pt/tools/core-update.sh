@@ -63,14 +63,25 @@ record_history() {
   ' "$HIST" "$1" "$2" "$3" "$(date -Is 2>/dev/null || date -u +%FT%TZ)"
 }
 
-apply_pt_root() { # root-do-prefixo (…/node_modules)
-  local root="$1"
-  [ -d "$root/@deepseek-ai/dsh-client-locale" ] || return 0
-  if DSH_CORE_PKGS="$root/@deepseek-ai" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
-    echo "    ✔ patches pt-BR em $root"
+apply_pt_root() { # root-do-prefixo (…/node_modules) → dir de deps do app
+  local root="$1" dep=""
+  if [ -d "$root/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-locale" ]; then
+    dep="$root/@deepseek-ai/dsh/node_modules/@deepseek-ai"
+  elif [ -d "$root/@deepseek-ai/dsh-client-locale" ]; then
+    dep="$root/@deepseek-ai"
+  else
     return 0
   fi
-  echo "    ⚠ patches pt-BR NÃO aplicaram em $root — contexto mudou; precisa REGENERAR."
+  if DSH_CORE_PKGS="$dep" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
+    echo "    ✔ patches pt-BR em $dep"
+  else
+    echo "    ℹ patches antigos não encaixaram (core novo) — regenerando via pt-ride…"
+  fi
+  if node "$REPO/core-i18n-pt/tools/pt-ride.mjs" --root "$dep" >/dev/null 2>&1; then
+    echo "    ✔ pt-BR garantido via pt-ride"
+    return 0
+  fi
+  echo "    ⚠ pt-BR incompleto em $dep — confira a tabela de traduções."
   return 1
 }
 
@@ -84,7 +95,13 @@ preview_candidate() {
     echo "✋ [preview] falha no npm (candidato nem instala)."; tail -4 "$HOME/.dsh-core-preview-npm.log"; rm -rf "$stg"; return 1
   fi
   local sroot; sroot="$(npm root -g --prefix "$stg" 2>/dev/null)"
-  apply_pt_root "$sroot" || { rm -rf "$stg"; return 1; }
+  local sdep=""
+  if [ -d "$sroot/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-client-locale" ]; then sdep="$sroot/@deepseek-ai/dsh/node_modules/@deepseek-ai"; else sdep="$sroot/@deepseek-ai"; fi
+  if DSH_CORE_PKGS="$sdep" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
+    echo "    ✔ patches pt-BR no preview"
+  else
+    echo "    ⚠ pt-BR não aplicou no preview (contexto?) — seguindo."
+  fi
   # home de teste: plugins do overlay + settings (sem credenciais/sessões)
   local tmph; tmph="$(mktemp -d /tmp/dsh-preview-home.XXXXXX)"
   for h in /home/deploy/.dsh /home/deploy/.dsh-v2; do
