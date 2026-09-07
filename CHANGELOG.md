@@ -148,3 +148,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.30.
 ## [v0.2.32] — 2026-09-07 14:44 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.31.
   - 7f8eba3 fix(core-env): remove limpa gateway flm-<nome> e perfil Chrome da instância
+
+## [v0.2.33] — 2026-09-07 14:48 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.32.
+  - 8321ef7 fix(freellmapi): reinicia a instância após provisionar o gateway próprio
