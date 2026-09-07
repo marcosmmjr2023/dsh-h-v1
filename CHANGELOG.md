@@ -276,3 +276,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.62.
 ## [v0.2.64] — 2026-09-07 23:38 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.63.
   - 63149b2 fix(win): bloco CANDIDATE_LIBS reescrito (npm root -g + require.main) sem quebrar sintaxe
+
+## [v0.2.65] — 2026-09-07 23:43 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.64.
+  - 96177c1 fix(win): execSync npm root -g com shell:true (resolve .cmd no Windows)
