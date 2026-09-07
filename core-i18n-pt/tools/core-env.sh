@@ -44,6 +44,42 @@ deps_root() { # node_modules-root -> dir @deepseek-ai que contém dsh-client-loc
     echo "$r/@deepseek-ai"
   fi
 }
+
+# ── teste de sanidade do ambiente (primeiro uso) ────────────────────────
+sanity_test() {
+  local name="$1" m="$BASE/$name/meta.json" fails=0
+  [ -f "$m" ] || { echo "✋ ambiente '$name' não existe"; return 1; }
+  local port core sys url
+  port="$(node -e 'console.log(require(process.argv[1]).port)' "$m")"
+  core="$(node -e 'console.log(require(process.argv[1]).core)' "$m")"
+  sys="$(node -e 'console.log(require(process.argv[1]).sys)' "$m")"
+  url="http://127.0.0.1:$port"
+  echo "=== teste de sanidade: $name ($sys · c$core) → $url ==="
+  local st ok=""
+  st=$(/usr/bin/pm2 jlist 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);p=[x for x in d if x['name']=='dsh-env-$name'];print(p[0]['pm2_env']['status'] if p else 'down')")
+  if [ "$st" = "online" ]; then echo "  ✔ servidor pm2: online"; else echo "  ✋ servidor pm2: $st"; fails=$((fails+1)); fi
+  local code; code=$(curl -s -o /dev/null -w '%{http_code}' "$url/" 2>/dev/null || echo down)
+  if [ "$code" = 200 ] || [ "$code" = 401 ]; then echo "  ✔ página responde (http=$code — token quando 401)"; else echo "  ✋ página sem resposta (http=$code)"; fails=$((fails+1)); fi
+
+  local log; log="/home/deploy/.pm2/logs/dsh-env-$name-out.log"
+  local errs; errs=$(grep -icE 'failed to import|load entry|SyntaxError|Unexpected token' "$log" 2>/dev/null || true); errs=${errs:-0}
+  if [ "$errs" -eq 0 ] 2>/dev/null; then echo "  ✔ sem erros de importação/sintaxe"; else echo "  ✋ erros de importação: ${errs:-?}"; fails=$((fails+1)); fi
+  local dep; dep="$BASE/$name/core/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai"
+  local ptc; ptc=$(grep -c Português "$dep/dsh-client-locale/lib/client.js" 2>/dev/null || echo 0)
+  if [ "$ptc" -ge 1 ]; then echo "  ✔ pt-BR presente (Português)"; else echo "  ✋ pt-BR ausente"; fails=$((fails+1)); fi
+  for marker in '\[VersionBadge\]' '\[LayoutPanel\]' '\[FreeLLMAPI-Shortcut\]'; do
+    grep -q "$marker" "$log" 2>/dev/null && echo "  ✔ plugin $marker carregou" || { echo "  ✋ plugin $marker não carregou"; fails=$((fails+1)); }
+  done
+  local ping; ping=$(curl -fsS --max-time 3 http://127.0.0.1:3002/api/ping -o /dev/null -w '%{http_code}' 2>/dev/null || echo down)
+  if [ "$ping" = 200 ]; then echo "  ✔ FreeLLMAPI (3002) ping 200"; else echo "  ✋ FreeLLMAPI ping: $ping"; fails=$((fails+1)); fi
+  local cors; cors=$(curl -s -i -H "Origin: $url" http://127.0.0.1:3002/api/ping 2>/dev/null | grep -i '^access-control-allow-origin' | tr -d '
+')
+  case "$cors" in *"$url"*) echo "  ✔ CORS FreeLLMAPI libera $url";; *) echo "  ✋ CORS FreeLLMAPI sem $url"; fails=$((fails+1));; esac
+  ls -d /home/deploy/.dsh-core-backups/core-* >/dev/null 2>&1 && echo "  ✔ backup de segurança existe" || { echo "  ✋ sem backup (core-backup.sh)"; fails=$((fails+1)); }
+  if [ "$fails" -eq 0 ]; then echo "✔ APROVADO — pode promover/commitar/publicar."; else echo "✋ $fails falha(s) — corrija antes de promover."; fi
+  return $fails
+}
+
 write_launcher() {
   local name="$1" m="$BASE/$name/meta.json"
   [ -f "$m" ] || { echo "ambiente '$name' não existe"; return 1; }
@@ -184,6 +220,12 @@ EOF
     [ "$code" = "200" ] || echo "⚠ não respondeu 200 ainda — veja: pm2 logs dsh-env-$name / $envdir"
     echo "Ambiente pronto em $envdir  (atalho: $envdir/start.sh)"
     write_launcher "$name"
+    # garante FreeLLMAPI com CORS loopback (qualquer porta do harness)
+    if [ -f "$REPO/core-i18n-pt/tools/ensure-freellmapi-loopback.sh" ]; then
+      "$REPO/core-i18n-pt/tools/ensure-freellmapi-loopback.sh" >/dev/null 2>&1 && echo "  ✔ FreeLLMAPI: CORS loopback garantido"
+    fi
+    echo "── teste de sanidade do ambiente ──"
+    sanity_test "$name" || true
     ;;
   start|stop|remove)
     name="${2:-}"; m="$BASE/$name/meta.json"
@@ -212,6 +254,11 @@ EOF
     name="${2:-}"
     [ -n "$name" ] || { echo "uso: core-env.sh desktop <nome>"; exit 2; }
     write_launcher "$name"
+    ;;
+  test)
+    name="${2:-}"
+    [ -n "$name" ] || { echo "uso: core-env.sh test <nome>"; exit 2; }
+    sanity_test "$name"
     ;;
   -h|--help) usage ;;
   *) echo "opção desconhecida: $1"; usage; exit 2 ;;

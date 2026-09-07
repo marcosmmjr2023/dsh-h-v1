@@ -109,3 +109,12 @@ core-i18n-pt/tools/core-env.sh status novo | promote novo | remove novo
   core pedido isolado, aplica pt-BR e sobe paralelo ao atual.
 - Aprovou? `promote` mostra o comando para aplicar nos prefixos canônicos e a
   GUI pode então ser reiniciada; depois é só remover o ambiente antigo.
+
+## Testes na primeira subida de um ambiente novo (core novo)
+`core-env.sh create` agora roda automaticamente:
+1. `ensure-freellmapi-loopback.sh` — libera o CORS do FreeLLMAPI para
+   **qualquer porta loopback** (3081/3110/3111/…) e o mantém sob o pm2;
+2. **teste de sanidade** (`core-env.sh test <nome>`): servidor online, página
+   responde, sem erros de importação/sintaxe, pt-BR presente, plugins do
+   overlay carregando, FreeLLMAPI ping + CORS, backup de segurança existente.
+Só promova (`promote`) um ambiente com **✔ APROVADO**.
