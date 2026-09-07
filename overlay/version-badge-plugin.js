@@ -201,6 +201,7 @@ const CORE_CHECK_CACHE = path.join(__dirname, ".dsh-core-check.json");
 const CORE_HISTORY = path.join(__dirname, ".dsh-core-history.json");
 
 function coreInstalledVersion() {
+  if (process.env.DSH_CORE_VERSION) return process.env.DSH_CORE_VERSION; // ambiente paralelo (core-env)
   for (const f of CORE_CANDIDATES) {
     try { return JSON.parse(fs.readFileSync(f, "utf8")).version; } catch { /* tenta próximo */ }
   }
@@ -319,7 +320,7 @@ const CORE_UI_JS = [
   "  var refresh = function () {",
   "    fetch('/api/dsh-core', { method: 'GET' }).then(function (r) { return r.json(); }).then(function (d) {",
   "      if (!d || !d.ok) return;",
-  "      var label = 'core ' + esc(d.installed);",
+  "      var label = 'core c' + esc(d.installed);",
   "      var cls = '';",
   "      if (d.hasUpdate) { label += ' · nova ' + esc(d.latest); cls = 'cb-new'; }",
   "      else if (!d.patches.ok) { label += ' · sem pt'; cls = 'cb-warn'; }",

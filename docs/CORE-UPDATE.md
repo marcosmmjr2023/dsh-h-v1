@@ -90,3 +90,22 @@ Se, após instalar um core novo, os patches não aplicarem limpos
 - não embutir senha do sudo em arquivos do repo (guard bloqueia);
 - não "remendar" patches manualmente quando a regeneração resolve;
 - não atualizar o core em todas as máquinas de uma vez.
+
+## Alternativa máxima de segurança: AMBIENTE PARALELO (A/B)
+
+Em vez de atualizar o core no lugar, crie um **sistema inteiro novo** numa
+pasta própria (core npm + home copiado), porta própria e atalho próprio — o
+sistema atual fica intacto até você testar e promover:
+
+```bash
+core-i18n-pt/tools/core-env.sh create novo --core 0.1.2-rc.1
+# abre: http://127.0.0.1:<porta>   (atalho: ~/.dsh-envs/novo/start.sh)
+core-i18n-pt/tools/core-env.sh status novo | promote novo | remove novo
+```
+
+- **Duplo versionamento**: `v<versão do sistema>` (repo) + `c<versão do core>`
+  (ex.: `v0.2.12 · c0.1.2-rc.1`), visível no chip do painel.
+- O ambiente copia sua config/plugins/credenciais (sem sessões), instala o
+  core pedido isolado, aplica pt-BR e sobe paralelo ao atual.
+- Aprovou? `promote` mostra o comando para aplicar nos prefixos canônicos e a
+  GUI pode então ser reiniciada; depois é só remover o ambiente antigo.
