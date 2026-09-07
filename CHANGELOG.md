@@ -75,3 +75,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.13.
 ## [v0.2.15] — 2026-09-07 05:39 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.14.
   - 29e7c46 fix(core-env): launcher/create abrem a URL real do boot (inclui ?token quando o core novo exigir auth)
+
+## [v0.2.16] — 2026-09-07 05:40 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.15.
+  - cb44f8b fix(core-env): launcher gerado por template com placeholders — URL (?token) calculada a cada abertura; sem unbound var em set -u
