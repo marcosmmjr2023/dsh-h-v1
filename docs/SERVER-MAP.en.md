@@ -32,6 +32,6 @@ Companion to the PT version ([SERVER-MAP.md](SERVER-MAP.md)). Short form.
 5. Rollback (`tools/rollback.sh` / ↩ button) now restarts the GUI itself.
 
 ## Known pending items
-- DSH auto-sync cron (`*/30`, wrapper `~/.local/bin/dsh-v2-autoupdate.sh`)
-  was NOT found in `crontab -l` — verify/restore scheduling if wanted.
+- DSH auto-sync cron: **active** — `*/30 * * * * ~/.local/bin/dsh-v2-autoupdate.sh`
+  (confirmed 2026-09-07).
 - Keep live plugin files in `~/.dsh-v2` in sync with `overlay/` (auto-push covers it).

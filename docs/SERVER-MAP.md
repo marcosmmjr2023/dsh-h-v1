@@ -74,9 +74,8 @@ continuam como estavam (ex.: brazil-cnpj-api, scripts de backup do usuário).
 
 ## 6. Pendências conhecidas
 
-- Cron do auto-update do DSH (`*/30`) **não está presente** no `crontab -l`
-  atual — conferir e restaurar o agendamento do wrapper
-  `~/.local/bin/dsh-v2-autoupdate.sh` se desejado.
+- Cron do auto-update do DSH: **ativo** — `*/30 * * * * ~/.local/bin/dsh-v2-autoupdate.sh`
+  (confirmado em 2026-09-07; usa DSH_CLONE=~/dsh-v2 que é o symlink).
 - `smart-router-plugin.js`, `openrouter-enhanced-plugin.js` etc. estão no
   overlay mas os arquivos vivos de `~/.dsh-v2` precisam ficar **em sincronia**
   (auto-push cobre; validar após próximos syncs).
