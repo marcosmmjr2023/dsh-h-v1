@@ -32,6 +32,49 @@ port_free() { # porta candidata
   echo "$p"
 }
 
+
+# ── atalho X11 (menu): wrapper + .desktop por ambiente
+write_launcher() {
+  local name="$1" m="$BASE/$name/meta.json"
+  [ -f "$m" ] || { echo "ambiente '$name' não existe"; return 1; }
+  local core sys port url
+  core="$(node -e 'console.log(require(process.argv[1]).core)' "$m")"
+  sys="$(node -e 'console.log(require(process.argv[1]).sys)' "$m")"
+  port="$(node -e 'console.log(require(process.argv[1]).port)' "$m")"
+  url="http://127.0.0.1:$port"
+  local wrapper="$BASE/$name/launch-gui.sh"
+  cat > "$wrapper" <<EOF
+#!/usr/bin/env bash
+# Abre a GUI do ambiente '$name' ($sys · c$core) pelo menu/atalho X11.
+pm2 describe dsh-env-$name >/dev/null 2>&1 || \
+  (cd /home/deploy && DSH_ENV_NAME="$name" DSH_CORE_VERSION="$core" DSH_HOME="$BASE/$name/home" \
+   DSH_WEB_URL="$url" pm2 start $(command -v node) --name "dsh-env-$name" -- \
+   "$BASE/$name/core/lib/node_modules/@deepseek-ai/dsh/lib/bin.js" --profile web --no-open --port "$port" --host 127.0.0.1)
+pm2 list 2>/dev/null | grep -q "dsh-env-$name.*online" || pm2 restart "dsh-env-$name" >/dev/null 2>&1
+sleep 1
+exec /opt/google/chrome/chrome --app="$url" --user-data-dir="/home/deploy/.config/dsh-env-$name" --no-first-run --no-default-browser-check
+EOF
+  chmod +x "$wrapper"
+  mkdir -p /home/deploy/.local/share/applications
+  local desk="/home/deploy/.local/share/applications/dsh-env-$name.desktop"
+  cat > "$desk" <<EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=DeepSeek Harness $name ($sys · c$core)
+Comment=Abre o ambiente paralelo '$name' ($sys · c$core) — porta $port (sistema atual intacto)
+Exec=$wrapper
+Icon=/opt/google/chrome/product_logo_256.png
+Terminal=false
+Categories=Network;WebBrowser;
+StartupNotify=false
+EOF
+  chmod 644 "$desk"
+  desktop-file-validate "$desk" >/dev/null 2>&1 && echo "✔ atalho X11 criado: $desk"
+  echo "   (no menu: 'DeepSeek Harness $name ($sys · c$core)')"
+}
+
+
 cmd="${1:-list}"
 case "$cmd" in
   list)
@@ -117,6 +160,7 @@ EOF
     done
     [ "$code" = "200" ] || echo "⚠ não respondeu 200 ainda — veja: pm2 logs dsh-env-$name / $envdir"
     echo "Ambiente pronto em $envdir  (atalho: $envdir/start.sh)"
+    write_launcher "$name"
     ;;
   start|stop|remove)
     name="${2:-}"; m="$BASE/$name/meta.json"
@@ -137,6 +181,11 @@ EOF
     echo "  sudo $REPO/core-i18n-pt/tools/core-update.sh --skip-preview --install $ver"
     echo "Depois reinicie a GUI (botão '▶ Reiniciar agora' no painel). O ambiente pode ser removido:"
     echo "  core-env.sh remove $name"
+    ;;
+  desktop)
+    name="${2:-}"
+    [ -n "$name" ] || { echo "uso: core-env.sh desktop <nome>"; exit 2; }
+    write_launcher "$name"
     ;;
   -h|--help) usage ;;
   *) echo "opção desconhecida: $1"; usage; exit 2 ;;
