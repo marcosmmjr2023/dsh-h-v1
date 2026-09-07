@@ -252,3 +252,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.56.
 ## [v0.2.58] — 2026-09-07 23:05 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.57.
   - 074475d feat(win): clean-windows.ps1 (desinstalacao total) + instalador grava log e verifica overlay
+
+## [v0.2.59] — 2026-09-07 23:24 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.58.
+  - 2875f0f fix(win): cordis.patch.yml usa file:/// p/ plugins (loader ESM do Windows exige URL)
