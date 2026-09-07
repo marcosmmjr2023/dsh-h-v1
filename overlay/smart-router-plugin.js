@@ -55,7 +55,7 @@ const CANDIDATE_LIBS = [
   process.env.DSH_CLI_LIB,
   (function () {
     try {
-      var nr = (require("node:child_process").execSync("npm root -g", { encoding: "utf8" }) || "").trim();
+      var nr = (require("node:child_process").execSync("npm root -g", { encoding: "utf8", shell: true }) || "").trim();
       if (nr) return require("node:path").join(nr, "@deepseek-ai", "dsh", "lib");
     } catch (e) { /* sem npm */ }
     return null;
