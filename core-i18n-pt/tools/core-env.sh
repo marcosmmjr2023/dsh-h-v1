@@ -170,7 +170,10 @@ EOF
       stop) /usr/bin/pm2 stop "dsh-env-$name" >/dev/null 2>&1 && echo "✔ parado (ambiente preservado)";;
       remove)
         /usr/bin/pm2 delete "dsh-env-$name" >/dev/null 2>&1 || true
-        rm -rf "$BASE/$name"; echo "✔ ambiente '$name' removido";;
+        rm -f "/home/deploy/.local/share/applications/dsh-env-$name.desktop"
+        rm -rf "$BASE/$name"
+        update-desktop-database /home/deploy/.local/share/applications >/dev/null 2>&1 || true
+        echo "✔ ambiente '$name' removido (incluindo atalho do menu)";;
     esac
     ;;
   promote)
