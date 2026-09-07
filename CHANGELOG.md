@@ -83,3 +83,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.15.
 ## [v0.2.17] — 2026-09-07 12:40 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.16.
   - d77ae90 feat(pt-ride): pt-BR anda junto com QUALQUER core novo (sem depender de patches com contexto)
+
+## [v0.2.18] — 2026-09-07 12:42 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.17.
+  - fb30bb1 feat(i18n-pt): +296 frases do core 0.1.2 (total 920) — paridade pt/en OK em 28 arquivos no ambiente rc012
