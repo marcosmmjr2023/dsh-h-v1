@@ -136,3 +136,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.27.
 ## [v0.2.29] — 2026-09-07 14:35 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.28.
   - eebdce2 feat(core-env): alocador de portas por faixa com verificação de conflitos
+
+## [v0.2.30] — 2026-09-07 14:41 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.29.
+  - 22e5573 feat(freellmapi): gateway FreeLLMAPI POR INSTÂNCIA (limpo, porta+banco próprios)
