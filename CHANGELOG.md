@@ -152,3 +152,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.31.
 ## [v0.2.33] — 2026-09-07 14:48 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.32.
   - 8321ef7 fix(freellmapi): reinicia a instância após provisionar o gateway próprio
+
+## [v0.2.34] — 2026-09-07 14:54 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.33.
+  - b11bb5f fix(freellmapi): gateway dinâmico por instância nos plugins (shared, via DSH_ENV_NAME)
