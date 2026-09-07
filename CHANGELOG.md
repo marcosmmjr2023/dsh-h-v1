@@ -87,3 +87,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.16.
 ## [v0.2.18] — 2026-09-07 12:42 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.17.
   - fb30bb1 feat(i18n-pt): +296 frases do core 0.1.2 (total 920) — paridade pt/en OK em 28 arquivos no ambiente rc012
+
+## [v0.2.19] — 2026-09-07 12:51 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.18.
+  - ebed24f fix(pt-ride/core-env): nunca quebrar a UI ao aplicar pt em core novo
