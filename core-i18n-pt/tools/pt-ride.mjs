@@ -35,7 +35,13 @@ if (!root || !fs.existsSync(path.join(root, "dsh-client-locale"))) {
 const GEN = path.join(path.dirname(new URL(import.meta.url).pathname), "build-pt-patches.mjs");
 const PHRASES_PATH = path.join(path.dirname(path.dirname(new URL(import.meta.url).pathname)), "dictionaries", "en-phrases.json");
 const PHRASES = JSON.parse(fs.readFileSync(PHRASES_PATH, "utf8"));
+const SKIP = (process.env.DSH_PT_SKIP || "").split(",").map((x) => x.trim()).filter(Boolean);
+const skipped = (f) => SKIP.some((k) => f.includes(k));
 const report = (s) => console.log("  " + s);
+function jsOk(f) {
+  const r = spawnSync(process.execPath, ["--check", f], { encoding: "utf8" });
+  return r.status === 0;
+}
 
 // ── 1) dicionários (sweep com o gerador) ────────────────────────────────
 let genFiles = 0;
@@ -60,9 +66,16 @@ const pkgs = [];
   }
 })(root);
 for (const f of pkgs) {
+  if (skipped(f)) { report(`ℹ pulado por DSH_PT_SKIP: ${path.relative(root, f)}`); continue; }
+  const orig = fs.readFileSync(f, "utf8");
   const r = spawnSync(process.execPath, [GEN, "--file", f], { encoding: "utf8" });
-  if (r.status === 0) { genFiles++; report(`✔ pt (dict) em ${path.relative(root, f)}`); }
-  else report(`⚠ gerador falhou em ${path.relative(root, f)}: ${(r.stderr || "").split("\n")[0]}`);
+  if (r.status !== 0 || !jsOk(f)) {
+    fs.writeFileSync(f, orig); // guarda: nunca entrega JS inválido
+    report(`⚠ pulado (falha/sintaxe) em ${path.relative(root, f)} — segue com en/fallback`);
+    continue;
+  }
+  genFiles++;
+  report(`✔ pt (dict) em ${path.relative(root, f)}`);
 }
 report(`dicionários gerados: ${genFiles} arquivo(s)`);
 
@@ -128,7 +141,9 @@ let fixed = 0;
     return out;
   };
   for (const f of files) {
+    if (skipped(f)) continue;
     let t = fs.readFileSync(f, "utf8");
+    const t0 = t;
     let changed = false;
     for (const en of dictsOf(t, "en")) {
       const ptName = "pt" + en.name.slice(2);
@@ -148,7 +163,10 @@ let fixed = 0;
       fixed += missing.length;
       changed = true;
     }
-    if (changed) fs.writeFileSync(f, t);
+    if (changed) {
+      fs.writeFileSync(f, t);
+      if (!jsOk(f)) { fs.writeFileSync(f, t0); report(`⚠ reparo revertido (sintaxe) em ${path.relative(root, f)}`); }
+    }
   }
 })(root);
 report(`chaves reparadas: ${fixed}`);

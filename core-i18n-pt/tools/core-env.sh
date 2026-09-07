@@ -139,10 +139,12 @@ case "$cmd" in
     coreRoot="$(npm root -g --prefix "$envdir/core" 2>/dev/null)"
     # 3) patches pt-BR no core do ambiente
     DEP="$(deps_root "$coreRoot")"
-    if DSH_CORE_PKGS="$DEP" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
-      echo "  ✔ patches pt-BR aplicados ($DEP)"
+    if [ -n "${DSH_PT_SKIP:-}" ]; then
+      echo "  ℹ DSH_PT_SKIP ativo — sem apply de patches; só regeneração (pt-ride)."
+    elif DSH_CORE_PKGS="$DEP" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --check >/dev/null 2>&1; then
+      DSH_CORE_PKGS="$DEP" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1 && echo "  ✔ patches pt-BR aplicados ($DEP)"
     else
-      echo "  ℹ patches antigos não encaixaram (normal p/ core novo) — regenerando via pt-ride…"
+      echo "  ℹ patches antigos não encaixam neste core — usando só regeneração (pt-ride)…"
     fi
     node "$REPO/core-i18n-pt/tools/pt-ride.mjs" --root "$DEP" >/dev/null 2>&1 && echo "  ✔ pt-BR garantido via pt-ride (tabela de traduções)"
     # 4) perfis → deps do próprio ambiente (isolado do core antigo)

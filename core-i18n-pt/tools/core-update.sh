@@ -72,10 +72,12 @@ apply_pt_root() { # root-do-prefixo (…/node_modules) → dir de deps do app
   else
     return 0
   fi
-  if DSH_CORE_PKGS="$dep" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
-    echo "    ✔ patches pt-BR em $dep"
+  if DSH_CORE_PKGS="$dep" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --check >/dev/null 2>&1; then
+    if DSH_CORE_PKGS="$dep" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
+      echo "    ✔ patches pt-BR em $dep"
+    fi
   else
-    echo "    ℹ patches antigos não encaixaram (core novo) — regenerando via pt-ride…"
+    echo "    ℹ patches antigos não encaixam neste core — usando regeneração (pt-ride)…"
   fi
   if node "$REPO/core-i18n-pt/tools/pt-ride.mjs" --root "$dep" >/dev/null 2>&1; then
     echo "    ✔ pt-BR garantido via pt-ride"
