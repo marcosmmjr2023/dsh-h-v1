@@ -55,3 +55,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.8.
 ## [v0.2.10] — 2026-09-07 04:40 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.9.
   - f746770 docs(ui): painel do núcleo deixa claro que dados do usuário nunca são tocados (sessões/chaves/.dsh) e que há rollback (↩) se falhar
+
+## [v0.2.11] — 2026-09-07 05:24 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.10.
+  - 6f7e8da feat(core-safe): arquitetura segura de atualização do core — backup completo, preview isolado e aplicação em 2 passos
