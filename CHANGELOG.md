@@ -240,3 +240,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.53.
 ## [v0.2.55] — 2026-09-07 22:45 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.54.
   - e1af6ff fix(pt-ride): dup-guard no locale.register — duplicata de locale mantém o primeiro (sem throw)
+
+## [v0.2.56] — 2026-09-07 22:50 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.55.
+  - 50f23a3 feat(win): sincroniza OVERLAY (nossa camada) para %USERPROFILE%\.dsh
