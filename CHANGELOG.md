@@ -112,3 +112,7 @@ Publicação automática — última sincronização desta máquina.
   - attachments/v1/request-images/42/428a7a7a42ab9ec0796a0e8fa8ee0c6a3a87a89840acf54fabc4bb7d64081d68
   - attachments/v1/request-images/97/97adc7ec5173d425de2bcc7730a7d6f687cbd2d441072de0e43354105345c470
   - llm-deepseek/files-v3.json
+
+## [v0.2.24] — 2026-09-07 14:04 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.23.
+  - de497f5 docs(map): SERVER-MAP PT/EN — organização do servidor e regras de uso
