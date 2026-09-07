@@ -18,5 +18,6 @@ if ($Cmd -eq "--check") {
 if ($Cmd -eq "--force") {
   $env:DSH_PT_SKIP = "dsh-client-ui-conversation"
   & node (Join-Path $Repo "core-i18n-pt\tools\pt-ride.mjs") --root $deps
+  if ($LASTEXITCODE -ne 0) { Write-Host "[X] pt-ride falhou (veja acima)"; exit 1 }
   Write-Host "[OK] pt-BR garantido via pt-ride"
 }

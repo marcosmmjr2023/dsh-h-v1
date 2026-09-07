@@ -20,6 +20,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { parseDict, findObject } from "./ptlib.mjs";
 
 const args = process.argv.slice(2);
@@ -32,8 +33,9 @@ if (!root || !fs.existsSync(path.join(root, "dsh-client-locale"))) {
   process.exit(2);
 }
 
-const GEN = path.join(path.dirname(new URL(import.meta.url).pathname), "build-pt-patches.mjs");
-const PHRASES_PATH = path.join(path.dirname(path.dirname(new URL(import.meta.url).pathname)), "dictionaries", "en-phrases.json");
+const here = path.dirname(fileURLToPath(import.meta.url));
+const GEN = path.join(here, "build-pt-patches.mjs");
+const PHRASES_PATH = path.join(path.dirname(here), "dictionaries", "en-phrases.json");
 const PHRASES = JSON.parse(fs.readFileSync(PHRASES_PATH, "utf8"));
 const SKIP = (process.env.DSH_PT_SKIP || "").split(",").map((x) => x.trim()).filter(Boolean);
 const skipped = (f) => SKIP.some((k) => f.includes(k));

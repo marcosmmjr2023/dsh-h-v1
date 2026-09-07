@@ -60,9 +60,26 @@ if (-not $NoDshAlias) {
   }
 }
 
+# 6) Atalhos Desktop + Menu Iniciar
+try {
+  $ws = New-Object -ComObject WScript.Shell
+  $target = Join-Path $Repo "start-dsh-gui.bat"
+  $desk = Join-Path ([Environment]::GetFolderPath("Desktop")) "DeepSeek Harness.lnk"
+  $sm   = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\DeepSeek Harness.lnk"
+  foreach ($lnkPath in @($desk, $sm)) {
+    $lnk = $ws.CreateShortcut($lnkPath)
+    $lnk.TargetPath = "cmd.exe"
+    $lnk.Arguments  = "/c `"$target`""
+    $lnk.WorkingDirectory = $Repo
+    $lnk.Description = "DeepSeek Harness (dsh-h-v1)"
+    $lnk.Save()
+    Write-Host "[OK] atalho criado: $lnkPath"
+  }
+} catch { Write-Host "[i] nao foi possivel criar atalhos (Desktop/Menu Iniciar)" }
+
 Write-Host ""
 Write-Host "== Pronto! =="
-Write-Host "  1) Abra a GUI:  dsh up   (ou:  .\start-dsh-gui.bat)"
+Write-Host "  1) Abra a GUI:  dsh up   (ou atalho Desktop/Menu Iniciar)"
 Write-Host "  2) No chip do core:  Criar instancia com core novo (progresso incluso)"
 Write-Host "  3) Desinstalar: dentro da instancia, menu lateral -> [uninstall] Desinstalar"
 Write-Host "  4) Atualizar depois:  dsh update"
