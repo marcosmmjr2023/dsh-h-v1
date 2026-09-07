@@ -51,3 +51,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.7.
 ## [v0.2.9] — 2026-09-07 04:32 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.8.
   - 6e22685 feat(core-chip): chip do núcleo no painel — versão instalada + checagem automática de nova versão + atualização/rollback MANUAL
+
+## [v0.2.10] — 2026-09-07 04:40 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.9.
+  - f746770 docs(ui): painel do núcleo deixa claro que dados do usuário nunca são tocados (sessões/chaves/.dsh) e que há rollback (↩) se falhar
