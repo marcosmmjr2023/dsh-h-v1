@@ -204,3 +204,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.44.
 ## [v0.2.46] — 2026-09-07 16:04 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.45.
   - 0698fcd fix(uninstall): janela fecha sozinha (pkill perfil Chrome + window.close) e FAB fora do settings
+
+## [v0.2.47] — 2026-09-07 16:24 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.46.
+  - 5b5645a feat(uninstall): barra fina fixa no RODAPÉ do menu lateral — pequena, com o nome da instância
