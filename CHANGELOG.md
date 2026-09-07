@@ -284,3 +284,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.64.
 ## [v0.2.66] — 2026-09-07 23:49 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.65.
   - 4728ba4 fix(win): run-gui define DSH_CLI_LIB (lib do core) p/ plugins resolverem schemastery/dsh-settings
+
+## [v0.2.67] — 2026-09-07 23:54 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.66.
+  - d5b3ca2 fix(win): fallback absoluto p/ schemastery/dsh-settings dentro do grafo do core
