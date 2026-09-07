@@ -1,0 +1,23 @@
+{
+  "formatVersion": 3,
+  "records": [
+    {
+      "scope": "4206220a712e55c52856b7c487282a37f74b906e41770ea5c0c9f324ed147caf",
+      "attachmentId": "sha256:9ceb9c3eec354a2a3dfe9ca80867632158fd86121774c84c59f66e10e0fcc53d",
+      "variantId": "sha256:97adc7ec5173d425de2bcc7730a7d6f687cbd2d441072de0e43354105345c470",
+      "fileId": "file-api-614d6b37-264d-4aa8-a581-5362afa80a20",
+      "bytes": 83977,
+      "createdAt": 1788779836000,
+      "expiresAt": 1789384636000
+    },
+    {
+      "scope": "4206220a712e55c52856b7c487282a37f74b906e41770ea5c0c9f324ed147caf",
+      "attachmentId": "sha256:78a3d129cfdc38fd5a060177558464652744d75323295632f0d5c36ccd57e478",
+      "variantId": "sha256:428a7a7a42ab9ec0796a0e8fa8ee0c6a3a87a89840acf54fabc4bb7d64081d68",
+      "fileId": "file-api-d0e1ced3-7d51-403e-854e-915192aa1a38",
+      "bytes": 68754,
+      "createdAt": 1788779885000,
+      "expiresAt": 1789384685000
+    }
+  ]
+}
