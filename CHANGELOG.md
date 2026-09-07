@@ -168,3 +168,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.35.
 ## [v0.2.37] — 2026-09-07 15:21 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.36.
   - ac8b9b9 fix(badge-core): erro de sintaxe no script do chip (newline literal em string do botão import) sumia com o badge
+
+## [v0.2.38] — 2026-09-07 15:31 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.37.
+  - 700bf3c feat(panel): botão ✕ para fechar os painéis do núcleo e do rollback (sem precisar clicar de novo no badge)
