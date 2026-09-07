@@ -71,3 +71,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.12.
 ## [v0.2.14] — 2026-09-07 05:37 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.13.
   - 55f0ea8 fix(core-env): remove também apaga o atalho .desktop do menu X11
+
+## [v0.2.15] — 2026-09-07 05:39 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.14.
+  - 29e7c46 fix(core-env): launcher/create abrem a URL real do boot (inclui ?token quando o core novo exigir auth)
