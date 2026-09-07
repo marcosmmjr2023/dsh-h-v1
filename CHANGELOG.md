@@ -180,3 +180,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.38.
 ## [v0.2.40] — 2026-09-07 15:36 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.39.
   - c2466b5 fix(ci): padroes duplicados no case do rollback.sh quebravam o ShellCheck (SC2221/2222)
+
+## [v0.2.41] — 2026-09-07 15:44 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.40.
+  - 388165b feat(ui): indicador de PROGRESSO na criação de instância + botão desinstalar no menu lateral
