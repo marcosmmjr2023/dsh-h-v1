@@ -342,12 +342,14 @@ EOF
       start) /usr/bin/pm2 start "dsh-env-$name" >/dev/null 2>&1 && echo "✔ iniciado (URL no meta.json)";;
       stop) /usr/bin/pm2 stop "dsh-env-$name" >/dev/null 2>&1 && echo "✔ parado (ambiente preservado)";;
       remove)
-        /usr/bin/pm2 delete "dsh-env-$name" >/dev/null 2>&1 || true
+        # limpeza PRIMEIRO; a instância (pm2 dsh-env) é apagada POR ÚLTIMO —
+        # assim o processo que dispara (quando vem do painel) não morre no meio.
         /usr/bin/pm2 delete "flm-$name" >/dev/null 2>&1 || true
         rm -f "/home/deploy/.local/share/applications/dsh-env-$name.desktop"
         rm -rf "$BASE/$name" "/home/deploy/.config/dsh-env-$name"
         update-desktop-database /home/deploy/.local/share/applications >/dev/null 2>&1 || true
-        echo "✔ ambiente '$name' removido (harness + gateway FreeLLMAPI + atalho + perfil Chrome)";;
+        echo "✔ ambiente '$name' removido (gateway + atalho + pasta + perfil Chrome)"
+        /usr/bin/pm2 delete "dsh-env-$name" >/dev/null 2>&1 || true
     esac
     ;;
   promote)
