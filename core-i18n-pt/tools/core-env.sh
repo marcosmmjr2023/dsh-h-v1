@@ -51,8 +51,10 @@ pm2 describe dsh-env-$name >/dev/null 2>&1 || \
    DSH_WEB_URL="$url" pm2 start $(command -v node) --name "dsh-env-$name" -- \
    "$BASE/$name/core/lib/node_modules/@deepseek-ai/dsh/lib/bin.js" --profile web --no-open --port "$port" --host 127.0.0.1)
 pm2 list 2>/dev/null | grep -q "dsh-env-$name.*online" || pm2 restart "dsh-env-$name" >/dev/null 2>&1
-sleep 1
-exec /opt/google/chrome/chrome --app="$url" --user-data-dir="/home/deploy/.config/dsh-env-$name" --no-first-run --no-default-browser-check
+sleep 2
+FULL="$(pm2 logs "dsh-env-$name" --nostream --lines 200 2>/dev/null | grep -oE 'http[^ ]*:'"$port"'[^ ]*' | tail -1)"
+[ -n "$FULL" ] || FULL="$url"
+exec /opt/google/chrome/chrome --app="$FULL" --user-data-dir="/home/deploy/.config/dsh-env-$name" --no-first-run --no-default-browser-check
 EOF
   chmod +x "$wrapper"
   mkdir -p /home/deploy/.local/share/applications
@@ -152,8 +154,8 @@ EOF
       code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/" 2>/dev/null || true)
       if [ "$code" = "200" ]; then echo "✔ '$name' no ar: $SYSTEM_VER · c$ver → http://127.0.0.1:$port"; break; fi
       if [ "$code" = "401" ]; then
-        tok="$(/usr/bin/pm2 logs "dsh-env-$name" --nostream --lines 50 2>/dev/null | grep -oE '\?token=[A-Za-z0-9_-]+' | tail -1)"
-        echo "ℹ '$name' pede autenticação: http://127.0.0.1:$port/${tok#?}" 2>/dev/null || echo "ℹ '$name' pede token — veja: pm2 logs dsh-env-$name"
+        full="$(/usr/bin/pm2 logs "dsh-env-$name" --nostream --lines 200 2>/dev/null | grep -oE 'http[^ ]*:'"$port"'[^ ]*' | tail -1)"
+        echo "ℹ '$name' pede autenticação — abra com o token: ${full:-http://127.0.0.1:$port}"
         break
       fi
       sleep 2
