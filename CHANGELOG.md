@@ -220,3 +220,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.48.
 ## [v0.2.50] — 2026-09-07 22:12 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.49.
   - b476f58 feat(win-install): instalador de 1 linha + comando 'dsh' (estilo apt) para Windows
+
+## [v0.2.51] — 2026-09-07 22:21 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.50.
+  - c6f931f fix(win): .ps1 em ASCII puro (sem BOM o PowerShell 5.1 quebrava com acentos/emoji)
