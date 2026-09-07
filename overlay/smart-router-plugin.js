@@ -75,6 +75,22 @@ for (const lib of CANDIDATE_LIBS) {
     break;
   } catch { /* tenta a proxima */ }
 }
+  // fallback: caminho absoluto dentro do grafo do core (Windows resolve por nome as vezes falha)
+  if (!z || !installSettingsSection) {
+    for (const lib of CANDIDATE_LIBS) {
+      if (!lib) continue;
+      const sc = path.resolve(lib, "..", "node_modules", "@deepseek-ai", "schemastery");
+      const ds = path.resolve(lib, "..", "node_modules", "@deepseek-ai", "dsh-settings");
+      if (fs.existsSync(sc) && fs.existsSync(ds)) {
+        try {
+          const rq = createRequire(path.join(sc, "package.json"));
+          z = rq(sc);
+          ({ installSettingsSection } = rq(ds));
+          if (z && installSettingsSection) break;
+        } catch (e) { /* proximo */ }
+      }
+    }
+  }
 if (!z || !installSettingsSection) {
   throw new Error("[SmartRouter] nao foi possivel carregar schemastery/dsh-settings");
 }
