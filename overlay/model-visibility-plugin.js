@@ -33,6 +33,7 @@ const { createRequire } = require("node:module");
 // resolve schemastery + dsh-settings a partir do grafo do CLI instalado
 const CANDIDATE_LIBS = [
   process.env.DSH_CLI_LIB,
+  require.main && path.dirname(require.main.filename), // core em execucao (Linux e Windows)
   "/opt/dsh-tui/node/lib/node_modules/@deepseek-ai/dsh/lib/",
   "/usr/lib/node_modules/@deepseek-ai/dsh/lib/",
 ].filter(Boolean);
