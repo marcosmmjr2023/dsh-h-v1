@@ -188,3 +188,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.40.
 ## [v0.2.42] — 2026-09-07 15:50 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.41.
   - 85f249d fix(layout): botão desinstalar usa nome da instância INJETADO pelo servidor (determinístico)
+
+## [v0.2.43] — 2026-09-07 15:55 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.42.
+  - 8564ec2 fix(uninstall): botão de desinstalar garantido em instância — linha no menu lateral + FAB vermelho
