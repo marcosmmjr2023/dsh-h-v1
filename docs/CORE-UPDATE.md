@@ -118,3 +118,11 @@ core-i18n-pt/tools/core-env.sh status novo | promote novo | remove novo
    responde, sem erros de importação/sintaxe, pt-BR presente, plugins do
    overlay carregando, FreeLLMAPI ping + CORS, backup de segurança existente.
 Só promova (`promote`) um ambiente com **✔ APROVADO**.
+
+
+## Atualizar pelo chip = criar instância isolada (2ª versão)
+O botão **Atualizar para X** do painel do núcleo agora executa
+`core-env.sh create nova-<versão> --core X`: cria uma **segunda instância**
+funcional (pasta/porta/atalho próprios, pt-BR + FreeLLMAPI) SEM tocar na GUI
+atual. Aprovou? `promote` aplica como padrão. ↩ continua sendo o rollback
+manual do core canônico (emergência).

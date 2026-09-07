@@ -161,6 +161,8 @@ case "$cmd" in
     envdir="$BASE/$name"
     [ -e "$envdir" ] && { echo "✋ ambiente '$name' já existe (core-env.sh remove $name)"; exit 1; }
     [ -z "$port" ] && port="$(port_free 3110)"
+    # por padrão, pule pacotes com conflito interno no core novo (conversation no 0.1.2)
+    if [ -z "${DSH_PT_SKIP:-}" ]; then export DSH_PT_SKIP="dsh-client-ui-conversation"; fi
     mkdir -p "$envdir/core" "$envdir/home"
     echo "▶ criando ambiente '$name' → core c$ver | porta $port | sistema $SYSTEM_VER"
     echo "   (o sistema atual em ~/.dsh-v2 e /opt fica INTACTO)"

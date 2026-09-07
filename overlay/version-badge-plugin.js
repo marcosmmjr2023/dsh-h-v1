@@ -273,22 +273,44 @@ function coreStatus(forceCheck, cb) {
 function runCoreAction(action, version, json, res) {
   coreAction(action, version, (r) => {
     if (!r.ok) { json(500, r, res); return; }
-    r.needRestart = true;
+    if (action !== "update") r.needRestart = true; // rollback canônico: reinicia p/ aplicar
     json(200, r, res);
   });
 }
-function coreAction(action, version, cb) {  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-update.sh");
+// "Atualizar" do chip = criar uma SEGUNDA instância isolada (core-env), sem tocar na GUI atual.
+function coreEnvCreate(version, cb) {
+  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-env.sh");
+  if (!fs.existsSync(tool)) { cb({ ok: false, error: "core-env.sh não encontrado no repo" }); return; }
+  if (!/^[0-9A-Za-z._-]+$/.test(String(version || ""))) { cb({ ok: false, error: "versão inválida" }); return; }
+  const base = String(version).replace(/[^A-Za-z0-9]+/g, "").slice(0, 14) || "nova";
+  let name = "nova-" + base;
+  let i = 2;
+  while (fs.existsSync(path.join(HOME, ".dsh-envs", name, "meta.json"))) name = "nova-" + base + "-" + (i++);
+  execFile(tool, ["create", name, "--core", version],
+    { env: Object.assign({}, process.env, { HOME }), timeout: 600000, maxBuffer: 32 * 1024 * 1024 },
+    (err, stdout, stderr) => {
+      const output = String(stdout || "") + (stderr ? "\n" + stderr : "");
+      if (err) { cb({ ok: false, error: "falha ao criar a instância (veja saída)", output }); return; }
+      const url = (String(stdout).match(/http:\/\/127\.0\.0\.1:\d+[^\s]*/) || [])[0] || "";
+      cb({ ok: true, envName: name, url, output });
+    });
+}
+// ↩ = rollback MANUAL do core instalado (canônico) — só para emergências.
+function coreRollback(version, cb) {
+  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-update.sh");
   if (!fs.existsSync(tool)) { cb({ ok: false, error: "core-update.sh não encontrado no repo" }); return; }
   if (!/^[0-9A-Za-z._-]+$/.test(String(version || ""))) { cb({ ok: false, error: "versão inválida" }); return; }
-  const args = ["-n", tool, "--live", __dirname, action === "rollback" ? "--rollback" : "--install", version];
+  const args = ["-n", tool, "--live", __dirname, "--rollback", version];
   execFile("sudo", args, { timeout: 300000, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
     const output = String(stdout || "") + (stderr ? "\n" + stderr : "");
-    if (err) {
-      cb({ ok: false, error: "falha (sudo?)", needSudo: true, output });
-      return;
-    }
+    if (err) { cb({ ok: false, error: "falha (sudo?)", needSudo: true, output }); return; }
     cb({ ok: true, output });
   });
+}
+function coreAction(action, version, cb) {
+  if (action === "update") { coreEnvCreate(version, cb); return; }
+  if (action === "rollback") { coreRollback(version, cb); return; }
+  cb({ ok: false, error: "ação desconhecida" });
 }
 
 const CORE_UI_JS = [
@@ -330,8 +352,8 @@ const CORE_UI_JS = [
   "    }).catch(function () {});",
   "  };",
   "  var act = function (action, version, label) {",
-  "    if (!window.confirm('Núcleo (' + action + '): ' + label + '?\\n\\nNada é automático. Antes da instalação é feito backup completo do seu histórico/config. A GUI NÃO é reiniciada sozinha: depois você clica em \"Reiniciar agora\" para aplicar.')) return;",
-  "    panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + (action === 'rollback' ? 'Revertendo' : 'Atualizando') + ' o core para ' + esc(label) + '… (backup + preview + instalação — pode levar alguns minutos).</div>';",
+  "    if (!window.confirm((action === 'update' ? 'Criar instância isolada com o core ' + label + '?\\n\\nO sistema atual NÃO é tocado: será criada uma 2ª versão funcional (pasta/porta/atalho próprios, com pt-BR e FreeLLMAPI).' : 'Reverter o core instalado para ' + label + '?\\n\\nEstado atual é salvo; depois clique em \"Reiniciar agora\" para aplicar.'))) return;",
+  "    panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + (action === 'update' ? 'Criando instância isolada com o core ' : 'Revertendo o core para ') + esc(label) + '… (pode levar alguns minutos; o sistema atual fica intacto).</div>';",
   "    fetch('/api/dsh-core', {",
   "      method: 'POST',",
   "      headers: { 'content-type': 'application/json' },",
@@ -339,6 +361,13 @@ const CORE_UI_JS = [
   "    }).then(function (r) { return r.json(); }).then(function (res) {",
   "      if (!res.ok) {",
   "        panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-warn\">' + esc(res.error || 'falhou') + '</div><div class=\"cb-note\">' + esc(res.output || (res.needSudo ? 'Rode no terminal: sudo core-i18n-pt/tools/core-update.sh' : '')) + '</div>';",
+  "        return;",
+  "      }",
+  "      if (res.envName) {",
+  "        panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + esc(res.output || '') + '</div><div class=\"cb-note\">✔ Instância <b>' + esc(res.envName) + '</b> criada — o sistema atual NÃO foi tocado. Abra o novo atalho no menu (DeepSeek Harness ' + esc(res.envName) + ') para testar o core novo.</div>' + (res.url ? '<div><button id=\"cb-open\">Abrir instância nova</button></div>' : '');",
+  "        var ob2 = document.getElementById('cb-open');",
+  "        if (ob2) ob2.addEventListener('click', function () { window.open(res.url, '_blank'); });",
+  "        refresh();",
   "        return;",
   "      }",
   "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + esc(res.output || 'ok') + '</div><div class=\"cb-note\">A GUI NÃO foi reiniciada. Quando quiser aplicar, clique abaixo (se algo falhar depois, é só voltar com ↩ e restaurar o backup).</div><div><button id=\"cb-restart\">▶ Reiniciar agora (aplicar)</button></div>';",
@@ -368,7 +397,7 @@ const CORE_UI_JS = [
   "      h.push('<div class=\"cb-row\"><span>Disponível</span><b>' + esc(d.latest) + (d.hasUpdate ? ' ⚠' : '') + '</b></div>');",
   "      h.push('<div class=\"cb-row\"><span>pt-BR (patch)</span><b>' + (d.patches && d.patches.ok ? 'aplicado' : '<span class=\"cb-warn\">pendente</span>') + '</b></div>');",
   "      if (d.hasUpdate) {",
-  "        h.push('<div><button data-a=\"update\" data-v=\"' + esc(d.latest) + '\" data-l=\"' + esc(d.latest) + '\">Atualizar para ' + esc(d.latest) + '</button></div>');",
+  "        h.push('<div><button data-a=\"update\" data-v=\"' + esc(d.latest) + '\" data-l=\"' + esc(d.latest) + '\">➕ Criar instância com core ' + esc(d.latest) + '</button></div>');",
   "      }",
   "      var rb = (d.pinned && d.pinned !== d.installed) ? d.pinned : ((d.history && d.history[0] && d.history[0].from) || '');",
   "      if (rb && rb !== d.installed) {",
