@@ -248,3 +248,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.55.
 ## [v0.2.57] — 2026-09-07 22:59 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.56.
   - 2517cbf feat(win): gera cordis.patch.yml no home (ativa nossos plugins)
+
+## [v0.2.58] — 2026-09-07 23:05 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.57.
+  - 074475d feat(win): clean-windows.ps1 (desinstalacao total) + instalador grava log e verifica overlay
