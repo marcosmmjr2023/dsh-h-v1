@@ -27,6 +27,15 @@ Cópias de segurança: `~/.dsh-snapshots` (overlay), `~/.dsh-core-backups` (pré
 
 | Serviço (pm2) | Porta | Home/config | Núcleo | Uso |
 |---|---|---|---|---|
+| dsh-web-v2 | 3081 | ~/.dsh-v2 | /opt/dsh-tui (0.1.1-rc.2) | **GUI principal** (esta sessão) — única GUI |
+| freellmapi | 3002 | ~/projects/freellmapi | (upstream tashfeenahmed/freellmapi) | gateway FreeLLMAPI |
+
+Removidas em 2026-09-07 para manter só a principal: GUI v1 `dsh-web` (3080, `~/.dsh`) e o
+ambiente de teste `dsh-env-rc012` (3111). Testes de core novo agora são feitos criando um
+ambiente na hora: `core-i18n-pt/tools/core-env.sh create <nome> --core <ver>` (porta e
+atalho próprios, sem tocar na GUI principal).
+
+|---|---|---|---|---|
 | dsh-web | 3080 | ~/.dsh | /opt/dsh-tui (0.1.1-rc.2) | GUI v1 (legado de produção) |
 | dsh-web-v2 | 3081 | ~/.dsh-v2 | /opt/dsh-tui (0.1.1-rc.2) | **GUI principal** (esta sessão) |
 | dsh-env-rc012 | 3111 | ~/.dsh-envs/rc012/home | ~/.dsh-envs/rc012/core (0.1.2-rc.1) | teste A/B do core novo (português ok) |
