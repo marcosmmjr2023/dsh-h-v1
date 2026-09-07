@@ -27,6 +27,10 @@ $started = $false
 if (-not (Test-Up)) {
   $env:DSH_HOME = $homeCfg
   $env:DSH_WEB_URL = "http://127.0.0.1:$Port"
+  # resolve bare requires dos plugins p/ os modulos do core (schemastery etc.)
+  $npmRoot = (& npm root -g).Trim()
+  $nested  = Join-Path $npmRoot "@deepseek-ai\dsh\node_modules"
+  $env:NODE_PATH = ($nested + ";" + $npmRoot)
   Start-Process -FilePath "node" -ArgumentList @("$bin","--profile","web","--no-open","--port","$Port","--host","127.0.0.1") `
     -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError ($log + ".err")
   $started = $true
