@@ -236,3 +236,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.52.
 ## [v0.2.54] — 2026-09-07 22:40 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.53.
   - 81820a8 fix(win): dsh up resolvia repo errado (faltava dsh-h-v1) — Split-Path simples
+
+## [v0.2.55] — 2026-09-07 22:45 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.54.
+  - e1af6ff fix(pt-ride): dup-guard no locale.register — duplicata de locale mantém o primeiro (sem throw)
