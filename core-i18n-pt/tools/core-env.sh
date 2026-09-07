@@ -39,7 +39,7 @@ alloc_env_port() {
   for ((p=PORT_RANGE_START; p<=PORT_RANGE_END; p++)); do
     case ",$RESERVED_PORTS," in *",$p,"*) continue;; esac
     ss -ltn 2>/dev/null | grep -q ":$p " && continue
-    if grep -rlE "\"port\": ?$p[,}]" "$BASE"/*/meta.json 2>/dev/null | grep -q .; then continue; fi
+    if grep -rlE "\"(port|freellmapiPort)\": ?$p[,}]" "$BASE"/*/meta.json 2>/dev/null | grep -q .; then continue; fi
     echo "$p"
     return 0
   done
@@ -64,6 +64,64 @@ deps_root() { # node_modules-root -> dir @deepseek-ai que contém dsh-client-loc
 }
 
 # ── teste de sanidade do ambiente (primeiro uso) ────────────────────────
+
+# ── FreeLLMAPI POR INSTÂNCIA (limpo): reusa o código, banco + porta próprios ──
+FREELMAPI_SRV=/home/deploy/projects/freellmapi/server
+provision_freellmapi() {
+  local name="$1" m="$BASE/$name/meta.json"
+  [ -f "$m" ] || { echo "✋ ambiente '$name' não existe"; return 1; }
+  [ -f "$FREELMAPI_SRV/dist/index.js" ] || { echo "ℹ código FreeLLMAPI ausente — usando global 3002."; return 0; }
+  local hp flp db origins
+  hp="$(node -e 'console.log(require(process.argv[1]).port)' "$m")"
+  flp="$(node -e 'try{console.log(require(process.argv[1]).freellmapiPort||"")}catch(e){console.log("")}' "$m")"
+  [ -n "$flp" ] || flp="$(alloc_env_port)"
+  [ "$flp" = "0" ] && { echo "✋ sem porta livre p/ gateway"; return 1; }
+  mkdir -p "$BASE/$name/freellmapi"
+  db="$BASE/$name/freellmapi/freeapi.db"
+  # instância LIMPA: se não há banco, copia o atual (login/config prontos) e segue independente
+  if [ ! -f "$db" ] && [ -f "$FREELMAPI_SRV/data/freeapi.db" ]; then
+    cp -a "$FREELMAPI_SRV/data/freeapi.db" "$db"
+  fi
+  origins="http://localhost:5173,http://127.0.0.1:5173,http://[::1]:5173,http://127.0.0.1:3080,http://127.0.0.1:3081,http://127.0.0.1:$hp"
+  if ! /usr/bin/pm2 describe "flm-$name" >/dev/null 2>&1; then
+    (cd "$FREELMAPI_SRV" && PORT="$flp" HOST=127.0.0.1 FREEAPI_DB_PATH="$db" DASHBOARD_ORIGINS="$origins" \
+      /usr/bin/pm2 start dist/index.js --name "flm-$name" >/dev/null 2>&1)
+    echo "  ▶ gateway FreeLLMAPI '$name' iniciado na porta $flp (banco próprio)"
+  else
+    /usr/bin/pm2 restart "flm-$name" >/dev/null 2>&1
+    echo "  ℹ gateway FreeLLMAPI '$name' reiniciado (porta $flp)"
+  fi
+  # aponta o ENV p/ o gateway próprio
+  python3 - "$BASE/$name/home" "$flp" "$hp" <<'PY'
+import sys, pathlib
+home, flp, hp = sys.argv[1], sys.argv[2], sys.argv[3]
+old = "http://127.0.0.1:3002"
+new = f"http://127.0.0.1:{flp}"
+# settings.yaml — só a linha baseURL do freellmapi
+sp = pathlib.Path(home)/"settings.yaml"
+if sp.exists():
+    t = sp.read_text()
+    import re
+    t2 = re.sub(r'(baseURL:\s*)http://127\.0\.0\.1:3002(?=/v1)', rf'\1http://127.0.0.1:{flp}', t)
+    if t2 != t: sp.write_text(t2); print("  settings.yaml →", new)
+# plugin do env — URL do dashboard
+pp = pathlib.Path(home)/"freellmapi-shortcut-plugin.js"
+if pp.exists():
+    t = pp.read_text().replace(old, new)
+    pp.write_text(t); print("  plugin env →", new)
+PY
+  # grava porta no meta
+  node -e '
+    const fs=require("fs");
+    const f=process.argv[1];
+    const m=JSON.parse(fs.readFileSync(f,"utf8"));
+    m.freellmapiPort=Number(process.argv[2]);
+    fs.writeFileSync(f, JSON.stringify(m,null,1)+"\n");
+  ' "$m" "$flp"
+  echo "  ✔ FreeLLMAPI por instância: $BASE/$name/freellmapi (porta $flp)"
+  return 0
+}
+
 sanity_test() {
   local name="$1" m="$BASE/$name/meta.json" fails=0
   [ -f "$m" ] || { echo "✋ ambiente '$name' não existe"; return 1; }
@@ -88,9 +146,11 @@ sanity_test() {
   for marker in '\[VersionBadge\]' '\[LayoutPanel\]' '\[FreeLLMAPI-Shortcut\]'; do
     grep -q "$marker" "$log" 2>/dev/null && echo "  ✔ plugin $marker carregou" || { echo "  ✋ plugin $marker não carregou"; fails=$((fails+1)); }
   done
-  local ping; ping=$(curl -fsS --max-time 3 http://127.0.0.1:3002/api/ping -o /dev/null -w '%{http_code}' 2>/dev/null || echo down)
-  if [ "$ping" = 200 ]; then echo "  ✔ FreeLLMAPI (3002) ping 200"; else echo "  ✋ FreeLLMAPI ping: $ping"; fails=$((fails+1)); fi
-  local cors; cors=$(curl -s -i -H "Origin: $url" http://127.0.0.1:3002/api/ping 2>/dev/null | grep -i '^access-control-allow-origin' | tr -d '
+  local flp; flp="$(node -e 'try{console.log(require(process.argv[1]).freellmapiPort||"")}catch(e){console.log("")}' "$m")"; [ -n "$flp" ] || flp=3002
+  local gw="http://127.0.0.1:$flp"
+  local ping; ping=$(curl -fsS --max-time 3 "$gw/api/ping" -o /dev/null -w '%{http_code}' 2>/dev/null || echo down)
+  if [ "$ping" = 200 ]; then echo "  ✔ FreeLLMAPI (porta $flp) ping 200"; else echo "  ✋ FreeLLMAPI ping: $ping"; fails=$((fails+1)); fi
+  local cors; cors=$(curl -s -i -H "Origin: $url" "$gw/api/ping" 2>/dev/null | grep -i '^access-control-allow-origin' | tr -d '
 ')
   case "$cors" in *"$url"*) echo "  ✔ CORS FreeLLMAPI libera $url";; *) echo "  ✋ CORS FreeLLMAPI sem $url"; fails=$((fails+1));; esac
   ls -d /home/deploy/.dsh-core-backups/core-* >/dev/null 2>&1 && echo "  ✔ backup de segurança existe" || { echo "  ✋ sem backup (core-backup.sh)"; fails=$((fails+1)); }
@@ -106,6 +166,9 @@ write_launcher() {
   sys="$(node -e 'console.log(require(process.argv[1]).sys)' "$m")"
   port="$(node -e 'console.log(require(process.argv[1]).port)' "$m")"
   url="http://127.0.0.1:$port"
+  local flp fldb
+  flp="$(node -e 'try{console.log(require(process.argv[1]).freellmapiPort||"")}catch(e){console.log("")}' "$m")"
+  fldb="$BASE/$name/freellmapi/freeapi.db"
   local datept; datept="$(node -e 'try{console.log((process.argv[1]||"").slice(0,10))}catch{}' "$(node -e 'console.log(require(process.argv[1]).created)' "$m")")"
   local tagline="$sys · c$core (novo core · ${datept:-data})"
   local wrapper="$BASE/$name/launch-gui.sh"
@@ -121,12 +184,17 @@ pm2 describe dsh-env-@NAME@ >/dev/null 2>&1 || \
    DSH_WEB_URL="@URL@" pm2 start @NODEBIN@ --name "dsh-env-@NAME@" -- \
    "@BIN@" --profile web --no-open --port @PORT@ --host 127.0.0.1)
 pm2 list 2>/dev/null | grep -q "dsh-env-@NAME@.*online" || pm2 restart "dsh-env-@NAME@" >/dev/null 2>&1
+# gateway FreeLLMAPI próprio desta instância (se houver)
+[ -n "@FLP@" ] && { curl -fsS --max-time 2 http://127.0.0.1:@FLP@/api/ping >/dev/null 2>&1 || \
+  (cd /home/deploy/projects/freellmapi/server && PORT=@FLP@ HOST=127.0.0.1 FREEAPI_DB_PATH="@FLDB@" \
+   DASHBOARD_ORIGINS="http://localhost:5173,http://127.0.0.1:5173,http://[::1]:5173,http://127.0.0.1:@HARPORT@" \
+   pm2 start dist/index.js --name "flm-@NAME@" >/dev/null 2>&1 || pm2 restart "flm-@NAME@" >/dev/null 2>&1); }
 sleep 2
 FULL="$(pm2 logs "dsh-env-@NAME@" --nostream --lines 200 2>/dev/null | grep -oE "http[^ ]*:@PORT@[^ ]*" | tail -1)"
 [ -n "$FULL" ] || FULL="@URL@"
 exec /opt/google/chrome/chrome --app="$FULL" --user-data-dir="/home/deploy/.config/dsh-env-@NAME@" --no-first-run --no-default-browser-check
 TPL
-  sed -e "s|@NAME@|$name|g" -e "s|@TAGLINE@|$tagline|g" -e "s|@SYS@|$sys|g" -e "s|@CORE@|$core|g"       -e "s|@PORT@|$port|g" -e "s|@URL@|$url|g" -e "s|@HOME@|$BASE/$name/home|g"       -e "s|@BIN@|$BASE/$name/core/lib/node_modules/@deepseek-ai/dsh/lib/bin.js|g"       -e "s|@NODEBIN@|$(command -v node)|g" "$wrapper" > "$wrapper.tmp" && mv "$wrapper.tmp" "$wrapper"
+  sed -e "s|@NAME@|$name|g" -e "s|@FLP@|$flp|g" -e "s|@FLDB@|$fldb|g" -e "s|@HARPORT@|$port|g" -e "s|@TAGLINE@|$tagline|g" -e "s|@SYS@|$sys|g" -e "s|@CORE@|$core|g"       -e "s|@PORT@|$port|g" -e "s|@URL@|$url|g" -e "s|@HOME@|$BASE/$name/home|g"       -e "s|@BIN@|$BASE/$name/core/lib/node_modules/@deepseek-ai/dsh/lib/bin.js|g"       -e "s|@NODEBIN@|$(command -v node)|g" "$wrapper" > "$wrapper.tmp" && mv "$wrapper.tmp" "$wrapper"
   chmod +x "$wrapper"
   mkdir -p /home/deploy/.local/share/applications
   local desk="/home/deploy/.local/share/applications/dsh-env-$name.desktop"
@@ -239,6 +307,11 @@ EOF
     done
     [ "$code" = "200" ] || echo "⚠ não respondeu 200 ainda — veja: pm2 logs dsh-env-$name / $envdir"
     echo "Ambiente pronto em $envdir  (atalho: $envdir/start.sh)"
+    if [ "${NO_FREELMAPI:-0}" -eq 0 ]; then
+      provision_freellmapi "$name" || true
+    else
+      echo "  ℹ gateway FreeLLMAPI compartilhado (--no-freellmapi)"
+    fi
     write_launcher "$name"
     # garante FreeLLMAPI com CORS loopback (qualquer porta do harness)
     if [ -f "$REPO/core-i18n-pt/tools/ensure-freellmapi-loopback.sh" ]; then
@@ -274,6 +347,11 @@ EOF
     name="${2:-}"
     [ -n "$name" ] || { echo "uso: core-env.sh desktop <nome>"; exit 2; }
     write_launcher "$name"
+    ;;
+  freellmapi)
+    name="${2:-}"
+    [ -n "$name" ] || { echo "uso: core-env.sh freellmapi <nome>"; exit 2; }
+    provision_freellmapi "$name"
     ;;
   test)
     name="${2:-}"
