@@ -6,6 +6,13 @@ $bin = Join-Path (& npm root -g).Trim() "@deepseek-ai\dsh\lib\bin.js"
 if (-not (Test-Path $bin)) { Write-Host "[X] core nao encontrado: $bin (rode: npm install -g @deepseek-ai/dsh)"; exit 1 }
 $homeCfg = Join-Path $env:USERPROFILE ".dsh"
 if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $homeCfg | Out-Null }
+$Repo = Split-Path $PSScriptRoot -Parent   # tools/run-gui.ps1 -> <repo>
+# Overlay (nossa camada: badges, menu lateral, funcionalidades)
+Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
+$tag = (git -C $Repo describe --tags 2>$null | Select-Object -First 1)
+if ($tag) {
+  @{ version=$tag; updatedAt=(Get-Date -Format o) } | ConvertTo-Json | Set-Content -Encoding UTF8 (Join-Path $homeCfg ".dsh-version.json")
+}
 $log = Join-Path $homeCfg "web.log"
 function Test-Up {
   try { $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 -Uri "http://127.0.0.1:$Port/" ; return $true } catch { return $false }

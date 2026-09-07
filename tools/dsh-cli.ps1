@@ -18,8 +18,15 @@ switch ($Action) {
   "up" {
     & (Join-Path $Repo "tools\run-gui.ps1")
   }
+  "sync-overlay" {
+    $homeCfg = Join-Path $env:USERPROFILE ".dsh"
+    if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $homeCfg | Out-Null }
+    Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
+    Write-Host "[OK] overlay sincronizado em $homeCfg"
+  }
   "update" {
     git -C $Repo pull --ff-only
+    & (Join-Path $Repo "tools\dsh-cli.ps1") "sync-overlay"
     $pinned = (Get-Content (Join-Path $Repo "manifest.json") -Raw | ConvertFrom-Json).core.pinned
     $inst = (& npm ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
     if ($inst -notmatch [regex]::Escape($pinned)) {
