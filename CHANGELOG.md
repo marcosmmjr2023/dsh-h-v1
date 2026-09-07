@@ -103,3 +103,12 @@ Release manual/estrutural — 1 commit(s) desde v0.2.20.
 ## [v0.2.22] — 2026-09-07 13:53 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.21.
   - 61c8eeb fix(rollback): reinicia a GUI automaticamente após restaurar + plugins estáveis no overlay
+
+## [v0.2.23] — 2026-09-07 14:00 (máquina v2202608297065493408)
+Publicação automática — última sincronização desta máquina.
+- Arquivos alterados (5):
+  - attachments/v1/objects/78/78a3d129cfdc38fd5a060177558464652744d75323295632f0d5c36ccd57e478
+  - attachments/v1/objects/9c/9ceb9c3eec354a2a3dfe9ca80867632158fd86121774c84c59f66e10e0fcc53d
+  - attachments/v1/request-images/42/428a7a7a42ab9ec0796a0e8fa8ee0c6a3a87a89840acf54fabc4bb7d64081d68
+  - attachments/v1/request-images/97/97adc7ec5173d425de2bcc7730a7d6f687cbd2d441072de0e43354105345c470
+  - llm-deepseek/files-v3.json
