@@ -268,3 +268,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.60.
 ## [v0.2.62] — 2026-09-07 23:34 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.61.
   - 64e32c9 fix(win): plugins descobrem o caminho do core via require.main (sem /opt fixo)
+
+## [v0.2.63] — 2026-09-07 23:38 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.62.
+  - f649f93 fix(win): plugins calculam lib do core via 'npm root -g' (require.main era null no loader)
