@@ -228,3 +228,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.50.
 ## [v0.2.52] — 2026-09-07 22:28 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.51.
   - e03eb12 fix(win): pt-ride multiplataforma (fileURLToPath), GUI com --profile web, atalhos Desktop/Menu Iniciar
+
+## [v0.2.53] — 2026-09-07 22:37 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.52.
+  - 7bbfa8e feat(win): launcher GUI robusto (run-gui.ps1) + instalador abre GUI automaticamente
