@@ -46,6 +46,23 @@ core_warn() {
   fi
 }
 
+NO_RESTART=0
+if [ "${1:-}" = "--no-restart" ]; then NO_RESTART=1; shift; fi
+
+# Reinicia a GUI para os arquivos restaurados carregarem (o processo em memória
+# continua com os módulos antigos até reiniciar). Detecta a instância pelo DSH_LIVE.
+restart_harness() {
+  [ "$NO_RESTART" -eq 1 ] && { echo "  (reinício pulado: --no-restart)"; return 0; }
+  local app="dsh-web"
+  case "$LIVE" in *.dsh-v2|*/.dsh-v2) app="dsh-web-v2";; esac
+  if /usr/bin/pm2 describe "$app" >/dev/null 2>&1; then
+    echo "  ⟳ reiniciando $app (detached) para carregar o estado restaurado…"
+    setsid bash -c "sleep 2; /usr/bin/pm2 restart $app" >/dev/null 2>&1 < /dev/null &
+  else
+    echo "  ⚠ pm2 $app não encontrado — reinicie o harness manualmente."
+  fi
+}
+
 case "${1:-list}" in
   list)
     echo "═ Snapshots locais ($SNAP_ROOT) — estado exato que funcionava nesta máquina ═"
@@ -82,7 +99,7 @@ case "${1:-list}" in
     echo "▶ Restaurando snapshot: $(basename "$dest") → $LIVE"
     rsync -ac --delete --exclude-from="$EXCL" "$dest/" "$LIVE/"
     echo "✔ Config viva restaurada do snapshot $(basename "$dest")."
-    echo "  (Reinicie o harness para carregar o estado restaurado.)"
+    restart_harness
     ;;
 
   --core)
@@ -91,6 +108,7 @@ case "${1:-list}" in
     echo "▶ Reinstalando core @deepseek-ai/dsh@$1"
     npm install -g "@deepseek-ai/dsh@$1"
     echo "✔ Core $1 instalado. Teste seus plugins e, se estável, atualize o pinned no manifest.json."
+    restart_harness
     ;;
 
   -*)
@@ -122,6 +140,6 @@ case "${1:-list}" in
     "$SELF_DIR/stamp-version.sh" "$ref"
     echo "✔ Overlay restaurado para $ref."
     core_warn "$ref"
-    echo "  (Reinicie o harness para carregar a versão antiga.)"
+    restart_harness
     ;;
 esac
