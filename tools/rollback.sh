@@ -54,7 +54,7 @@ if [ "${1:-}" = "--no-restart" ]; then NO_RESTART=1; shift; fi
 restart_harness() {
   [ "$NO_RESTART" -eq 1 ] && { echo "  (reinício pulado: --no-restart)"; return 0; }
   local app="dsh-web"
-  case "$LIVE" in *.dsh-v2|*/.dsh-v2) app="dsh-web-v2";; esac
+  case "$LIVE" in */.dsh-v2) app="dsh-web-v2";; esac
   if /usr/bin/pm2 describe "$app" >/dev/null 2>&1; then
     echo "  ⟳ reiniciando $app (detached) para carregar o estado restaurado…"
     setsid bash -c "sleep 2; /usr/bin/pm2 restart $app" >/dev/null 2>&1 < /dev/null &
