@@ -760,7 +760,35 @@ const PANEL_JS = `(function () {
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
-})();`;
+
+  // ── Rodapé: desinstalar a instância (somente quando rodar numa instância) ──
+  function maybeAddUninstall() {
+    if (document.getElementById('dsh-uninstall-row')) return;
+    fetch('/api/dsh-core', { method: 'GET' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.envName) return;
+      var host = document.getElementById('dlp-body');
+      if (!host) return;
+      var row = document.createElement('div');
+      row.id = 'dsh-uninstall-row';
+      row.style.cssText = 'margin-top:10px;padding-top:8px;border-top:1px solid #21262d;';
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = '🗑 Desinstalar esta instância e os atalhos';
+      b.style.cssText = 'width:100%;padding:7px 8px;border:0;border-radius:8px;background:#f85149;color:#fff;font:11px/1.4 system-ui,sans-serif;cursor:pointer;';
+      b.onclick = function () {
+        if (!window.confirm('Desinstalar a instância ' + d.envName + '? Ela sera encerrada e os atalhos/perfil serao removidos. O sistema principal nao e afetado.')) return;
+        b.disabled = true;
+        b.textContent = 'Desinstalando...';
+        fetch('/api/dsh-core', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'uninstall' }) })
+          .then(function () { row.innerHTML = 'Instância sendo encerrada... volte para a principal.'; })
+          .catch(function () { row.innerHTML = 'Erro ao desinstalar (veja os logs).'; });
+      };
+      row.appendChild(b);
+      host.appendChild(row);
+    }).catch(function () {});
+  }
+  setInterval(maybeAddUninstall, 3000);
+  })();`;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CORDIS PLUGIN

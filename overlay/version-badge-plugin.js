@@ -301,6 +301,8 @@ function runCoreAction(action, version, json, res) {
   });
 }
 // "Atualizar" do chip = criar uma SEGUNDA instância isolada (core-env), sem tocar na GUI atual.
+// Criação da instância roda em BACKGROUND (o painel acompanha por polling).
+const CREATE_PROGRESS = new Map();
 function coreEnvCreate(version, cb) {
   const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-env.sh");
   if (!fs.existsSync(tool)) { cb({ ok: false, error: "core-env.sh não encontrado no repo" }); return; }
@@ -309,14 +311,37 @@ function coreEnvCreate(version, cb) {
   let name = "nova-" + base;
   let i = 2;
   while (fs.existsSync(path.join(HOME, ".dsh-envs", name, "meta.json"))) name = "nova-" + base + "-" + (i++);
-  execFile(tool, ["create", name, "--core", version],
-    { env: Object.assign({}, process.env, { HOME }), timeout: 600000, maxBuffer: 32 * 1024 * 1024 },
-    (err, stdout, stderr) => {
-      const output = String(stdout || "") + (stderr ? "\n" + stderr : "");
-      if (err) { cb({ ok: false, error: "falha ao criar a instância (veja saída)", output }); return; }
-      const url = (String(stdout).match(/http:\/\/127\.0\.0\.1:\d+[^\s]*/) || [])[0] || "";
-      cb({ ok: true, envName: name, url, output });
-    });
+  const store = { running: true, done: false, ok: false, error: "", lines: [], output: "", url: "", envName: name };
+  CREATE_PROGRESS.set(name, store);
+  const child = spawn(tool, ["create", name, "--core", version], { env: Object.assign({}, process.env, { HOME }) });
+  let acc = "";
+  const push = (chunk) => { acc += chunk; store.lines = acc.split(/\r?\n/); if (store.lines.length > 400) store.lines = store.lines.slice(-400); };
+  child.stdout.on("data", push);
+  child.stderr.on("data", push);
+  child.on("error", (err) => { store.running = false; store.done = true; store.ok = false; store.error = err.message; store.output = acc; });
+  child.on("close", (code) => {
+    store.running = false; store.done = true; store.ok = code === 0;
+    store.output = acc;
+    const url = (acc.match(/http:\/\/127\.0\.0\.1:\d+[^\s]*/) || [])[0] || "";
+    store.url = url;
+    if (!store.ok) store.error = "falha ao criar a instância (exit " + code + ")";
+  });
+  cb({ ok: true, started: true, name });
+}
+function coreProgress(name, cb) {
+  const store = CREATE_PROGRESS.get(name);
+  if (!store) { cb({ ok: true, done: true, found: false }); return; }
+  cb({
+    ok: true,
+    running: store.running,
+    done: store.done,
+    success: store.ok,
+    error: store.error,
+    url: store.url,
+    envName: store.envName,
+    output: store.output,
+    lines: store.lines.slice(-40),
+  });
 }
 // ↩ = rollback MANUAL do core instalado (canônico) — só para emergências.
 function coreRollback(version, cb) {
@@ -376,37 +401,52 @@ const CORE_UI_JS = [
   "  };",
   "  var act = function (action, version, label) {",
   "    if (action === 'import') { actImport(); return; }",
-  "    if (!window.confirm((action === 'update' ? 'Criar instância isolada com o core ' + label + '?\\n\\nO sistema atual NÃO é tocado: será criada uma 2ª versão funcional (pasta/porta/atalho próprios, com pt-BR e FreeLLMAPI).' : 'Reverter o core instalado para ' + label + '?\\n\\nEstado atual é salvo; depois clique em \"Reiniciar agora\" para aplicar.'))) return;",
-  "    panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + (action === 'update' ? 'Criando instância isolada com o core ' : 'Revertendo o core para ') + esc(label) + '… (pode levar alguns minutos; o sistema atual fica intacto).</div>';",
-  "    fetch('/api/dsh-core', {",
-  "      method: 'POST',",
-  "      headers: { 'content-type': 'application/json' },",
-  "      body: JSON.stringify({ action: action, version: version })",
-  "    }).then(function (r) { return r.json(); }).then(function (res) {",
-  "      if (!res.ok) {",
-  "        panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-warn\">' + esc(res.error || 'falhou') + '</div><div class=\"cb-note\">' + esc(res.output || (res.needSudo ? 'Rode no terminal: sudo core-i18n-pt/tools/core-update.sh' : '')) + '</div>';",
-  "        return;",
-  "      }",
-  "      if (res.envName) {",
-  "        panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + esc(res.output || '') + '</div><div class=\"cb-note\">✔ Instância <b>' + esc(res.envName) + '</b> criada — o sistema atual NÃO foi tocado. Abra o novo atalho no menu (DeepSeek Harness ' + esc(res.envName) + ') para testar o core novo.</div>' + (res.url ? '<div><button id=\"cb-open\">Abrir instância nova</button></div>' : '');",
-  "        var ob2 = document.getElementById('cb-open');",
-  "        if (ob2) ob2.addEventListener('click', function () { window.open(res.url, '_blank'); });",
+  "    var cmsg = (action === 'update' ? 'Criar instancia isolada com o core ' + label + '? O sistema atual nao e tocado: sera criada uma 2a versao funcional (pt-BR e FreeLLMAPI).' : 'Reverter o core instalado para ' + label + '? Estado atual e salvo; depois clique em Reiniciar agora para aplicar.');",
+  "    if (!window.confirm(cmsg)) return;",
+  "    panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">' + (action === 'update' ? 'Iniciando a criacao da instancia...' : 'Revertendo o core...') + '</div>';",
+  "    fetch('/api/dsh-core', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: action, version: version }) })",
+  "      .then(function (r) { return r.json(); }).then(function (res) {",
+  "        if (!res.ok) {",
+  "          panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-warn\">' + esc(res.error || 'falhou') + '</div><div class=\"cb-note\">' + esc(res.output || (res.needSudo ? 'Rode no terminal: sudo core-i18n-pt/tools/core-update.sh' : '')) + '</div>';",
+  "          return;",
+  "        }",
+  "        if (action === 'update') {",
+  "          if (res.started && res.name) { pollCreate(res.name, 0); }",
+  "          else if (res.envName) { showCreated(res.envName, res.url, res.output); }",
+  "          return;",
+  "        }",
+  "        panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">' + esc(res.output || 'ok') + '</div><div class=\"cb-note\">A GUI nao foi reiniciada. Quando quiser aplicar, clique abaixo.</div><div><button id=\"cb-restart\">Reiniciar agora (aplicar)</button></div>';",
+  "        var rb = document.getElementById('cb-restart');",
+  "        if (rb) rb.addEventListener('click', function () {",
+  "          fetch('/api/dsh-core', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'restart' }) })",
+  "            .then(function () { panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">Reiniciando a GUI... recarregue (F5).</div>'; });",
+  "        });",
   "        refresh();",
-  "        return;",
-  "      }",
-  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + esc(res.output || 'ok') + '</div><div class=\"cb-note\">A GUI NÃO foi reiniciada. Quando quiser aplicar, clique abaixo (se algo falhar depois, é só voltar com ↩ e restaurar o backup).</div><div><button id=\"cb-restart\">▶ Reiniciar agora (aplicar)</button></div>';",
-  "      var rb = document.getElementById('cb-restart');",
-  "      if (rb) rb.addEventListener('click', function () {",
-  "        fetch('/api/dsh-core', {",
-  "          method: 'POST',",
-  "          headers: { 'content-type': 'application/json' },",
-  "          body: JSON.stringify({ action: 'restart' })",
-  "        }).then(function () { panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Reiniciando a GUI… recarregue a página (F5) se necessário.</div>'; });",
+  "      }).catch(function () {",
+  "        panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">Operacao concluida? Recarregue a pagina (F5) e confira o chip do core.</div>';",
   "      });",
-  "      refresh();",
-  "    }).catch(function () {",
-  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Operação concluída? Recarregue a página (F5) e confira o chip do core.</div>';",
-  "    });",
+  "  };",
+  "  var showCreated = function (nm, url, outp) {",
+  "    panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">✔ Instancia <b>' + esc(nm) + '</b> criada — o sistema atual nao foi tocado. Abra o novo atalho no menu para testar o core novo.</div>' + (url ? '<div><button id=\"cb-open\">Abrir instancia nova</button></div>' : '') + '<div class=\"cb-note\">' + esc((outp || '').slice(-500)) + '</div>';",
+  "    var ob = document.getElementById('cb-open');",
+  "    if (ob) ob.addEventListener('click', function () { window.open(url, '_blank'); });",
+  "    refresh();",
+  "  };",
+  "  var pollCreate = function (nm, tick) {",
+  "    if (tick > 700) { panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-warn\">Tempo esgotado ao consultar o progresso — recarregue (F5) e confira o chip.</div>'; return; }",
+  "    fetch('/api/dsh-core?progress=1&name=' + encodeURIComponent(nm))",
+  "      .then(function (r) { return r.json(); }).then(function (p) {",
+  "        var linesA = (p && p.lines) || [];",
+  "        var tail = linesA.slice(-16).join('\\n');",
+  "        var spin = ['|', '/', '-', '\\\\'][tick % 4];",
+  "        panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">' + spin + ' Instalando o core e criando a instancia <b>' + esc(nm) + '</b>... aguarde, pode levar alguns minutos.</div><div style=\"max-height:220px;overflow:auto;white-space:pre-wrap;font-size:10px;color:#8b949e;\">' + esc(tail) + '</div>';",
+  "        if (p && p.done) {",
+  "          if (p.ok && p.envName) { showCreated(p.envName, p.url, p.output); return; }",
+  "          panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-warn\">Falha ao criar a instancia</div><div class=\"cb-note\">' + esc(p.error || '') + '</div><div class=\"cb-note\">' + esc((p.output || '').slice(-900)) + '</div>';",
+  "          return;",
+  "        }",
+  "        setTimeout(function () { pollCreate(nm, tick + 1); }, 1600);",
+  "      }).catch(function () { setTimeout(function () { pollCreate(nm, tick + 1); }, 1600); });",
   "  };",
   "  var actImport = function () {",
   "    if (!window.confirm('Importar historico/conversas + configs (credenciais FreeLLMAPI etc.) da instancia anterior para esta? (mescla com o que ja existe; nada e apagado — depois recarregue com F5).')) return;",
@@ -697,6 +737,8 @@ module.exports = function versionBadgePlugin(ctx) {
           path: "/api/dsh-core",
           handler: (req, res) => {
             if (req.method === "GET") {
+              const mprog = /[?&]progress=1&name=([A-Za-z0-9._-]+)/.exec(req.url || "");
+              if (mprog) { coreProgress(mprog[1], (payload) => json(200, payload, res)); return; }
               const force = /[?&]force=1/.test(req.url || "");
               coreStatus(!!force, (payload) => json(200, payload, res));
               return;
@@ -722,8 +764,20 @@ module.exports = function versionBadgePlugin(ctx) {
                   });
                   return;
                 }
+                if (action === "uninstall") {
+                  const envName = process.env.DSH_ENV_NAME;
+                  if (!envName) { json(400, { ok: false, error: "use dentro de uma instância" }, res); return; }
+                  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-env.sh");
+                  if (!fs.existsSync(tool)) { json(500, { ok: false, error: "core-env.sh não encontrado" }, res); return; }
+                  json(200, { ok: true, uninstalling: true, envName });
+                  setTimeout(() => {
+                    const c = spawn(tool, ["remove", envName], { env: Object.assign({}, process.env, { HOME }), detached: true, stdio: "ignore" });
+                    c.unref();
+                  }, 1500);
+                  return;
+                }
                 if (action !== "update" && action !== "rollback") {
-                  json(400, { ok: false, error: "action deve ser update|rollback|restart" }, res);
+                  json(400, { ok: false, error: "action deve ser update|rollback|restart|import|uninstall" }, res);
                   return;
                 }
                 if (!version) {
