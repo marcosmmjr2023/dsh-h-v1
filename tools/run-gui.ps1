@@ -9,6 +9,12 @@ if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $home
 $Repo = Split-Path $PSScriptRoot -Parent   # tools/run-gui.ps1 -> <repo>
 # Overlay (nossa camada: badges, menu lateral, funcionalidades)
 Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
+$tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl"
+if (Test-Path $tpl) {
+  $homeFwd = $homeCfg -replace "\\", "/"
+  (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeFwd | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
+  Write-Host "[OK] cordis.patch.yml gerado em $homeCfg"
+}
 $tag = (git -C $Repo describe --tags 2>$null | Select-Object -First 1)
 if ($tag) {
   @{ version=$tag; updatedAt=(Get-Date -Format o) } | ConvertTo-Json | Set-Content -Encoding UTF8 (Join-Path $homeCfg ".dsh-version.json")

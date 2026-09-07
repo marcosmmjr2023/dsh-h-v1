@@ -22,7 +22,12 @@ switch ($Action) {
     $homeCfg = Join-Path $env:USERPROFILE ".dsh"
     if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $homeCfg | Out-Null }
     Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
-    Write-Host "[OK] overlay sincronizado em $homeCfg"
+    $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl"
+    if (Test-Path $tpl) {
+      $homeFwd = $homeCfg -replace "\\", "/"
+      (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeFwd | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
+    }
+    Write-Host "[OK] overlay sincronizado em $homeCfg (cordis.patch.yml gerado)"
   }
   "update" {
     git -C $Repo pull --ff-only
