@@ -233,10 +233,10 @@ function corePatchesOk(installed) {
   if (process.env.DSH_CORE_VERSION || process.env.DSH_ENV_NAME || (process.env.DSH_HOME || "").includes(".dsh-envs")) {
     const roots = [];
     if (process.env.DSH_ENV_NAME) {
-      roots.push(path.join("/home/deploy/.dsh-envs", process.env.DSH_ENV_NAME, "core", "lib", "node_modules", "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
+      roots.push(path.join(HOME, ".dsh-envs", process.env.DSH_ENV_NAME, "core", "lib", "node_modules", "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
     }
     try {
-      const base = "/home/deploy/.dsh-envs";
+      const base = path.join(HOME, ".dsh-envs");
       for (const e of fs.readdirSync(base)) {
         if (fs.existsSync(path.join(base, e, "meta.json"))) {
           roots.push(path.join(base, e, "core", "lib", "node_modules", "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
@@ -303,9 +303,27 @@ function runCoreAction(action, version, json, res) {
 // "Atualizar" do chip = criar uma SEGUNDA instância isolada (core-env), sem tocar na GUI atual.
 // Criação da instância roda em BACKGROUND (o painel acompanha por polling).
 const CREATE_PROGRESS = new Map();
+const IS_WIN = process.platform === "win32";
+function toolExt(name) { return IS_WIN ? name + ".ps1" : name + ".sh"; }
+function toolFull(name) { return path.join(cloneDir(), "core-i18n-pt", "tools", toolExt(name)); }
+function spawnTool(name, args, opts) {
+  const t = toolFull(name);
+  if (IS_WIN) return spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", t].concat(args), opts);
+  return spawn(t, args, opts);
+}
+function execToolAsync(name, args, timeout, cb) {
+  const child = spawnTool(name, args, { env: Object.assign({}, process.env, { HOME }), timeout: timeout || 0 });
+  let acc = "";
+  child.stdout.on("data", (d) => { acc += d; });
+  child.stderr.on("data", (d) => { acc += d; });
+  child.on("error", (err) => cb({ err, code: -1, out: acc }));
+  child.on("close", (code) => cb({ err: null, code, out: acc }));
+  return child;
+}
+
 function coreEnvCreate(version, cb) {
-  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-env.sh");
-  if (!fs.existsSync(tool)) { cb({ ok: false, error: "core-env.sh não encontrado no repo" }); return; }
+  const tool = toolFull("core-env");
+  if (!fs.existsSync(tool)) { cb({ ok: false, error: "ferramenta de ambiente não encontrada" }); return; }
   if (!/^[0-9A-Za-z._-]+$/.test(String(version || ""))) { cb({ ok: false, error: "versão inválida" }); return; }
   const base = String(version).replace(/[^A-Za-z0-9]+/g, "").slice(0, 14) || "nova";
   let name = "nova-" + base;
@@ -313,7 +331,7 @@ function coreEnvCreate(version, cb) {
   while (fs.existsSync(path.join(HOME, ".dsh-envs", name, "meta.json"))) name = "nova-" + base + "-" + (i++);
   const store = { running: true, done: false, ok: false, error: "", lines: [], output: "", url: "", envName: name };
   CREATE_PROGRESS.set(name, store);
-  const child = spawn(tool, ["create", name, "--core", version], { env: Object.assign({}, process.env, { HOME }) });
+  const child = spawnTool("core-env", ["create", name, "--core", version], { env: Object.assign({}, process.env, { HOME }) });
   let acc = "";
   const push = (chunk) => { acc += chunk; store.lines = acc.split(/\r?\n/); if (store.lines.length > 400) store.lines = store.lines.slice(-400); };
   child.stdout.on("data", push);
@@ -755,11 +773,11 @@ module.exports = function versionBadgePlugin(ctx) {
                 if (action === "import") {
                   const envName = process.env.DSH_ENV_NAME;
                   if (!envName) { json(400, { ok: false, error: "use dentro de uma instância nova" }, res); return; }
-                  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-env.sh");
-                  if (!fs.existsSync(tool)) { json(500, { ok: false, error: "core-env.sh não encontrado" }, res); return; }
-                  execFile(tool, ["import", envName], { env: Object.assign({}, process.env, { HOME }), timeout: 300000, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
-                    const output = String(stdout || "") + (stderr ? "\n" + stderr : "");
-                    if (err) { json(500, { ok: false, error: "import falhou (veja saída)", output }, res); return; }
+                  const tool = toolFull("core-env");
+                  if (!fs.existsSync(tool)) { json(500, { ok: false, error: "ferramenta não encontrada" }, res); return; }
+                  execToolAsync("core-env", ["import", envName], 300000, (r) => {
+                    const output = String(r.out || "");
+                    if (r.err || r.code !== 0) { json(500, { ok: false, error: "import falhou (veja saída)", output }, res); return; }
                     json(200, { ok: true, imported: true, output }, res);
                   });
                   return;
@@ -767,11 +785,11 @@ module.exports = function versionBadgePlugin(ctx) {
                 if (action === "uninstall") {
                   const envName = process.env.DSH_ENV_NAME;
                   if (!envName) { json(400, { ok: false, error: "use dentro de uma instância" }, res); return; }
-                  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-env.sh");
-                  if (!fs.existsSync(tool)) { json(500, { ok: false, error: "core-env.sh não encontrado" }, res); return; }
+                  const tool = toolFull("core-env");
+                  if (!fs.existsSync(tool)) { json(500, { ok: false, error: "ferramenta não encontrada" }, res); return; }
                   json(200, { ok: true, uninstalling: true, envName }, res);
                   setTimeout(() => {
-                    const c = spawn(tool, ["remove", envName], { env: Object.assign({}, process.env, { HOME }), detached: true, stdio: "ignore" });
+                    const c = spawnTool("core-env", ["remove", envName], { env: Object.assign({}, process.env, { HOME }), detached: true, stdio: "ignore" });
                     c.unref();
                   }, 1500);
                   return;
