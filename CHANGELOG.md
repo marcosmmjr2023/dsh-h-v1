@@ -264,3 +264,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.59.
 ## [v0.2.61] — 2026-09-07 23:31 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.60.
   - d79b885 fix(win): NODE_PATH p/ modulos do core (plugins resolvem schemastery/dsh-settings)
+
+## [v0.2.62] — 2026-09-07 23:34 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.61.
+  - 64e32c9 fix(win): plugins descobrem o caminho do core via require.main (sem /opt fixo)
