@@ -196,3 +196,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.42.
 ## [v0.2.44] — 2026-09-07 15:59 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.43.
   - 5f003c9 fix(uninstall): passa res no json (erro 000/TypeError) + FAB pequeno ao lado do settings
+
+## [v0.2.45] — 2026-09-07 16:00 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.44.
+  - 8fe073d fix(uninstall): remove reordenado — limpa gateway/atalho/pasta/perfil PRIMEIRO e apaga a instância por último
