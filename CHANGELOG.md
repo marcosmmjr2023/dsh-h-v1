@@ -124,3 +124,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.24.
 ## [v0.2.26] — 2026-09-07 14:09 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.25.
   - c484e72 refactor(paths): remove symlink ~/dsh-v2 — caminho único ~/projects/dsh/dsh-h-v1
+
+## [v0.2.27] — 2026-09-07 14:14 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.26.
+  - 1b807ff docs(map): só a GUI principal (dsh-web-v2) + FreeLLMAPI
