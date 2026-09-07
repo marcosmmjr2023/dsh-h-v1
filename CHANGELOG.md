@@ -99,3 +99,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.19.
 ## [v0.2.21] — 2026-09-07 13:07 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.20.
   - 1655e94 fix(badge-core): chip do core reconhece pt aplicado por pt-ride em ambientes paralelos (DSH_ENV_NAME)
+
+## [v0.2.22] — 2026-09-07 13:53 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.21.
+  - 61c8eeb fix(rollback): reinicia a GUI automaticamente após restaurar + plugins estáveis no overlay
