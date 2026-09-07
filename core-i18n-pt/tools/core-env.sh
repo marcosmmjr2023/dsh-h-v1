@@ -43,19 +43,21 @@ write_launcher() {
   port="$(node -e 'console.log(require(process.argv[1]).port)' "$m")"
   url="http://127.0.0.1:$port"
   local wrapper="$BASE/$name/launch-gui.sh"
-  cat > "$wrapper" <<EOF
+  cat > "$wrapper" <<'TPL'
 #!/usr/bin/env bash
-# Abre a GUI do ambiente '$name' ($sys · c$core) pelo menu/atalho X11.
-pm2 describe dsh-env-$name >/dev/null 2>&1 || \
-  (cd /home/deploy && DSH_ENV_NAME="$name" DSH_CORE_VERSION="$core" DSH_HOME="$BASE/$name/home" \
-   DSH_WEB_URL="$url" pm2 start $(command -v node) --name "dsh-env-$name" -- \
-   "$BASE/$name/core/lib/node_modules/@deepseek-ai/dsh/lib/bin.js" --profile web --no-open --port "$port" --host 127.0.0.1)
-pm2 list 2>/dev/null | grep -q "dsh-env-$name.*online" || pm2 restart "dsh-env-$name" >/dev/null 2>&1
+# Abre a GUI do ambiente @NAME@ (@SYS@ · c@CORE@) pelo menu/atalho X11.
+# A URL é calculada a cada abertura (algumas versões do core exigem ?token).
+pm2 describe dsh-env-@NAME@ >/dev/null 2>&1 || \
+  (cd /home/deploy && DSH_ENV_NAME="@NAME@" DSH_CORE_VERSION="@CORE@" DSH_HOME="@HOME@" \
+   DSH_WEB_URL="@URL@" pm2 start @NODEBIN@ --name "dsh-env-@NAME@" -- \
+   "@BIN@" --profile web --no-open --port @PORT@ --host 127.0.0.1)
+pm2 list 2>/dev/null | grep -q "dsh-env-@NAME@.*online" || pm2 restart "dsh-env-@NAME@" >/dev/null 2>&1
 sleep 2
-FULL="$(pm2 logs "dsh-env-$name" --nostream --lines 200 2>/dev/null | grep -oE 'http[^ ]*:'"$port"'[^ ]*' | tail -1)"
-[ -n "$FULL" ] || FULL="$url"
-exec /opt/google/chrome/chrome --app="$FULL" --user-data-dir="/home/deploy/.config/dsh-env-$name" --no-first-run --no-default-browser-check
-EOF
+FULL="$(pm2 logs "dsh-env-@NAME@" --nostream --lines 200 2>/dev/null | grep -oE "http[^ ]*:@PORT@[^ ]*" | tail -1)"
+[ -n "$FULL" ] || FULL="@URL@"
+exec /opt/google/chrome/chrome --app="$FULL" --user-data-dir="/home/deploy/.config/dsh-env-@NAME@" --no-first-run --no-default-browser-check
+TPL
+  sed -e "s|@NAME@|$name|g" -e "s|@SYS@|$sys|g" -e "s|@CORE@|$core|g"       -e "s|@PORT@|$port|g" -e "s|@URL@|$url|g" -e "s|@HOME@|$BASE/$name/home|g"       -e "s|@BIN@|$BASE/$name/core/lib/node_modules/@deepseek-ai/dsh/lib/bin.js|g"       -e "s|@NODEBIN@|$(command -v node)|g" "$wrapper" > "$wrapper.tmp" && mv "$wrapper.tmp" "$wrapper"
   chmod +x "$wrapper"
   mkdir -p /home/deploy/.local/share/applications
   local desk="/home/deploy/.local/share/applications/dsh-env-$name.desktop"
