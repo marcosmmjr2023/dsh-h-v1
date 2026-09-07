@@ -244,3 +244,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.54.
 ## [v0.2.56] — 2026-09-07 22:50 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.55.
   - 50f23a3 feat(win): sincroniza OVERLAY (nossa camada) para %USERPROFILE%\.dsh
+
+## [v0.2.57] — 2026-09-07 22:59 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.56.
+  - 2517cbf feat(win): gera cordis.patch.yml no home (ativa nossos plugins)
