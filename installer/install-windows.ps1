@@ -1,13 +1,13 @@
-# install-windows.ps1 — Instalador do DeepSeek Harness + sistema dsh (Windows)
-# Uso (uma linha, do repositório público):
+# install-windows.ps1 - Instalador do DeepSeek Harness + sistema dsh (Windows)
+# Uso (uma linha, do repositorio publico):
 #   irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 | iex
-# Opções: -NoDshAlias (não instala o comando 'dsh' no perfil)
+# Opcoes: -NoDshAlias (nao instala o comando 'dsh' no perfil)
 [CmdletBinding()]
 param([switch]$NoDshAlias)
 $ErrorActionPreference = "Stop"
 
 Write-Host "== Instalador DeepSeek Harness (dsh) =="
-# 1) Pré-requisitos
+# 1) Pre-requisitos
 foreach ($cmd in @("node","npm","git")) {
   if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
     Write-Host "Faltando: $cmd"
@@ -33,7 +33,7 @@ if (-not (Test-Path (Join-Path $Repo ".git"))) {
 }
 Set-Location $Repo
 
-# 3) Core global na versão pinada (se ainda não estiver)
+# 3) Core global na versao pinada (se ainda nao estiver)
 $pinned = (Get-Content manifest.json -Raw | ConvertFrom-Json).core.pinned
 $inst = (& npm ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
 if ($inst -notmatch [regex]::Escape($pinned)) {
@@ -56,15 +56,15 @@ if (-not $NoDshAlias) {
   $has = if (Test-Path $PROFILE) { Get-Content $PROFILE -Raw -ErrorAction SilentlyContinue } else { "" }
   if ($has -notmatch "function dsh") {
     Add-Content -Encoding UTF8 $PROFILE $lines
-    Write-Host "✔ comando 'dsh' adicionado ao perfil (reabra o PowerShell)."
+    Write-Host "[OK] comando 'dsh' adicionado ao perfil (reabra o PowerShell)."
   }
 }
 
 Write-Host ""
 Write-Host "== Pronto! =="
 Write-Host "  1) Abra a GUI:  dsh up   (ou:  .\start-dsh-gui.bat)"
-Write-Host "  2) No chip do core: ➕ Criar instancia com core novo (progresso incluso)"
-Write-Host "  3) Desinstalar: dentro da instancia, menu lateral -> 🗑 Desinstalar"
+Write-Host "  2) No chip do core:  Criar instancia com core novo (progresso incluso)"
+Write-Host "  3) Desinstalar: dentro da instancia, menu lateral -> [uninstall] Desinstalar"
 Write-Host "  4) Atualizar depois:  dsh update"
 Write-Host "  5) Diagnosticar:      dsh doctor"
 Write-Host ""

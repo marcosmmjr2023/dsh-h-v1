@@ -1,11 +1,11 @@
-# dsh-cli.ps1 — comando 'dsh' estilo package-manager (Windows)
-# Chamado pela função 'dsh' instalada no perfil do PowerShell.
+# dsh-cli.ps1 - comando 'dsh' estilo package-manager (Windows)
+# Chamado pela funcao 'dsh' instalada no perfil do PowerShell.
 #   dsh up           abre a GUI principal
 #   dsh update       atualiza o repo + core pinado + reaplica pt-BR
 #   dsh env create <nome> --core <ver>   |  dsh env remove <nome>
 #   dsh env list | import <nome> | freellmapi <nome>
 #   dsh core --check | --install <ver> | --rollback <ver>
-#   dsh doctor        verifica pré-requisitos e estado
+#   dsh doctor        verifica pre-requisitos e estado
 [CmdletBinding()]
 param(
   [Parameter(Position = 0)][string]$Action = "help",
@@ -28,7 +28,7 @@ switch ($Action) {
       Write-Host "core ja esta na versao pinada ($pinned)"
     }
     & (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") --force
-    Write-Host "✔ atualizado. Rode: dsh up"
+    Write-Host "[OK] atualizado. Rode: dsh up"
   }
   "env" {
     if ($Rest.Count -eq 0) { $Rest = @("ports") }

@@ -1,5 +1,5 @@
-# core-env.ps1 — AMBIENTES PARALELOS do DeepSeek Harness no WINDOWS
-# (equivalente ao core-env.sh do Linux; sem pm2 — gerenciamento por registro
+# core-env.ps1 - AMBIENTES PARALELOS do DeepSeek Harness no WINDOWS
+# (equivalente ao core-env.sh do Linux; sem pm2 - gerenciamento por registro
 #  ~/.dsh-envs/.registry.json com PID/porta/url; Start-Process + launcher .bat)
 #
 # Uso:
@@ -9,7 +9,7 @@
 #   core-env.ps1 ports
 #   core-env.ps1 freellmapi <nome>
 #
-# A detecção de SO é feita pelo servidor do painel: no Windows ele chama este
+# A deteccao de SO e feita pelo servidor do painel: no Windows ele chama este
 # script (powershell.exe -File); no Linux continua o core-env.sh.
 [CmdletBinding()]
 param(
@@ -63,8 +63,8 @@ switch ($Command) {
     $coreDir = Join-Path $envDir "core"
     New-Item -ItemType Directory -Force -Path $homeDir,$coreDir | Out-Null
     $port = New-Port
-    Write-Host "▶ criando '$Name' core c$Core porta $port (Linux path inalterado)"
-    # 1) copia config do home de origem (sem sessões/storages/node_modules)
+    Write-Host "> criando '$Name' core c$Core porta $port (Linux path inalterado)"
+    # 1) copia config do home de origem (sem sessoes/storages/node_modules)
     Get-ChildItem -Force $From | ForEach-Object {
       if ($_.Name -in @("sessions","storages","node_modules",".git")) { return }
       Copy-Item -Recurse -Force $_.FullName $homeDir
@@ -95,7 +95,7 @@ switch ($Command) {
       "if not exist `"$bin`" goto :eof",
       "start `"`" `"$bin`" --profile web --no-open --port $port --host 127.0.0.1",
       "start http://127.0.0.1:$port") | Set-Content -Encoding ASCII $bat
-    Write-Host "✔ instancia '$Name' criada: $($meta.url) (launcher: $bat)"
+    Write-Host "[OK] instancia '$Name' criada: $($meta.url) (launcher: $bat)"
   }
   "import" {
     if (-not $Name) { throw "Informe o nome (import <nome> [--from <origem>])" }
@@ -103,7 +103,7 @@ switch ($Command) {
     if (-not $entry) { throw "Instancia '$Name' nao existe" }
     if (-not $From) { $From = Join-Path $env:USERPROFILE ".dsh-v2" }
     if (-not (Test-Path $From)) { $From = Join-Path $env:USERPROFILE ".dsh" }
-    Write-Host "▶ importando de '$From' p/ '$Name' (mescla)"
+    Write-Host "> importando de '$From' p/ '$Name' (mescla)"
     foreach ($sub in @("sessions","storages")) {
       $src = Join-Path $From $sub
       if (Test-Path $src) { Copy-Item -Recurse -Force $src (Join-Path $entry.Home $sub) }
@@ -112,7 +112,7 @@ switch ($Command) {
       $src = Join-Path $From $f
       if (Test-Path $src) { Copy-Item -Force $src (Join-Path $entry.Home $f) }
     }
-    Write-Host "✔ importacao concluida - recarregue a pagina da instancia (F5)"
+    Write-Host "[OK] importacao concluida - recarregue a pagina da instancia (F5)"
   }
   "freellmapi" {
     if (-not $Name) { throw "Informe o nome" }
@@ -130,14 +130,14 @@ switch ($Command) {
       $reg = @(Read-Registry)
       for ($i=0; $i -lt $reg.Count; $i++) { if ($reg[$i].Name -eq $Name) { $reg[$i].FlmPort=$flp; $reg[$i].FlmPid=$proc.Id } }
       Write-Registry @($reg)
-      Write-Host "✔ FreeLLMAPI da instancia na porta $flp"
-    } else { Write-Host "ℹ codigo FreeLLMAPI nao encontrado em $gw - use o gateway global" }
+      Write-Host "[OK] FreeLLMAPI da instancia na porta $flp"
+    } else { Write-Host "i codigo FreeLLMAPI nao encontrado em $gw - use o gateway global" }
   }
   "remove" {
     if (-not $Name) { throw "Informe o nome (remove <nome>)" }
     $entry = Entry $Name
     if (-not $entry) { throw "Instancia '$Name' nao existe" }
-    Write-Host "▶ removendo '$Name' (gateway + janela + pasta primeiro; processo por ultimo)"
+    Write-Host "> removendo '$Name' (gateway + janela + pasta primeiro; processo por ultimo)"
     if ($entry.FlmPid) { Stop-Process -Id $entry.FlmPid -Force -ErrorAction SilentlyContinue }
     # fecha janela Chrome da instancia (perfil .dsh-envs\<nome> no comando)
     Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" -ErrorAction SilentlyContinue |
@@ -147,7 +147,7 @@ switch ($Command) {
     $reg = @(Read-Registry) | Where-Object { $_.Name -ne $Name }
     Write-Registry @($reg)
     if ($entry.Pid) { Stop-Process -Id $entry.Pid -Force -ErrorAction SilentlyContinue }
-    Write-Host "✔ instancia '$Name' removida (e atalhos/pasta/perfil)"
+    Write-Host "[OK] instancia '$Name' removida (e atalhos/pasta/perfil)"
   }
   default { # ports
     Write-Host "== Instancias (registro) =="

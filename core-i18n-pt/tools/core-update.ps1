@@ -1,5 +1,5 @@
-# core-update.ps1 — atualiza/volta o CORE no WINDOWS (equivalente ao .sh do Linux).
-# Sem pm2/sudo: instala no prefixo global do usuário e reaplica pt via pt-ride.
+# core-update.ps1 - atualiza/volta o CORE no WINDOWS (equivalente ao .sh do Linux).
+# Sem pm2/sudo: instala no prefixo global do usuario e reaplica pt via pt-ride.
 #   core-update.ps1 --check | --history | --install <versao> | --rollback <versao>
 param([Parameter(Position=0)][string]$Cmd="--check", [string]$Ver="")
 $Repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -32,5 +32,5 @@ if ($Cmd -in @("--install","--rollback")) {
   $ok = Reapply-Pt
   $h = [ordered]@{ version=$Ver; from=$old; patchesOk=$ok; at=(Get-Date -Format o) }
   @($h) | ConvertTo-Json | Set-Content -Encoding UTF8 $HistFile
-  Write-Host "✔ core $Ver aplicado (pt-ride: $ok). Abra a GUI pelo atalho (start-dsh-gui.bat)."
+  Write-Host "[OK] core $Ver aplicado (pt-ride: $ok). Abra a GUI pelo atalho (start-dsh-gui.bat)."
 }
