@@ -140,3 +140,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.28.
 ## [v0.2.30] — 2026-09-07 14:41 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.29.
   - 22e5573 feat(freellmapi): gateway FreeLLMAPI POR INSTÂNCIA (limpo, porta+banco próprios)
+
+## [v0.2.31] — 2026-09-07 14:42 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.30.
+  - a96f42c fix(core-env): ports mostra harness + gateway de cada instância
