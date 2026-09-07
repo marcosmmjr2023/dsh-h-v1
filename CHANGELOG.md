@@ -184,3 +184,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.39.
 ## [v0.2.41] — 2026-09-07 15:44 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.40.
   - 388165b feat(ui): indicador de PROGRESSO na criação de instância + botão desinstalar no menu lateral
+
+## [v0.2.42] — 2026-09-07 15:50 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.41.
+  - 85f249d fix(layout): botão desinstalar usa nome da instância INJETADO pelo servidor (determinístico)
