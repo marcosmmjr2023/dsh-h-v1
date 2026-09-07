@@ -164,3 +164,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.34.
 ## [v0.2.36] — 2026-09-07 15:11 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.35.
   - 985c6d4 feat(import): botão na instância nova p/ importar histórico/configs da instância anterior
+
+## [v0.2.37] — 2026-09-07 15:21 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.36.
+  - ac8b9b9 fix(badge-core): erro de sintaxe no script do chip (newline literal em string do botão import) sumia com o badge
