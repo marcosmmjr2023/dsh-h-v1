@@ -288,6 +288,7 @@ function coreStatus(forceCheck, cb) {
       checkedAt: at || Date.now(),
       patches,
       history: coreHistory(),
+      envName: process.env.DSH_ENV_NAME || null,
     });
   });
 }
@@ -374,6 +375,7 @@ const CORE_UI_JS = [
   "    }).catch(function () {});",
   "  };",
   "  var act = function (action, version, label) {",
+  "    if (action === 'import') { actImport(); return; }",
   "    if (!window.confirm((action === 'update' ? 'Criar instância isolada com o core ' + label + '?\\n\\nO sistema atual NÃO é tocado: será criada uma 2ª versão funcional (pasta/porta/atalho próprios, com pt-BR e FreeLLMAPI).' : 'Reverter o core instalado para ' + label + '?\\n\\nEstado atual é salvo; depois clique em \"Reiniciar agora\" para aplicar.'))) return;",
   "    panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + (action === 'update' ? 'Criando instância isolada com o core ' : 'Revertendo o core para ') + esc(label) + '… (pode levar alguns minutos; o sistema atual fica intacto).</div>';",
   "    fetch('/api/dsh-core', {",
@@ -406,6 +408,24 @@ const CORE_UI_JS = [
   "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Operação concluída? Recarregue a página (F5) e confira o chip do core.</div>';",
   "    });",
   "  };",
+  "  var actImport = function () {",
+  "    if (!window.confirm('Importar historico/conversas + configs (credenciais FreeLLMAPI etc.) da instancia anterior para esta?\n\nMescla com o que ja existe; nada e apagado. Depois recarregue (F5).')) return;",
+  "    panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Importando historico/configs da instancia anterior\u2026</div>';",
+  "    fetch('/api/dsh-core', {",
+  "      method: 'POST',",
+  "      headers: { 'content-type': 'application/json' },",
+  "      body: JSON.stringify({ action: 'import' })",
+  "    }).then(function (r) { return r.json(); }).then(function (res) {",
+  "      if (!res.ok) {",
+  "        panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-warn\">' + esc(res.error || 'falhou') + '</div><div class=\"cb-note\">' + esc(res.output || '') + '</div>';",
+  "        return;",
+  "      }",
+  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + esc(res.output || '') + '</div><div class=\"cb-note\">\u2714 Importado. Recarregue a pagina (F5) para ver o historico e as configs.</div>';",
+  "      refresh();",
+  "    }).catch(function () {",
+  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Importando\u2026 recarregue a pagina (F5) e confira.</div>';",
+  "    });",
+  "  };",
   "  var open = function () {",
   "    if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }",
   "    panel.style.display = 'block';",
@@ -427,6 +447,10 @@ const CORE_UI_JS = [
   "      }",
   "      if (d.history && d.history.length) {",
   "        h.push('<div class=\"cb-note\">Histórico: ' + d.history.map(function (x) { return x.version + (x.patchesOk ? '' : ' (sem pt)'); }).join(' → ') + '</div>');",
+  "      }",
+  "      if (d.envName) {",
+  "        h.push('<div class=\"cb-row\"><span>Instância</span><b>' + esc(d.envName) + '</b></div>');",
+  "        h.push('<div><button data-a=\"import\" data-l=\"da instância anterior\">⇄ Importar histórico/configs da anterior</button></div>');",
   "      }",
   "      panel.innerHTML = h.join('');",
   "      Array.prototype.forEach.call(panel.querySelectorAll('button[data-a]'), function (b) {",
@@ -664,6 +688,18 @@ module.exports = function versionBadgePlugin(ctx) {
                 if (action === "restart") {
                   json(200, { ok: true, restarting: true });
                   scheduleRestart(1600); // ação explícita do usuário
+                  return;
+                }
+                if (action === "import") {
+                  const envName = process.env.DSH_ENV_NAME;
+                  if (!envName) { json(400, { ok: false, error: "use dentro de uma instância nova" }, res); return; }
+                  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-env.sh");
+                  if (!fs.existsSync(tool)) { json(500, { ok: false, error: "core-env.sh não encontrado" }, res); return; }
+                  execFile(tool, ["import", envName], { env: Object.assign({}, process.env, { HOME }), timeout: 300000, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
+                    const output = String(stdout || "") + (stderr ? "\n" + stderr : "");
+                    if (err) { json(500, { ok: false, error: "import falhou (veja saída)", output }, res); return; }
+                    json(200, { ok: true, imported: true, output }, res);
+                  });
                   return;
                 }
                 if (action !== "update" && action !== "rollback") {

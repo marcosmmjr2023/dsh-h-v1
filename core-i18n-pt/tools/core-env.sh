@@ -387,6 +387,47 @@ EOF
     nxt="$(alloc_env_port)"
     echo "  próxima porta livre na faixa: ${nxt:-—}"
     ;;
+  import)
+    name="${2:-}"
+    if [ -z "$name" ]; then echo "uso: core-env.sh import <nome> [--from principal|v1|<env>]"; exit 2; fi
+    src="principal"
+    if [ "${3:-}" = "--from" ]; then src="${4:-principal}"; fi
+    m="$BASE/$name/meta.json"
+    if [ ! -f "$m" ]; then echo "✋ instância '$name' não existe"; exit 1; fi
+    if [ "$src" = "principal" ]; then
+      SRCH=/home/deploy/.dsh-v2
+      SRCGW=/home/deploy/projects/freellmapi/server/data/freeapi.db
+    elif [ "$src" = "v1" ]; then
+      SRCH=/home/deploy/.dsh
+      SRCGW=/home/deploy/projects/freellmapi/server/data/freeapi.db
+    else
+      if [ ! -f "$BASE/$src/meta.json" ]; then echo "✋ origem '$src' não é uma instância"; exit 1; fi
+      SRCH="$BASE/$src/home"
+      SRCGW="$BASE/$src/freellmapi/freeapi.db"
+    fi
+    if [ ! -d "$SRCH" ]; then echo "✋ origem '$src' não encontrada"; exit 1; fi
+    dest="$BASE/$name/home"
+    echo "▶ importando de '$src' para a instância '$name' (mescla; nada é apagado)"
+    for sub in sessions storages; do
+      if [ -d "$SRCH/$sub" ]; then
+        mkdir -p "$dest/$sub"
+        rsync -a "$SRCH/$sub/" "$dest/$sub/" 2>/dev/null
+        echo "  ✔ $sub importado"
+      fi
+    done
+    for f in settings.yaml .credentials.yaml cordis.patch.yml; do
+      if [ -f "$SRCH/$f" ]; then cp -a "$SRCH/$f" "$dest/$f" && echo "  ✔ $f"; fi
+    done
+    flp="$(node -e 'try{console.log(require(process.argv[1]).freellmapiPort||"")}catch(e){console.log("")}' "$m")"
+    if [ -n "$flp" ] && [ -f "$SRCGW" ]; then
+      mkdir -p "$BASE/$name/freellmapi"
+      cp -a "$SRCGW" "$BASE/$name/freellmapi/freeapi.db"
+      /usr/bin/pm2 restart "flm-$name" >/dev/null 2>&1 && echo "  ✔ FreeLLMAPI (banco/config) importado; gateway reiniciado"
+    else
+      echo "  ℹ FreeLLMAPI: sem banco na origem ou gateway não criado — use core-env.sh freellmapi <nome>"
+    fi
+    echo "✔ Importação concluída. Recarregue a página da instância (F5) para ver o histórico."
+    ;;
   -h|--help) usage ;;
   *) echo "opção desconhecida: $1"; usage; exit 2 ;;
 esac
