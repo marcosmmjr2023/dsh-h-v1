@@ -785,8 +785,8 @@ const PANEL_JS = `(function () {
     if (!document.getElementById('dsh-uninstall-fab')) {
       var fab = document.createElement('button');
       fab.id = 'dsh-uninstall-fab'; fab.type = 'button';
-      fab.textContent = '🗑 Desinstalar esta instância';
-      fab.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:2147483647;background:#f85149;color:#fff;border:0;border-radius:18px;padding:8px 12px;font:11px/1.4 system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.5);';
+      fab.textContent = '🗑 Desinstalar';
+      fab.style.cssText = 'position:fixed;left:66px;bottom:14px;z-index:2147483647;background:#f85149;color:#fff;border:0;border-radius:12px;padding:4px 8px;font:10px/1.4 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
       fab.onclick = function () { uninstallAction(DSH_INSTANCE); };
       (document.body || document.documentElement).appendChild(fab);
     }

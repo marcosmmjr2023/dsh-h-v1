@@ -769,7 +769,7 @@ module.exports = function versionBadgePlugin(ctx) {
                   if (!envName) { json(400, { ok: false, error: "use dentro de uma instância" }, res); return; }
                   const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-env.sh");
                   if (!fs.existsSync(tool)) { json(500, { ok: false, error: "core-env.sh não encontrado" }, res); return; }
-                  json(200, { ok: true, uninstalling: true, envName });
+                  json(200, { ok: true, uninstalling: true, envName }, res);
                   setTimeout(() => {
                     const c = spawn(tool, ["remove", envName], { env: Object.assign({}, process.env, { HOME }), detached: true, stdio: "ignore" });
                     c.unref();
