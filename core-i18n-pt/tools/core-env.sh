@@ -158,6 +158,16 @@ sanity_test() {
   return $fails
 }
 
+
+restart_env_after_gateway() {
+  local name="$1" m="$BASE/$name/meta.json"
+  if node -e 'try{const m=require(process.argv[1]);process.exit(m.freellmapiPort?0:1)}catch(e){process.exit(1)}' "$m" 2>/dev/null; then
+    /usr/bin/pm2 restart "dsh-env-$name" >/dev/null 2>&1
+    sleep 2
+    echo "  ⟳ instância '$name' reiniciada p/ carregar o gateway FreeLLMAPI próprio ($(node -e 'console.log(require(process.argv[1]).freellmapiPort)' "$m"))."
+  fi
+}
+
 write_launcher() {
   local name="$1" m="$BASE/$name/meta.json"
   [ -f "$m" ] || { echo "ambiente '$name' não existe"; return 1; }
@@ -309,6 +319,7 @@ EOF
     echo "Ambiente pronto em $envdir  (atalho: $envdir/start.sh)"
     if [ "${NO_FREELMAPI:-0}" -eq 0 ]; then
       provision_freellmapi "$name" || true
+      restart_env_after_gateway "$name"
     else
       echo "  ℹ gateway FreeLLMAPI compartilhado (--no-freellmapi)"
     fi
@@ -353,6 +364,7 @@ EOF
     name="${2:-}"
     [ -n "$name" ] || { echo "uso: core-env.sh freellmapi <nome>"; exit 2; }
     provision_freellmapi "$name"
+    restart_env_after_gateway "$name"
     ;;
   test)
     name="${2:-}"
