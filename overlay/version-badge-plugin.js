@@ -351,6 +351,7 @@ const CORE_UI_JS = [
   "    fetch('/api/dsh-core', { method: 'GET' }).then(function (r) { return r.json(); }).then(function (d) {",
   "      var h = ['<h4>Núcleo do DeepSeek Harness</h4>'];",
   "      h.push('<div class=\"cb-note\">Atualização sempre MANUAL (nada automático) — semelhante a um kernel. A checagem de versão nova é automática.</div>');",
+  "      h.push('<div class=\"cb-note\">🔒 Seus dados nunca são tocados: sessões, histórico, chaves e config vivem na sua pasta .dsh — só os arquivos do núcleo (npm) mudam, e dá para voltar (botão ↩ abaixo) se algo falhar.</div>');",
   "      h.push('<div class=\"cb-row\"><span>Instalado</span><b>' + esc(d.installed) + '</b></div>');",
   "      h.push('<div class=\"cb-row\"><span>Pinado no repo</span><b>' + esc(d.pinned || '—') + '</b></div>');",
   "      h.push('<div class=\"cb-row\"><span>Disponível</span><b>' + esc(d.latest) + (d.hasUpdate ? ' ⚠' : '') + '</b></div>');",
