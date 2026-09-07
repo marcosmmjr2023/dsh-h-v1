@@ -86,3 +86,19 @@ sudo core-i18n-pt/tools/apply-pt-core.sh          # Linux, install global root
 > (dezenas de pacotes `dsh-client-ui-*` com dicionários e textos inline). A
 > ordem sugerida é: superfícies de maior uso (settings, sidebar, composer,
 > conversa) → resto; cada pacote vira um patch numerado.
+
+## Chip do núcleo no painel + atualização MANUAL (como um kernel)
+
+O badge da camada (`v0.2.x`) ganhou um **chip do core** logo abaixo: mostra a
+versão do `@deepseek-ai/dsh` instalada e, automaticamente, se há versão nova
+(`core … · nova …`). Não há atualização automática — apenas **checagem
+automática**. Clicando, o painel mostra Instalado × Pinado × Disponível +
+estado dos patches pt-BR e os botões **Atualizar** / **↩ Voltar** (rollback
+para a última versão que funcionava), que reiniciam a GUI ao final.
+
+Procedimento completo (permissão sudoers única, fluxo, rollback e regra de
+regenerar patches): **[`docs/CORE-UPDATE.md`](../../docs/CORE-UPDATE.md)**.
+
+Ferramentas: `tools/core-update.sh` (check/install/rollback/history, root) e
+`tools/install-sudoers.sh` (libera o usuário do harness para rodar só essas
+ferramentas via `sudo` sem senha).

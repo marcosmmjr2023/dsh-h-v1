@@ -192,6 +192,191 @@ function scheduleRestart(delayMs) {
   });
 }
 
+// ══ CORE (kernel-like): status + atualização/rollback MANUAL via sudo ══
+const CORE_CANDIDATES = [
+  "/opt/dsh-tui/node/lib/node_modules/@deepseek-ai/dsh/package.json",
+  "/usr/lib/node_modules/@deepseek-ai/dsh/package.json",
+];
+const CORE_CHECK_CACHE = path.join(__dirname, ".dsh-core-check.json");
+const CORE_HISTORY = path.join(__dirname, ".dsh-core-history.json");
+
+function coreInstalledVersion() {
+  for (const f of CORE_CANDIDATES) {
+    try { return JSON.parse(fs.readFileSync(f, "utf8")).version; } catch { /* tenta próximo */ }
+  }
+  return "?";
+}
+function corePinned() {
+  const clone = cloneDir();
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(clone, "manifest.json"), "utf8"));
+    return { pkg: m.core && m.core.package, pinned: m.core && m.core.pinned };
+  } catch { return { pkg: "@deepseek-ai/dsh", pinned: "" }; }
+}
+function coreLatest(force, cb) {
+  let cached = null;
+  try { cached = JSON.parse(fs.readFileSync(CORE_CHECK_CACHE, "utf8")); } catch { /* sem cache */ }
+  const fresh = cached && cached.latest && (Date.now() - (cached.at || 0)) < 60 * 60 * 1000;
+  if (fresh && !force) { cb(cached.latest, cached.at); return; }
+  execFile("npm", ["view", "@deepseek-ai/dsh", "version"], { timeout: 25000 }, (err, stdout) => {
+    const latest = err ? "" : String(stdout || "").trim().split("\n").pop() || "";
+    if (latest) {
+      try { fs.writeFileSync(CORE_CHECK_CACHE, JSON.stringify({ latest, at: Date.now() })); } catch { /* ok */ }
+    } else if (cached && cached.latest) { cb(cached.latest, cached.at); return; }
+    cb(latest, latest ? Date.now() : 0);
+  });
+}
+function corePatchesOk(installed) {
+  // marcador deixado pelo apply-pt-core.sh junto aos pacotes do core
+  const roots = [
+    "/opt/dsh-tui/node/lib/node_modules/@deepseek-ai/dsh/node_modules",
+    "/usr/lib/node_modules/@deepseek-ai/dsh/node_modules",
+  ];
+  for (const r of roots) {
+    try {
+      const marker = fs.readFileSync(path.join(r, ".dsh-core-pt-applied"), "utf8");
+      if (marker.includes("core=" + installed)) return { ok: true, note: "pt-BR aplicado" };
+    } catch { /* sem marcador */ }
+  }
+  return { ok: false, note: "sem pt-BR (reaplicar: apply-pt-core.sh --force)" };
+}
+function coreHistory() {
+  try {
+    const h = JSON.parse(fs.readFileSync(CORE_HISTORY, "utf8"));
+    return Array.isArray(h) ? h.slice(0, 5) : [];
+  } catch { return []; }
+}
+function sudoersOk(cb) {
+  execFile("sudo", ["-n", "-l"], { timeout: 8000 }, (err) => cb(!err));
+}
+function coreStatus(forceCheck, cb) {
+  const installed = coreInstalledVersion();
+  const pinned = corePinned();
+  const patches = corePatchesOk(installed);
+  coreLatest(forceCheck, (latest, at) => {
+    cb({
+      ok: true,
+      installed,
+      package: pinned.pkg,
+      pinned: pinned.pinned,
+      latest: latest || "?",
+      hasUpdate: !!(latest && latest !== installed),
+      checkedAt: at || Date.now(),
+      patches,
+      history: coreHistory(),
+    });
+  });
+}
+// executa a ação do core e, em caso de sucesso, agenda o reinício da GUI
+function runCoreAction(action, version, json, res) {
+  coreAction(action, version, (r) => {
+    json(r.ok ? 200 : 500, r, res);
+    if (r.ok) scheduleRestart(2600);
+  });
+}
+function coreAction(action, version, cb) {  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-update.sh");
+  if (!fs.existsSync(tool)) { cb({ ok: false, error: "core-update.sh não encontrado no repo" }); return; }
+  if (!/^[0-9A-Za-z._-]+$/.test(String(version || ""))) { cb({ ok: false, error: "versão inválida" }); return; }
+  const args = ["-n", tool, "--live", __dirname, action === "rollback" ? "--rollback" : "--install", version];
+  execFile("sudo", args, { timeout: 300000, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
+    const output = String(stdout || "") + (stderr ? "\n" + stderr : "");
+    if (err) {
+      cb({ ok: false, error: "falha (sudo?)", needSudo: true, output });
+      return;
+    }
+    cb({ ok: true, output });
+  });
+}
+
+const CORE_UI_JS = [
+  "(function () {",
+  "  if (document.getElementById('dsh-core-badge')) return;",
+  "  var s2 = document.createElement('style');",
+  "  s2.textContent = [",
+  "    '#dsh-core-badge{position:fixed;right:16px;bottom:34px;z-index:2147483646;display:inline-flex;align-items:center;gap:6px;background:#0d1117;border:1px solid #30363d;border-radius:999px;padding:2px 10px;font:10px/1.6 system-ui,sans-serif;color:#8b949e;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.4);}',",
+  "    '#dsh-core-badge .cb-new{color:#f0883e;font-weight:600;}',",
+  "    '#dsh-core-badge .cb-old{color:#3fb950;}',",
+  "    '#dsh-core-panel{position:fixed;right:16px;bottom:74px;z-index:2147483647;width:340px;max-width:calc(100vw - 24px);background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:10px 12px;font:11px/1.5 system-ui,sans-serif;color:#e6edf3;box-shadow:0 8px 30px rgba(0,0,0,.6);}',",
+  "    '#dsh-core-panel h4{margin:0 0 6px;font-size:11px;color:#f0883e;}',",
+  "    '#dsh-core-panel .cb-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-top:1px solid #21262d;}',",
+  "    '#dsh-core-panel .cb-row:first-of-type{border-top:0;}',",
+  "    '#dsh-core-panel button{margin:4px 6px 4px 0;padding:3px 10px;border:0;border-radius:999px;background:#21262d;color:#e6edf3;font:10.5px/1.4 system-ui,sans-serif;cursor:pointer;}',",
+  "    '#dsh-core-panel button:hover{background:#30363d;}',",
+  "    '#dsh-core-panel .cb-warn{color:#f85149;}',",
+  "    '#dsh-core-panel .cb-note{color:#8b949e;font-size:10px;white-space:pre-wrap;max-height:150px;overflow:auto;}'",
+  "  ].join('\\n');",
+  "  document.head.appendChild(s2);",
+  "  var chip = document.createElement('div');",
+  "  chip.id = 'dsh-core-badge';",
+  "  chip.title = 'Núcleo do DeepSeek Harness — clique para ver/atualizar';",
+  "  document.body.appendChild(chip);",
+  "  var panel = document.createElement('div');",
+  "  panel.id = 'dsh-core-panel';",
+  "  panel.style.display = 'none';",
+  "  document.body.appendChild(panel);",
+  "  var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>\"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]; }); };",
+  "  var refresh = function () {",
+  "    fetch('/api/dsh-core', { method: 'GET' }).then(function (r) { return r.json(); }).then(function (d) {",
+  "      if (!d || !d.ok) return;",
+  "      var label = 'core ' + esc(d.installed);",
+  "      var cls = '';",
+  "      if (d.hasUpdate) { label += ' · nova ' + esc(d.latest); cls = 'cb-new'; }",
+  "      else if (!d.patches.ok) { label += ' · sem pt'; cls = 'cb-warn'; }",
+  "      chip.innerHTML = '<span class=\"' + (cls || 'cb-old') + '\">' + label + '</span>';",
+  "      panel.dataset.status = JSON.stringify(d);",
+  "    }).catch(function () {});",
+  "  };",
+  "  var act = function (action, version, label) {",
+  "    if (!window.confirm('Núcleo (' + action + '): ' + label + '?\\n\\nNada é automático — você confirma a operação. O harness será reiniciado ao final.')) return;",
+  "    panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + (action === 'rollback' ? 'Revertendo' : 'Atualizando') + ' o core para ' + esc(label) + '… (pode levar alguns minutos; ao final a GUI reinicia).</div>';",
+  "    fetch('/api/dsh-core', {",
+  "      method: 'POST',",
+  "      headers: { 'content-type': 'application/json' },",
+  "      body: JSON.stringify({ action: action, version: version })",
+  "    }).then(function (r) { return r.json(); }).then(function (res) {",
+  "      if (!res.ok) {",
+  "        panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-warn\">' + esc(res.error || 'falhou') + '</div><div class=\"cb-note\">' + esc(res.output || (res.needSudo ? 'Rode no terminal: sudo core-i18n-pt/tools/core-update.sh' : '')) + '</div>';",
+  "        return;",
+  "      }",
+  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + esc(res.output || 'ok') + '</div><div class=\"cb-note\">Reiniciando a GUI… recarregue a página (F5) se necessário.</div>';",
+  "      refresh();",
+  "    }).catch(function () {",
+  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Reiniciando… recarregue a página (F5).</div>';",
+  "    });",
+  "  };",
+  "  var open = function () {",
+  "    if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }",
+  "    panel.style.display = 'block';",
+  "    panel.innerHTML = '<h4>Núcleo (kernel)</h4><div class=\"cb-note\">Carregando…</div>';",
+  "    fetch('/api/dsh-core', { method: 'GET' }).then(function (r) { return r.json(); }).then(function (d) {",
+  "      var h = ['<h4>Núcleo do DeepSeek Harness</h4>'];",
+  "      h.push('<div class=\"cb-note\">Atualização sempre MANUAL (nada automático) — semelhante a um kernel. A checagem de versão nova é automática.</div>');",
+  "      h.push('<div class=\"cb-row\"><span>Instalado</span><b>' + esc(d.installed) + '</b></div>');",
+  "      h.push('<div class=\"cb-row\"><span>Pinado no repo</span><b>' + esc(d.pinned || '—') + '</b></div>');",
+  "      h.push('<div class=\"cb-row\"><span>Disponível</span><b>' + esc(d.latest) + (d.hasUpdate ? ' ⚠' : '') + '</b></div>');",
+  "      h.push('<div class=\"cb-row\"><span>pt-BR (patch)</span><b>' + (d.patches && d.patches.ok ? 'aplicado' : '<span class=\"cb-warn\">pendente</span>') + '</b></div>');",
+  "      if (d.hasUpdate) {",
+  "        h.push('<div><button data-a=\"update\" data-v=\"' + esc(d.latest) + '\" data-l=\"' + esc(d.latest) + '\">Atualizar para ' + esc(d.latest) + '</button></div>');",
+  "      }",
+  "      var rb = (d.pinned && d.pinned !== d.installed) ? d.pinned : ((d.history && d.history[0] && d.history[0].from) || '');",
+  "      if (rb && rb !== d.installed) {",
+  "        h.push('<div><button data-a=\"rollback\" data-v=\"' + esc(rb) + '\" data-l=\"' + esc(rb) + '\">↩ Voltar p/ ' + esc(rb) + '</button><span class=\"cb-note\"> (última que funcionava)</span></div>');",
+  "      }",
+  "      if (d.history && d.history.length) {",
+  "        h.push('<div class=\"cb-note\">Histórico: ' + d.history.map(function (x) { return x.version + (x.patchesOk ? '' : ' (sem pt)'); }).join(' → ') + '</div>');",
+  "      }",
+  "      panel.innerHTML = h.join('');",
+  "      Array.prototype.forEach.call(panel.querySelectorAll('button[data-a]'), function (b) {",
+  "        b.addEventListener('click', function () { act(b.getAttribute('data-a'), b.getAttribute('data-v'), b.getAttribute('data-l')); });",
+  "      });",
+  "    }).catch(function () { panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-warn\">Falha ao consultar o core.</div>'; });",
+  "  };",
+  "  chip.addEventListener('click', open);",
+  "  refresh();",
+  "  setInterval(refresh, 120000);",
+  "})();",
+].join("\n");
+
 const BADGE_JS = [
   "(function () {",
   "  if (document.getElementById('dsh-version-badge')) return;",
@@ -400,11 +585,44 @@ module.exports = function versionBadgePlugin(ctx) {
             json(405, { ok: false, error: "método não suportado" }, res);
           },
         });
+        const registerCore = webServer.register({
+          kind: "exact",
+          path: "/api/dsh-core",
+          handler: (req, res) => {
+            if (req.method === "GET") {
+              const force = /[?&]force=1/.test(req.url || "");
+              coreStatus(!!force, (payload) => json(200, payload, res));
+              return;
+            }
+            if (req.method === "POST") {
+              readBody(req, (body) => {
+                let action = "", version = "";
+                try { const p = JSON.parse(body || "{}"); action = String(p.action || ""); version = String(p.version || ""); } catch { /* inválido */ }
+                if (action !== "update" && action !== "rollback") {
+                  json(400, { ok: false, error: "action deve ser update|rollback" }, res);
+                  return;
+                }
+                if (!version) {
+                  if (action === "update") {
+                    coreStatus(false, (st) => { if (st.latest && st.latest !== "?") { runCoreAction(action, st.latest, json, res); } else json(400, { ok: false, error: "sem versão nova conhecida" }, res); });
+                    return;
+                  }
+                  json(400, { ok: false, error: "informe a versão p/ rollback" }, res);
+                  return;
+                }
+                runCoreAction(action, version, json, res);
+              });
+              return;
+            }
+            json(405, { ok: false, error: "método não suportado" }, res);
+          },
+        });
         const disposeAll = () => {
           try { if (typeof registerVersion === "function") registerVersion(); } catch { /* já removido */ }
           try { if (typeof registerRollback === "function") registerRollback(); } catch { /* já removido */ }
+          try { if (typeof registerCore === "function") registerCore(); } catch { /* já removido */ }
         };
-        console.log("[VersionBadge] rotas /api/dsh-version e /api/dsh-rollback registradas (GET + POST)");
+        console.log("[VersionBadge] rotas /api/dsh-version, /api/dsh-rollback e /api/dsh-core registradas (GET + POST)");
         return disposeAll;
       }, "version-badge: api");
       return;
@@ -419,6 +637,7 @@ module.exports = function versionBadgePlugin(ctx) {
 
   ctx.on("webserver/index-inject", (table) => {
     table.push({ kind: "script", placement: "body", text: BADGE_JS });
+    table.push({ kind: "script", placement: "body", text: CORE_UI_JS });
   });
 
   console.log("[VersionBadge] badge de versão + chave de auto-update + rollback ativos");

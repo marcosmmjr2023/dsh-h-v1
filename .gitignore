@@ -46,3 +46,6 @@ Thumbs.db
 overlay/cordis.patch.yml
 overlay/.dsh-version.json
 overlay/.dsh-autoupdate.off
+
+overlay/.dsh-core-history.json
+overlay/.dsh-core-check.json

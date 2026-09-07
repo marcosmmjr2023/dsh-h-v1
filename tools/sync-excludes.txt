@@ -17,3 +17,5 @@ state.json
 /cordis.patch.yml
 .dsh-version.json
 .dsh-autoupdate.off
+.dsh-core-history.json
+.dsh-core-check.json
