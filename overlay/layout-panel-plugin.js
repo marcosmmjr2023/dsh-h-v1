@@ -300,12 +300,23 @@ const PANEL_CSS = `
 // CLIENT: JS da coluna (injetado no <body>)
 // ═══════════════════════════════════════════════════════════════════════════
 
+function dshEnvFlmUrl() {
+  const env = process.env.DSH_ENV_NAME;
+  if (env) {
+    try {
+      const fs = require("node:fs");
+      const m = JSON.parse(fs.readFileSync(process.env.HOME + "/.dsh-envs/" + env + "/meta.json", "utf8"));
+      if (m && m.freellmapiPort) return "http://127.0.0.1:" + m.freellmapiPort;
+    } catch (e) { /* segue global */ }
+  }
+  return "http://127.0.0.1:3002";
+}
 const PANEL_JS = `(function () {
   "use strict";
   var PANEL_DIRS = ${JSON.stringify((() => { try { return monitoredDirs(); } catch (e) { return [process.platform === "win32" ? (os.homedir() + "\\projects") : "/home/deploy/projects"]; } })())};
   var API = "/api/layout-info";
   var API_FILE = "/api/layout-file";
-  var FREELMAPI = "http://127.0.0.1:3002";
+  var FREELMAPI = ${JSON.stringify(dshEnvFlmUrl())};
   var LS_KEY = "dlp-collapsed-v1";
 
   function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }

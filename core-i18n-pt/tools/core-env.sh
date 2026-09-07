@@ -109,6 +109,10 @@ pp = pathlib.Path(home)/"freellmapi-shortcut-plugin.js"
 if pp.exists():
     t = pp.read_text().replace(old, new)
     pp.write_text(t); print("  plugin env →", new)
+lp = pathlib.Path(home)/"layout-panel-plugin.js"
+if lp.exists() and old in lp.read_text():
+    t2 = lp.read_text().replace(old, new)
+    lp.write_text(t2); print("  layout-panel env →", new)
 PY
   # grava porta no meta
   node -e '

@@ -19,7 +19,19 @@
 
 "use strict";
 
-const FREELMAPI_DASHBOARD_URL = "http://127.0.0.1:3002";
+// Gateway dinâmico: dentro de uma instância (DSH_ENV_NAME) usa o gateway dela; senão o global 3002
+function dshEnvFlmUrl() {
+  const env = process.env.DSH_ENV_NAME;
+  if (env) {
+    try {
+      const fs = require("node:fs");
+      const m = JSON.parse(fs.readFileSync(process.env.HOME + "/.dsh-envs/" + env + "/meta.json", "utf8"));
+      if (m && m.freellmapiPort) return "http://127.0.0.1:" + m.freellmapiPort;
+    } catch (e) { /* segue global */ }
+  }
+  return "http://127.0.0.1:3002";
+}
+const FREELMAPI_DASHBOARD_URL = dshEnvFlmUrl();
 
 const INJECT = `(function () {
   "use strict";
