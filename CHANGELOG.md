@@ -63,3 +63,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.10.
 ## [v0.2.12] — 2026-09-07 05:32 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.11.
   - 4539b66 feat(core-env): ambientes paralelos (A/B) para testar core novo sem tocar o sistema atual
+
+## [v0.2.13] — 2026-09-07 05:36 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.12.
+  - ddde144 feat(core-env): gera atalho no menu X11 (.desktop + wrapper launch-gui.sh) por ambiente
