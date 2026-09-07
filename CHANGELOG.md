@@ -79,3 +79,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.14.
 ## [v0.2.16] — 2026-09-07 05:40 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.15.
   - cb44f8b fix(core-env): launcher gerado por template com placeholders — URL (?token) calculada a cada abertura; sem unbound var em set -u
+
+## [v0.2.17] — 2026-09-07 12:40 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.16.
+  - d77ae90 feat(pt-ride): pt-BR anda junto com QUALQUER core novo (sem depender de patches com contexto)
