@@ -7,6 +7,8 @@ param([switch]$NoDshAlias,[switch]$NoGui)
 $ErrorActionPreference = "Stop"
 
 Write-Host "== Instalador DeepSeek Harness (dsh) =="
+$LogFile = Join-Path $env:USERPROFILE ".dsh-install.log"
+Start-Transcript -Path $LogFile -Force | Out-Null
 # 1) Pre-requisitos
 foreach ($cmd in @("node","npm","git")) {
   if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
@@ -77,13 +79,20 @@ try {
   }
 } catch { Write-Host "[i] nao foi possivel criar atalhos (Desktop/Menu Iniciar)" }
 
-# 7) Abre a GUI (automatico)
+# 7) Abre a GUI (automatico) e verifica o overlay
 if (-not $NoGui) {
   Write-Host "Abrindo a GUI..."
+  try { & (Join-Path $Repo "tools\run-gui.ps1") } catch { Write-Host "[i] GUI nao abriu automaticamente - rode: dsh up" }
+  Start-Sleep -Seconds 8
   try {
-    & (Join-Path $Repo "tools\run-gui.ps1")
-  } catch { Write-Host "[i] Nao foi possivel abrir a GUI automaticamente - rode: dsh up" }
+    $html = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 8 -Uri "http://127.0.0.1:3081/").Content
+    if ($html -match "dsh-version-badge|dlp-body") { Write-Host "[OK] OVERLAY presente (menu lateral/badges)." }
+    else { Write-Host "[X] OVERLAY ausente na GUI - veja logs abaixo e cole aqui." }
+  } catch { Write-Host "[i] nao consegui verificar a pagina (talvez ainda subindo)" }
 }
+Stop-Transcript | Out-Null
+Write-Host ""
+Write-Host "Log completo: $LogFile"
 
 Write-Host ""
 Write-Host "== Pronto! =="
