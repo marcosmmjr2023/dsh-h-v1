@@ -95,3 +95,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.18.
 ## [v0.2.20] — 2026-09-07 12:59 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.19.
   - 7b29af9 feat(core-safe): testes de sanidade na 1ª subida + FreeLLMAPI com CORS loopback
+
+## [v0.2.21] — 2026-09-07 13:07 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.20.
+  - 1655e94 fix(badge-core): chip do core reconhece pt aplicado por pt-ride em ambientes paralelos (DSH_ENV_NAME)
