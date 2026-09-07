@@ -362,7 +362,7 @@ EOF
     echo "══ Portas dos ambientes DeepSeek Harness ══"
     for m in "$BASE"/*/meta.json; do
       [ -f "$m" ] || continue
-      node -e 'const m=require(process.argv[1]);console.log(`  ${m.name.padEnd(18)} porta ${m.port}  ${m.url}`)' "$m"
+      node -e 'const m=require(process.argv[1]);console.log(`  ${m.name.padEnd(18)} harness ${String(m.port).padEnd(4)} flmapi ${m.freellmapiPort||"-"}  ${m.url}`)' "$m"
     done
     [ -z "$(ls -d "$BASE"/*/meta.json 2>/dev/null)" ] && echo "  (nenhum ambiente)"
     echo
