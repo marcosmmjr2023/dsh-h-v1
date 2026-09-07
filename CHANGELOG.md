@@ -67,3 +67,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.11.
 ## [v0.2.13] — 2026-09-07 05:36 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.12.
   - ddde144 feat(core-env): gera atalho no menu X11 (.desktop + wrapper launch-gui.sh) por ambiente
+
+## [v0.2.14] — 2026-09-07 05:37 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.13.
+  - 55f0ea8 fix(core-env): remove também apaga o atalho .desktop do menu X11
