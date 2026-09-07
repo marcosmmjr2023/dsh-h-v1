@@ -116,3 +116,7 @@ Publicação automática — última sincronização desta máquina.
 ## [v0.2.24] — 2026-09-07 14:04 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.23.
   - de497f5 docs(map): SERVER-MAP PT/EN — organização do servidor e regras de uso
+
+## [v0.2.25] — 2026-09-07 14:05 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.24.
+  - a17fc66 docs(map): cron auto-update confirmado ativo; pm2 save
