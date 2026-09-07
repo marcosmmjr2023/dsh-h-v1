@@ -267,11 +267,12 @@ function coreStatus(forceCheck, cb) {
     });
   });
 }
-// executa a ação do core e, em caso de sucesso, agenda o reinício da GUI
+// executa a ação do core; NUNCA reinicia sozinho (você aplica com o botão)
 function runCoreAction(action, version, json, res) {
   coreAction(action, version, (r) => {
-    json(r.ok ? 200 : 500, r, res);
-    if (r.ok) scheduleRestart(2600);
+    if (!r.ok) { json(500, r, res); return; }
+    r.needRestart = true;
+    json(200, r, res);
   });
 }
 function coreAction(action, version, cb) {  const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-update.sh");
@@ -327,8 +328,8 @@ const CORE_UI_JS = [
   "    }).catch(function () {});",
   "  };",
   "  var act = function (action, version, label) {",
-  "    if (!window.confirm('Núcleo (' + action + '): ' + label + '?\\n\\nNada é automático — você confirma a operação. O harness será reiniciado ao final.')) return;",
-  "    panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + (action === 'rollback' ? 'Revertendo' : 'Atualizando') + ' o core para ' + esc(label) + '… (pode levar alguns minutos; ao final a GUI reinicia).</div>';",
+  "    if (!window.confirm('Núcleo (' + action + '): ' + label + '?\\n\\nNada é automático. Antes da instalação é feito backup completo do seu histórico/config. A GUI NÃO é reiniciada sozinha: depois você clica em \"Reiniciar agora\" para aplicar.')) return;",
+  "    panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + (action === 'rollback' ? 'Revertendo' : 'Atualizando') + ' o core para ' + esc(label) + '… (backup + preview + instalação — pode levar alguns minutos).</div>';",
   "    fetch('/api/dsh-core', {",
   "      method: 'POST',",
   "      headers: { 'content-type': 'application/json' },",
@@ -338,10 +339,18 @@ const CORE_UI_JS = [
   "        panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-warn\">' + esc(res.error || 'falhou') + '</div><div class=\"cb-note\">' + esc(res.output || (res.needSudo ? 'Rode no terminal: sudo core-i18n-pt/tools/core-update.sh' : '')) + '</div>';",
   "        return;",
   "      }",
-  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + esc(res.output || 'ok') + '</div><div class=\"cb-note\">Reiniciando a GUI… recarregue a página (F5) se necessário.</div>';",
+  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">' + esc(res.output || 'ok') + '</div><div class=\"cb-note\">A GUI NÃO foi reiniciada. Quando quiser aplicar, clique abaixo (se algo falhar depois, é só voltar com ↩ e restaurar o backup).</div><div><button id=\"cb-restart\">▶ Reiniciar agora (aplicar)</button></div>';",
+  "      var rb = document.getElementById('cb-restart');",
+  "      if (rb) rb.addEventListener('click', function () {",
+  "        fetch('/api/dsh-core', {",
+  "          method: 'POST',",
+  "          headers: { 'content-type': 'application/json' },",
+  "          body: JSON.stringify({ action: 'restart' })",
+  "        }).then(function () { panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Reiniciando a GUI… recarregue a página (F5) se necessário.</div>'; });",
+  "      });",
   "      refresh();",
   "    }).catch(function () {",
-  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Reiniciando… recarregue a página (F5).</div>';",
+  "      panel.innerHTML = '<h4>Núcleo</h4><div class=\"cb-note\">Operação concluída? Recarregue a página (F5) e confira o chip do core.</div>';",
   "    });",
   "  };",
   "  var open = function () {",
@@ -599,8 +608,13 @@ module.exports = function versionBadgePlugin(ctx) {
               readBody(req, (body) => {
                 let action = "", version = "";
                 try { const p = JSON.parse(body || "{}"); action = String(p.action || ""); version = String(p.version || ""); } catch { /* inválido */ }
+                if (action === "restart") {
+                  json(200, { ok: true, restarting: true });
+                  scheduleRestart(1600); // ação explícita do usuário
+                  return;
+                }
                 if (action !== "update" && action !== "rollback") {
-                  json(400, { ok: false, error: "action deve ser update|rollback" }, res);
+                  json(400, { ok: false, error: "action deve ser update|rollback|restart" }, res);
                   return;
                 }
                 if (!version) {

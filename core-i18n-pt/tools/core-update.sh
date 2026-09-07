@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════
-# core-update.sh — atualiza/volta o CORE do DeepSeek Harness (manual,
-# como um kernel: nada automático). Rode com ROOT (sudo):
+# core-update.sh — atualiza/volta o CORE do DeepSeek Harness com SEGURANÇA
+# (manual, como um kernel — nada automático). Rode como ROOT (sudo):
 #
-#   core-update.sh --check                    → mostra instalado em cada prefixo
-#   core-update.sh --install <versão>         → instala a versão (ex.: 0.1.2-rc.1)
-#   core-update.sh --rollback <versão>        → volta para uma versão anterior
-#   core-update.sh --history                  → histórico de versões usadas
+#   core-update.sh --check                       → versões instaladas
+#   core-update.sh --history                     → histórico de versões
+#   core-update.sh --preview <versão>            → TESTA candidato isolado
+#   core-update.sh --install <versão>            → backup + preview + instala
+#   core-update.sh --rollback <versão>           → volta (backup + restaura)
 #
-# O que ele faz por prefixo npm do core (/opt/dsh-tui/* e o global do root):
-#   1. grava a versão atual no histórico local (<config viva>/.dsh-core-history.json);
-#   2. instala "@deepseek-ai/dsh@<versão>" nesse prefixo;
-#   3. reaplica os patches pt-BR quando ainda aplicam; se o contexto mudou,
-#      avisa para REGENERAR (nunca remenda à força);
-#   4. NÃO reinicia a GUI (o botão do painel/pm2 faz isso).
+# Garantias:
+#   1. BACKUP completo antes de qualquer operação (core-backup.sh): sessões,
+#      config, credenciais, plugins, manifesto do core — em
+#      ~/.dsh-core-backups/ (nunca sincronizado).
+#   2. PREVIEW isolado (por padrão no --install): instala o candidato num
+#      prefixo de teste, aplica os patches pt e sobe a GUI de teste; só passa
+#      se a GUI responder 200 (token incluso) e os plugins do overlay
+#      carregarem. Falhou → nada é aplicado na máquina real.
+#   3. Rollback simples: --rollback <versão-anterior> (e botão ↩ no painel).
+#   4. NUNCA reinicia a GUI sozinho — você decide quando aplicar (botão).
 #
 # Vars: DSH_LIVE (config viva p/ histórico; padrão $HOME/.dsh)
 # ═══════════════════════════════════════════════════════════════
@@ -23,8 +28,18 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$SELF_DIR/../.." && pwd)"
 LIVE="${DSH_LIVE:-$HOME/.dsh}"
 HIST="$LIVE/.dsh-core-history.json"
+DO_BACKUP=1
+DO_PREVIEW=1
 
-# Prefixos npm que contêm o core (cada um resolve o próprio global root)
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --live) LIVE="${2:-$LIVE}"; HIST="$LIVE/.dsh-core-history.json"; shift 2 ;;
+    --skip-backup) DO_BACKUP=0; shift ;;
+    --skip-preview) DO_PREVIEW=0; shift ;;
+    *) break ;;
+  esac
+done
+
 PREFIXES=()
 for cand in /opt/dsh-tui/node /usr; do
   if [ -n "$(npm root -g --prefix "$cand" 2>/dev/null)" ] \
@@ -33,19 +48,14 @@ for cand in /opt/dsh-tui/node /usr; do
   fi
 done
 
-usage() { sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; }
-
+usage() { sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; }
 glob_root() { npm root -g --prefix "$1" 2>/dev/null || echo "$1/node_modules"; }
+version_of() { node -e 'try{console.log(require(process.argv[1]+"/@deepseek-ai/dsh/package.json").version)}catch(e){console.log("?")}' "$(glob_root "$1")" 2>/dev/null; }
 
-version_of() { # prefixo → versão do @deepseek-ai/dsh
-  node -e 'try{console.log(require(process.argv[1]+"/@deepseek-ai/dsh/package.json").version)}catch(e){console.log("?")}' "$(glob_root "$1")" 2>/dev/null
-}
-
-record_history() { # versãoAntiga nova ok_patches
+record_history() {
   mkdir -p "$LIVE"
   node -e '
-    const fs=require("fs");
-    const h=process.argv[1];
+    const fs=require("fs"); const h=process.argv[1];
     let list=[]; try{list=JSON.parse(fs.readFileSync(h,"utf8"));}catch{}
     list.unshift({version:process.argv[3], from:process.argv[2], patchesOk:process.argv[4]==="ok", at:process.argv[5]});
     list=list.slice(0,12);
@@ -53,39 +63,98 @@ record_history() { # versãoAntiga nova ok_patches
   ' "$HIST" "$1" "$2" "$3" "$(date -Is 2>/dev/null || date -u +%FT%TZ)"
 }
 
-reapply_pt() { # prefixo
-  local root="$(glob_root "$1")/@deepseek-ai"
-  if [ -d "$root/dsh-client-locale" ]; then
-    if DSH_CORE_PKGS="$root" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
-      echo "    ✔ patches pt-BR reaplicados em $root"
-      return 0
-    fi
-    echo "    ⚠ patches pt-BR NÃO aplicaram limpos em $root — o core mudou de contexto."
-    echo "      Regenerar (não remendar): ver core-i18n-pt/README.md → 'Atualizar o core'."
-    return 1
+apply_pt_root() { # root-do-prefixo (…/node_modules)
+  local root="$1"
+  [ -d "$root/@deepseek-ai/dsh-client-locale" ] || return 0
+  if DSH_CORE_PKGS="$root/@deepseek-ai" "$REPO/core-i18n-pt/tools/apply-pt-core.sh" --force >/dev/null 2>&1; then
+    echo "    ✔ patches pt-BR em $root"
+    return 0
   fi
-  return 0
+  echo "    ⚠ patches pt-BR NÃO aplicaram em $root — contexto mudou; precisa REGENERAR."
+  return 1
 }
 
-# parse de --live <dir> (sudo não propaga env; o painel passa o diretório vivo)
-while [ "$#" -gt 0 ] && [ "$1" = "--live" ]; do
-  LIVE="${2:-$LIVE}"; HIST="$LIVE/.dsh-core-history.json"; shift 2
-done
+# ── PREVIEW: instala o candidato num prefixo isolado, aplica pt, sobe GUI de
+#    teste com os plugins do overlay e exige http 200 (aceitando token novo).
+preview_candidate() {
+  local ver="$1" stg="$HOME/.dsh-core-staging" port=0 log
+  rm -rf "$stg"; mkdir -p "$stg"
+  echo "▶ [preview] instalando @deepseek-ai/dsh@$ver em prefixo isolado $stg …"
+  if ! npm install -g --prefix "$stg" "@deepseek-ai/dsh@$ver" >"$HOME/.dsh-core-preview-npm.log" 2>&1; then
+    echo "✋ [preview] falha no npm (candidato nem instala)."; tail -4 "$HOME/.dsh-core-preview-npm.log"; rm -rf "$stg"; return 1
+  fi
+  local sroot; sroot="$(npm root -g --prefix "$stg" 2>/dev/null)"
+  apply_pt_root "$sroot" || { rm -rf "$stg"; return 1; }
+  # home de teste: plugins do overlay + settings (sem credenciais/sessões)
+  local tmph; tmph="$(mktemp -d /tmp/dsh-preview-home.XXXXXX)"
+  for h in /home/deploy/.dsh /home/deploy/.dsh-v2; do
+    [ -d "$h" ] || continue
+    for f in "$h"/*.js; do [ -f "$f" ] && cp -a "$f" "$tmph/"; done 2>/dev/null
+    [ -f "$h/settings.yaml" ] && cp -a "$h/settings.yaml" "$tmph/"
+  done
+  # resolve plugins de perfil pelo prefixo isolado (como o home real faz)
+  mkdir -p "$tmph/profiles/node_modules/@deepseek-ai"
+  for pkg in "$sroot"/@deepseek-ai/*; do
+    [ -d "$pkg" ] && ln -s "$pkg" "$tmph/profiles/node_modules/@deepseek-ai/$(basename "$pkg")" 2>/dev/null
+  done
+  # escolhe porta livre (30xx)
+  port=$((3100 + RANDOM % 900))
+  log="$HOME/.dsh-core-preview-$port.log"
+  cd /home/deploy || true
+  env DSH_HOME="$tmph" DSH_WEB_URL="http://127.0.0.1:$port" \
+    node "$sroot/@deepseek-ai/dsh/lib/bin.js" --profile web --no-open --port "$port" --host 127.0.0.1 \
+    >"$log" 2>&1 &
+  local pid=$! ok="" code=""
+  for i in $(seq 1 60); do
+    code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/" 2>/dev/null || true)
+    if [ "$code" = "200" ]; then ok=1; break; fi
+    if [ "$code" = "401" ]; then
+      token="$(grep -oE '\?token=[A-Za-z0-9_-]+' "$log" | head -1)"
+      if [ -n "$token" ]; then
+        code2=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/$token" 2>/dev/null || true)
+        [ "$code2" = "200" ] && { ok=1; echo "  ℹ [preview] candidato usa AUTENTICAÇÃO por token ($token)."; break; }
+      fi
+      break
+    fi
+    sleep 2
+  done
+  local plugins=0
+  grep -q '\[VersionBadge\]' "$log" && plugins=1
+  kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
+  if [ -n "$ok" ] && [ "$plugins" -eq 1 ]; then
+    echo "✔ [preview] $ver PASSOU (GUI 200 + plugins do overlay carregados)."
+    rm -rf "$stg" "$tmph"
+    return 0
+  fi
+  echo "✋ [preview] $ver FALHOU (http=${code:-sem resposta}, plugins_carregados=$plugins). Log: $log"
+  [ "$plugins" -eq 0 ] && echo "   ➜ os plugins do overlay não carregaram — precisa adaptá-los antes de subir este core."
+  grep -nE 'error:|Error:|updateError' "$log" | head -5
+  rm -rf "$stg" "$tmph"
+  return 1
+}
+
 cmd="${1:---check}"
 case "$cmd" in
   --check)
     for p in "${PREFIXES[@]:-}"; do echo "prefixo $p → $(version_of "$p")"; done
     [ "${#PREFIXES[@]}" -eq 0 ] && echo "nenhum prefixo do core encontrado"
     ;;
-  --history)
-    if [ -f "$HIST" ]; then cat "$HIST"; else echo "sem histórico em $HIST ainda"; fi
+  --history) [ -f "$HIST" ] && cat "$HIST" || echo "sem histórico em $HIST ainda" ;;
+  --preview)
+    VER="${2:-}"; [ -n "$VER" ] || { echo "ERRO: informe a versão (--preview 0.1.2-rc.1)"; exit 2; }
+    preview_candidate "$VER"
     ;;
   --install|--rollback)
     VER="${2:-}"
     [ -z "$VER" ] && { echo "ERRO: informe a versão (ex.: --install 0.1.2-rc.1)"; exit 2; }
-    case "$VER" in
-      *[!0-9A-Za-z._-]*|"") echo "ERRO: versão inválida: $VER"; exit 2 ;;
-    esac
+    case "$VER" in *[!0-9A-Za-z._-]*|"") echo "ERRO: versão inválida: $VER"; exit 2 ;; esac
+    if [ "$cmd" = "--install" ] && [ "$DO_PREVIEW" -eq 1 ]; then
+      preview_candidate "$VER" || { echo "✋ Abortado: candidato NÃO passou no preview — nada foi alterado na máquina real."; exit 1; }
+    fi
+    if [ "$DO_BACKUP" -eq 1 ]; then
+      echo "▶ backup pré-operação…"
+      "$SELF_DIR/core-backup.sh" --label "pre-${cmd#--}-${VER}" >/dev/null 2>&1 && echo "  ✔ backup em ~/.dsh-core-backups/"
+    fi
     for p in "${PREFIXES[@]:-}"; do
       old="$(version_of "$p")"
       echo "▶ [$p] instalando @deepseek-ai/dsh@$VER (era $old)…"
@@ -94,12 +163,13 @@ case "$cmd" in
       fi
       new="$(version_of "$p")"
       echo "  ✔ agora: $new"
-      pt="ok"
-      reapply_pt "$p" || pt="regenerar"
+      pt="ok"; apply_pt_root "$(glob_root "$p")" || pt="regenerar"
       record_history "$old" "$new" "$pt"
     done
-    echo "✔ core $([ "$cmd" = "--rollback" ] && echo rollback || echo atualização) concluído para ${VER}."
-    echo "   Reinicie a GUI (o botão do painel reinicia; ou pm2 restart dsh-web-v2)."
+    echo "✔ core $([ "$cmd" = "--rollback" ] && echo rollback || echo atualização) para ${VER} concluído."
+    echo "   A GUI ainda NÃO foi reiniciada — aplique quando quiser (botão no painel ou pm2 restart dsh-web-v2)."
+    echo "   Se algo falhar depois de reiniciar:  sudo core-i18n-pt/tools/core-update.sh --rollback <versão-anterior>"
+    echo "   Dados restauram em: core-restore.sh latest"
     ;;
   -h|--help) usage ;;
   *) echo "opção desconhecida: $1"; usage; exit 2 ;;

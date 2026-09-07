@@ -29,30 +29,44 @@ sudo core-i18n-pt/tools/install-sudoers.sh     # grava /etc/sudoers.d/dsh-core-t
 
 Sem isso, o painel mostra o comando para você rodar manualmente no terminal.
 
-## Fluxo seguro de atualização
+## Fluxo seguro de atualização (backup → preview → instalar → aplicar)
 
-1. **Cheque a novidade**: o chip avisa; ou `tools/check-core.sh`.
+**Garantia nº 1 — backup completo antes de qualquer operação**
+(`core-update.sh` chama `core-backup.sh` automaticamente): histórico de
+SESSÕES (v1 e v2), settings.yaml, `.credentials.yaml` (700), plugins e
+manifesto do core vão para `~/.dsh-core-backups/` (últimas 5; nunca sync).
+Recupere com: `core-restore.sh list | latest`.
+
+**Garantia nº 2 — preview isolado antes de instalar**
+O `--install` roda (por padrão) um `--preview <versão>`: instala o candidato
+num **prefixo isolado**, aplica os patches pt e sobe uma GUI de teste com os
+plugins do overlay. Só passa se a GUI responder 200 (aceitando token, se o
+core novo introduzir) **e** os plugins do overlay carregarem. Se falhar, nada
+é alterado na máquina real e você vê qual plugin/erro precisa de adaptação.
+
+1. **Cheque**: o chip avisa; ou `tools/check-core.sh`.
 2. **Atualize pelo painel** (botão "Atualizar para …") — ou no terminal:
    ```bash
    sudo core-i18n-pt/tools/core-update.sh --install 0.1.2-rc.1
    ```
-   A ferramenta, para **cada prefixo npm** do core (`/opt/dsh-tui/*` e o global):
-   grava a versão anterior no histórico → instala a versão → **reaplica os
-   patches pt-BR** se ainda aplicarem (senão avisa para REGENERAR, nunca
-   remenda à força) → registra no histórico.
-3. **A GUI reinicia** ao final (pelo painel) — confira: página 200, as 3
-   línguas, `verify-pt` verde, seus plugins/badges aparecendo.
-4. **Se estabilizou**, atualize o `pinned` no `manifest.json` e publique com
-   `tools/release.sh` (nova sub-versão do repo).
+   Etapas por prefixo: backup → preview (falhou = aborta) → instala → grava a
+   versão anterior no histórico → **reaplica os patches pt-BR** se aplicarem
+   (senão avisa REGENERAR) — **sem reiniciar a GUI**.
+3. **Aplique você**: clique em **"▶ Reiniciar agora"** no painel (ou
+   `pm2 restart dsh-web-v2`) — só então o core novo entra em produção.
+4. **Confira**: página 200, 3 línguas, `verify-pt` verde, seus plugins/badges.
+5. **Se estabilizou**, atualize o `pinned` no `manifest.json` e publique com
+   `tools/release.sh`.
 
 ## Se quebrar (rollback)
 
-- **Pelo painel**: botão "↩ Voltar para …" (usa a última versão que funcionava,
-  do histórico ou do `pinned`) — mesmo fluxo, instalando a versão anterior e
-  reaplicando os patches dela.
+- **Pelo painel**: botão "↩ Voltar para …" (última versão que funcionava) →
+  backup automático → instala a versão anterior → reaplica os patches — e só
+  então você clica em "Reiniciar agora".
 - **No terminal:**
   ```bash
   sudo core-i18n-pt/tools/core-update.sh --rollback <versão-anterior>
+  # dados (sessões/config): sudo core-i18n-pt/tools/core-restore.sh latest
   # overlay/plugins: tools/rollback.sh list | --snapshot | <tag>
   ```
 - Verifique o histórico de versões usadas:
