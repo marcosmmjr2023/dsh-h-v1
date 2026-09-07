@@ -128,3 +128,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.25.
 ## [v0.2.27] — 2026-09-07 14:14 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.26.
   - 1b807ff docs(map): só a GUI principal (dsh-web-v2) + FreeLLMAPI
+
+## [v0.2.28] — 2026-09-07 14:18 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.27.
+  - 11229e8 feat(core-chip): Atualizar cria instância isolada (2ª versão) em vez de instalar no core vivo
