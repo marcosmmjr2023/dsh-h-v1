@@ -59,3 +59,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.9.
 ## [v0.2.11] — 2026-09-07 05:24 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.10.
   - 6f7e8da feat(core-safe): arquitetura segura de atualização do core — backup completo, preview isolado e aplicação em 2 passos
+
+## [v0.2.12] — 2026-09-07 05:32 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.11.
+  - 4539b66 feat(core-env): ambientes paralelos (A/B) para testar core novo sem tocar o sistema atual
