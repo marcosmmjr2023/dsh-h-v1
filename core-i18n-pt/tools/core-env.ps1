@@ -84,9 +84,9 @@ switch ($Command) {
                        home=$homeDir; coreRoot=$coreRoot; created=(Get-Date -Format o) }
     ($meta | ConvertTo-Json) | Set-Content -Encoding UTF8 (Join-Path $envDir "meta.json")
     # 5) inicia (Start-Process com PID no registro)
+    $env:DSH_HOME=$homeDir; $env:DSH_WEB_URL="http://127.0.0.1:$port"; $env:DSH_ENV_NAME=$Name; $env:DSH_CORE_VERSION=$Core; $env:HOME=$env:USERPROFILE
     $proc = Start-Process -FilePath "node" -ArgumentList @("$bin","--profile","web","--no-open","--port","$port","--host","127.0.0.1") `
-      -WorkingDirectory $env:USERPROFILE -WindowStyle Hidden -PassThru `
-      -Environment @{ DSH_HOME=$homeDir; DSH_WEB_URL="http://127.0.0.1:$port"; DSH_ENV_NAME=$Name; DSH_CORE_VERSION=$Core; HOME=$env:USERPROFILE }
+      -WorkingDirectory $env:USERPROFILE -WindowStyle Hidden -PassThru
     $reg = @(Read-Registry) + [ordered]@{ Name=$Name; Port=$port; Pid=$proc.Id; Home=$homeDir; Url=$meta.url }
     Write-Registry @($reg)
     # 6) launcher .bat
@@ -123,10 +123,10 @@ switch ($Command) {
     if (Test-Path (Join-Path $gw "dist\index.js")) {
       $flDir = Join-Path (Env-Home $Name) "freellmapi"
       New-Item -ItemType Directory -Force -Path $flDir | Out-Null
+      $env:PORT="$flp"; $env:HOST="127.0.0.1"; $env:FREEAPI_DB_PATH=(Join-Path $flDir "freeapi.db")
+      $env:DASHBOARD_ORIGINS="http://localhost:5173,http://127.0.0.1:5173,http://127.0.0.1:$($entry.Port)"
       $proc = Start-Process -FilePath "node" -ArgumentList @((Join-Path $gw "dist\index.js")) `
-        -WorkingDirectory $gw -WindowStyle Hidden -PassThru `
-        -Environment @{ PORT="$flp"; HOST="127.0.0.1"; FREEAPI_DB_PATH=(Join-Path $flDir "freeapi.db");
-                        DASHBOARD_ORIGINS="http://localhost:5173,http://127.0.0.1:5173,http://127.0.0.1:$($entry.Port)" }
+        -WorkingDirectory $gw -WindowStyle Hidden -PassThru
       $reg = @(Read-Registry)
       for ($i=0; $i -lt $reg.Count; $i++) { if ($reg[$i].Name -eq $Name) { $reg[$i].FlmPort=$flp; $reg[$i].FlmPid=$proc.Id } }
       Write-Registry @($reg)
