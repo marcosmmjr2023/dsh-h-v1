@@ -766,7 +766,11 @@ const PANEL_JS = `(function () {
   function uninstallAction(envName) {
     if (!window.confirm('Desinstalar a instância ' + envName + '? Ela sera encerrada e os atalhos/perfil serao removidos. O sistema principal nao e afetado.')) return;
     fetch('/api/dsh-core', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'uninstall' }) })
-      .then(function () { if (document.getElementById('dsh-uninstall-fab')) document.getElementById('dsh-uninstall-fab').textContent = 'Desinstalando...'; })
+      .then(function (r) { try { return r.json(); } catch (e) { return {}; } }).then(function (res) {
+        if (document.getElementById('dsh-uninstall-fab')) document.getElementById('dsh-uninstall-fab').textContent = 'Desinstalando...';
+        if (document.getElementById('dsh-uninstall-row')) document.getElementById('dsh-uninstall-row').innerHTML = 'Instância sendo encerrada...';
+        try { window.close(); } catch (e) {}
+      })
       .catch(function () { if (document.getElementById('dsh-uninstall-fab')) document.getElementById('dsh-uninstall-fab').textContent = 'Erro ao desinstalar'; });
   }
   function ensureUninstallUI() {
@@ -786,7 +790,7 @@ const PANEL_JS = `(function () {
       var fab = document.createElement('button');
       fab.id = 'dsh-uninstall-fab'; fab.type = 'button';
       fab.textContent = '🗑 Desinstalar';
-      fab.style.cssText = 'position:fixed;left:66px;bottom:14px;z-index:2147483647;background:#f85149;color:#fff;border:0;border-radius:12px;padding:4px 8px;font:10px/1.4 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
+      fab.style.cssText = 'position:fixed;right:16px;bottom:80px;z-index:2147483647;background:#f85149;color:#fff;border:0;border-radius:12px;padding:5px 10px;font:10px/1.4 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
       fab.onclick = function () { uninstallAction(DSH_INSTANCE); };
       (document.body || document.documentElement).appendChild(fab);
     }

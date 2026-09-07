@@ -347,8 +347,10 @@ EOF
         /usr/bin/pm2 delete "flm-$name" >/dev/null 2>&1 || true
         rm -f "/home/deploy/.local/share/applications/dsh-env-$name.desktop"
         rm -rf "$BASE/$name" "/home/deploy/.config/dsh-env-$name"
+        # fecha a janela Chrome da instância (perfil próprio) — processo externo
+        pkill -f "/home/deploy/.config/dsh-env-$name" >/dev/null 2>&1 || true
         update-desktop-database /home/deploy/.local/share/applications >/dev/null 2>&1 || true
-        echo "✔ ambiente '$name' removido (gateway + atalho + pasta + perfil Chrome)"
+        echo "✔ ambiente '$name' removido (gateway + atalho + pasta + perfil Chrome) — janela fechada"
         /usr/bin/pm2 delete "dsh-env-$name" >/dev/null 2>&1 || true
     esac
     ;;
