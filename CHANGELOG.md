@@ -288,3 +288,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.65.
 ## [v0.2.67] — 2026-09-07 23:54 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.66.
   - d5b3ca2 fix(win): fallback absoluto p/ schemastery/dsh-settings dentro do grafo do core
+
+## [v0.2.68] — 2026-09-08 04:01 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.67.
+  - a4f5699 feat(win): cordis.patch.yml gerado no Windows SEM smart-router/openrouter/model-visibility
