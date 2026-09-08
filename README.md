@@ -13,6 +13,8 @@
 
 **Português:** [README.pt-BR.md](README.pt-BR.md)
 
+![FreeDSH in action — FreeLLMAPI, Smart Router, model controls and safe core updates](assets/freedsh-demo.gif)
+
 ---
 
 ## Why FreeDSH?

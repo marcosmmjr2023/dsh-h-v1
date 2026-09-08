@@ -13,6 +13,8 @@
 
 **English:** [README.md](README.md)
 
+![FreeDSH funcionando — FreeLLMAPI, Roteador Inteligente, controle de modelos e atualização segura do core](assets/freedsh-demo.gif)
+
 ---
 
 ## Por que FreeDSH?
