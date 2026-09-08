@@ -1,13 +1,24 @@
-# dsh-h-v1 — Personal layer, auto-update & safe rollback for DeepSeek Harness
+# 🐋 dsh-h-v1 — A camada que torna o DeepSeek Harness **grátis na prática**, flexível e ótimo de usar
 
-A git-based overlay and sync system that keeps your **personal DeepSeek Harness setup**
-(custom plugins, model router, presets, editor assets) **identical on every machine** —
-and lets you **roll back safely** when an automatic update breaks something.
+**dsh-h-v1** vira o [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) em um assistente que você **realmente usa todos os dias, sem assinatura**: roda dezenas de **modelos gratuitos** (FreeLLMAPI, OpenRouter `:free`, OpenCode free/zen) com roteamento e fallback automáticos, traz uma **interface em pt-BR** (que acompanha o idioma do sistema: pt/zh/en), um **painel lateral com badges**, e **atualiza o core com segurança** (instância paralela com progresso ao vivo — o sistema em execução nunca é tocado).
 
-Built on top of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
-(*"Everything is a Plugin"*). **Unofficial** — a personal distribution, not affiliated with DeepSeek.
+> ⚙️ Construído sobre [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) ("*Everything is a Plugin*").
+> **Não oficial** — uma distribuição pessoal, sem afiliação com a DeepSeek.
 
 ---
+
+### ✨ Por que você vai querer usar
+
+| | O que você ganha |
+|---|---|
+| 🎁 **Modelos gratuitos, de verdade** | Gateway **FreeLLMAPI** + roteador inteligente (**OpenRouter `:free`**, **OpenCode free/zen**) com fallback automático — explore a onda de modelos grátis sem criar planos pagos |
+| 🖥️ **Painel próprio** | Menu lateral com arquivos recentes, status do core, FreeLLMAPI, Roteador e Modelos — tudo a um clique, sem abrir janelas soltas |
+| 🌎 **Idioma que segue você** | Interface em **português (pt-BR)**, chinês ou inglês conforme o idioma do seu sistema (padrão: inglês) |
+| 🛡️ **Core novo sem medo** | Clique em “Atualizar”: cria uma **instância paralela** com o core novo (com **progresso em tempo real**), você testa e **desinstala** com um botão — o que já está rodando continua intacto |
+| 🧩 **Sua camada, versionada** | Settings, plugins e presets como **código**: git, tags `vX.Y.Z`, changelog e **rollback seguro**; sincronizado entre todas as suas máquinas |
+| 💻 **Windows e Linux** | Instaladores **interativos em 1 linha** (detectam o que existe, idioma, chaves) — a mesma experiência nos dois sistemas |
+
+**Comece em 1 minuto** 👉 [Instalar e rodar](#-install--run-end-user)
 
 ## 💻 Install & run (end user)
 
