@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security policy
+    url: https://github.com/marcosmmjr2023/dsh-h-v1/blob/main/SECURITY.md
+    about: Please do not disclose secrets or exploit details in public issues.
