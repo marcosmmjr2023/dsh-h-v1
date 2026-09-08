@@ -332,3 +332,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.76.
 ## [v0.2.78] — 2026-09-08 04:55 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.77.
   - a43b3c5 feat(win): GUI segue idioma do sistema (pt-BR/zh-CN/en-US, padrao en)
+
+## [v0.2.79] — 2026-09-08 04:57 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.78.
+  - 4784d51 feat(linux): instalador interativo dsh-setup.sh (equiv. Windows)
