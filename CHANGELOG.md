@@ -304,3 +304,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.69.
 ## [v0.2.71] — 2026-09-08 04:17 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.70.
   - deee339 feat(win): icone da baleia + janela de app (Edge/Chrome --app) + atalhos Desktop/Menu Iniciar com icone
+
+## [v0.2.72] — 2026-09-08 04:23 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.71.
+  - 17087d1 feat(win): FreeLLMAPI local (dsh flm-setup) + icone oficial DeepSeek (baleia 225px)
