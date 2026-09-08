@@ -312,3 +312,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.71.
 ## [v0.2.73] — 2026-09-08 04:23 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.72.
   - 4c20186 fix(win): flm-setup.ps1 em ASCII puro (PS5.1)
+
+## [v0.2.74] — 2026-09-08 04:26 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.73.
+  - 9108659 feat(win): pt-BR via --lang na janela de app + FreeLLMAPI integrado ao instalador
