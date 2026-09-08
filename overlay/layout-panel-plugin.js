@@ -71,6 +71,23 @@ function monitoredDirs() {
   return [process.platform === "win32" ? path.join(os.homedir(), "projects") : "/home/deploy/projects"];
 }
 
+/** Comparação segura de caminhos (Windows não diferencia maiúsculas/minúsculas). */
+function comparablePath(value) {
+  const resolved = path.resolve(value);
+  return process.platform === "win32" ? resolved.toLowerCase() : resolved;
+}
+
+function samePath(a, b) {
+  return comparablePath(a) === comparablePath(b);
+}
+
+/** `candidate` está lexicalmente dentro de `root`? */
+function pathInside(root, candidate) {
+  const r = comparablePath(root);
+  const c = comparablePath(candidate);
+  return c === r || c.startsWith(r + path.sep);
+}
+
 /** Varre um diretório (profundidade limitada) e devolve arquivos com mtime. */
 function walkFiles(root, depth, out) {
   if (depth > MAX_DEPTH) return;
@@ -119,9 +136,13 @@ function layoutInfoPayload() {
   }
   files.sort((a, b) => b.mtimeMs - a.mtimeMs);
   const top = files.slice(0, MAX_FILES).map((f) => {
-    const owned = dirs.find((d) => f.path.startsWith(d + path.sep)) || dirs[0] || "";
+    // `root` identifica de qual diretório monitorado o arquivo veio. Isso é
+    // essencial no Windows, onde o painel monitora vários roots/junctions e o
+    // mesmo caminho relativo pode existir em mais de um deles.
+    const owned = dirs.find((d) => pathInside(d, f.path)) || dirs[0] || "";
     return {
       path: f.path,
+      root: owned,
       rel: path.relative(owned, f.path),
       name: f.name,
       mtimeMs: f.mtimeMs,
@@ -140,21 +161,32 @@ function layoutInfoPayload() {
 
 const MAX_EDIT_SIZE = 1024 * 1024; // 1MB — acima disso recusa abrir no editor
 
-/** Resolve um caminho relativo dentro dos diretórios monitorados (anti path-traversal). */
-function resolveInside(rel) {
+/**
+ * Resolve um caminho relativo dentro dos diretórios monitorados
+ * (anti path-traversal). Quando `root` é informado, resolve SOMENTE naquele
+ * diretório. Sem isso, no Windows, um arquivo do 2º root podia abrir o arquivo
+ * homônimo do 1º root — daí o editor mostrar conteúdo errado (ex.: "import …").
+ */
+function resolveInside(rel, root) {
   if (typeof rel !== "string" || rel.length === 0) return null;
   const dirs = monitoredDirs();
-  for (const dir of dirs) {
+  let candidates = dirs;
+  if (typeof root === "string" && root.trim()) {
+    const selected = dirs.find((d) => samePath(d, root));
+    if (!selected) return null;
+    candidates = [selected];
+  }
+  for (const dir of candidates) {
     const resolved = path.resolve(dir, rel);
-    if (resolved !== dir && !resolved.startsWith(dir + path.sep)) continue;
+    if (!pathInside(dir, resolved)) continue;
     return resolved;
   }
   return null;
 }
 
 /** Lê um arquivo de texto com limite de tamanho; rejeita binários. */
-function readTextFile(rel) {
-  const full = resolveInside(rel);
+function readTextFile(rel, root) {
+  const full = resolveInside(rel, root);
   if (!full) return { error: "caminho fora do diretório monitorado" };
   let st, buf;
   try {
@@ -168,19 +200,19 @@ function readTextFile(rel) {
   // binário? procura byte nulo nos primeiros 8KB
   const probe = buf.subarray(0, 8192);
   if (probe.includes(0)) return { error: "arquivo binário — não pode ser aberto no editor" };
-  return { ok: true, content: buf.toString("utf8"), size: st.size, mtimeMs: st.mtimeMs };
+  return { ok: true, path: full, content: buf.toString("utf8"), size: st.size, mtimeMs: st.mtimeMs };
 }
 
 /** Grava um arquivo de texto com limite de tamanho. */
-function writeTextFile(rel, content) {
-  const full = resolveInside(rel);
+function writeTextFile(rel, root, content) {
+  const full = resolveInside(rel, root);
   if (!full) return { error: "caminho fora do diretório monitorado" };
   if (typeof content !== "string") return { error: "conteúdo inválido" };
   if (Buffer.byteLength(content, "utf8") > MAX_EDIT_SIZE) return { error: "conteúdo grande demais (máx 1MB)" };
   try {
     fs.writeFileSync(full, content, "utf8");
     const st = fs.statSync(full);
-    return { ok: true, mtimeMs: st.mtimeMs };
+    return { ok: true, path: full, mtimeMs: st.mtimeMs };
   } catch (e) {
     return { error: `não foi possível salvar: ${e.code ?? e.message}` };
   }
@@ -487,6 +519,14 @@ const PANEL_JS = `(function () {
   var cmLoaded = false; // assets do CodeMirror já carregados nesta página
   var ASSET = "/dlp-editor/";
 
+  // Inclui o root de origem para não confundir arquivos homônimos quando o
+  // Windows monitora vários diretórios/junctions.
+  function fileApiUrl(rel, root) {
+    var url = API_FILE + "?rel=" + encodeURIComponent(rel || "");
+    if (root) url += "&root=" + encodeURIComponent(root);
+    return url;
+  }
+
   // modo CodeMirror por extensão de arquivo
   var CM_MODES = {
     js: "javascript", mjs: "javascript", cjs: "javascript", ts: "javascript", tsx: "javascript",
@@ -584,7 +624,7 @@ const PANEL_JS = `(function () {
   function edSave() {
     if (!edState || !edState.cm) return;
     edStatus("", "salvando…");
-    fetch(API_FILE + "?rel=" + encodeURIComponent(edState.rel), {
+    fetch(fileApiUrl(edState.rel, edState.root), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ content: edState.cm.getValue() })
@@ -619,7 +659,7 @@ const PANEL_JS = `(function () {
 
   function openEditor(f) {
     if (edState) edClose();
-    edState = { rel: f.rel, dirty: false, saved: null, cm: null };
+    edState = { rel: f.rel, root: f.root || "", dirty: false, saved: null, cm: null };
     var mode = cmModeFor(f.rel);
     edState.mode = mode;
     var isMd = mode === "markdown";
@@ -669,7 +709,7 @@ const PANEL_JS = `(function () {
         return null;
       })
       .then(function () {
-        return fetch(API_FILE + "?rel=" + encodeURIComponent(f.rel), { method: "GET" })
+        return fetch(fileApiUrl(f.rel, f.root), { method: "GET" })
           .then(function (r) { return r.json().then(function (d) { return { status: r.status, d: d }; }); });
       })
       .then(function (res) {
@@ -826,12 +866,13 @@ const layoutPanelPlugin = {
               handler: (req, res) => {
                 const url = new URL(req.url ?? "/", "http://127.0.0.1");
                 const rel = url.searchParams.get("rel") ?? "";
+                const root = url.searchParams.get("root") ?? "";
                 const json = (code, obj) => {
                   res.writeHead(code, { "content-type": "application/json; charset=utf-8" });
                   res.end(JSON.stringify(obj));
                 };
                 if (req.method === "GET") {
-                  const out = readTextFile(rel);
+                  const out = readTextFile(rel, root);
                   json(out.ok ? 200 : 400, out);
                   return;
                 }
@@ -841,7 +882,7 @@ const layoutPanelPlugin = {
                   req.on("end", () => {
                     let content = "";
                     try { content = JSON.parse(body || "{}").content ?? ""; } catch { content = ""; }
-                    const out = writeTextFile(rel, content);
+                    const out = writeTextFile(rel, root, content);
                     json(out.ok ? 200 : 400, out);
                   });
                   return;
