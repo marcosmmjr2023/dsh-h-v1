@@ -296,3 +296,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.67.
 ## [v0.2.69] — 2026-09-08 04:01 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.68.
   - 45d13b5 fix(win): dsh-cli com Remove-FailingPlugins no sync-overlay (funcao + uso)
+
+## [v0.2.70] — 2026-09-08 04:07 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.69.
+  - 74ce43d fix(win): cordis.patch.yml.win.tpl valido (remove 3 plugins por linhas) + geradores limpos
