@@ -318,6 +318,12 @@ const PANEL_CSS = `
 #dlp-editor-modal .ed-status.ok{color:#3fb950;}
 #dlp-editor-modal .ed-status.err{color:#f85149;}
 #dlp-editor-modal .ed-status .ed-ln{color:#484f58;}
+/* Fallback sem CodeMirror: textarea ocupa 100% (modo texto simples) */
+#dlp-editor-modal .ed-area-cm{display:flex;flex-direction:column;}
+#dlp-editor-modal .ed-area-cm textarea{display:block;flex:1 1 auto;min-height:0;width:100%;height:auto;box-sizing:border-box;
+  background:#0d1117;color:#e6edf3;border:0;outline:none;resize:none;margin:0;padding:4px 8px;
+  font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow:auto;tab-size:2;}
+#dlp-editor-modal .ed-area-cm .CodeMirror{height:auto;flex:1 1 auto;min-height:0;}
 /* CodeMirror — escuro, compacto, sem bordas internas */
 #dlp-editor-modal .CodeMirror{height:100%;background:#0d1117;color:#e6edf3;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;}
 #dlp-editor-modal .CodeMirror-gutters{background:#161b22;border-right:1px solid #21262d;}
@@ -621,13 +627,19 @@ const PANEL_JS = `(function () {
     else if (edState && edState.cm) edState.cm.refresh();
   }
 
+  function edGetValue() {
+    if (edState && edState.cm) return edState.cm.getValue();
+    var area = document.getElementById("dlp-ed-area");
+    return area ? area.value : "";
+  }
+
   function edSave() {
-    if (!edState || !edState.cm) return;
+    if (!edState) return;
     edStatus("", "salvando…");
     fetch(fileApiUrl(edState.rel, edState.root), {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ content: edState.cm.getValue() })
+      body: JSON.stringify({ content: edGetValue() })
     })
       .then(function (r) { return r.json().then(function (d) { return { status: r.status, d: d }; }); })
       .then(function (res) {
@@ -699,19 +711,70 @@ const PANEL_JS = `(function () {
     m.addEventListener("click", function (e) { if (e.target === m) edClose(); });
     document.addEventListener("keydown", edKey);
 
-    edStatus("", "carregando editor…");
-    ensureCmLoaded(mode)
-      .catch(function (err) {
-        // fallback: sem CodeMirror, usa textarea simples
-        var area = document.getElementById("dlp-ed-area");
-        if (area) area.style.display = "block";
-        edStatus("err", "CodeMirror não carregou (" + (err && err.message ? err.message : err) + ") — modo texto");
-        return null;
-      })
-      .then(function () {
-        return fetch(fileApiUrl(f.rel, f.root), { method: "GET" })
-          .then(function (r) { return r.json().then(function (d) { return { status: r.status, d: d }; }); });
-      })
+    edStatus("", "carregando conteúdo…");
+    // Estratégia em camadas (funciona mesmo se o CodeMirror falhar no Windows):
+    //  1) o texto é carregado e mostrado IMEDIATAMENTE num <textarea> de tela
+    //     cheia (com rolagem própria) — nunca fica preso à primeira linha;
+    //  2) quando/SE os assets do CodeMirror carregarem, o textarea é "elevado"
+    //     a editor com gutter/cores, copiando o valor que já está visível.
+    var contentReady = false;
+    var cmReady = false;
+    var contentOk = false;
+
+    function showPlain(msg) {
+      edState.plain = true;
+      edStatus("", msg || "pronto · " + fmtSize(edState.size || 0) + " · UTF-8 (texto)");
+    }
+
+    function upgradeToCM() {
+      if (!contentOk || !cmReady || edState.cm) return;
+      if (typeof CodeMirror === "undefined") { cmReady = false; return; }
+      var ta = document.getElementById("dlp-ed-area");
+      if (!ta) return;
+      try {
+        var cm = CodeMirror.fromTextArea(ta, {
+          mode: edState.mode ? (typeof edState.mode === "object" ? edState.mode : edState.mode) : "",
+          theme: "dracula",
+          lineNumbers: true,
+          matchBrackets: true,
+          autoCloseBrackets: true,
+          styleActiveLine: true,
+          indentUnit: 2,
+          tabSize: 2,
+          indentWithTabs: false,
+          lineWrapping: false
+        });
+        edState.cm = cm;
+        edState.plain = false;
+        cm.scrollTo(0, 0);
+        cm.setCursor({ line: 0, ch: 0 });
+        cm.on("change", function () { edState.dirty = true; });
+        cm.on("cursorActivity", edUpdateLine);
+        edUpdateLine();
+        edStatus("", "pronto · " + fmtSize(edState.size || 0) + " · UTF-8 · " + (edState.mode || "texto"));
+        // Re-mede a viewport algumas vezes: se o modal ainda não tinha layout
+        // pronto (flex acabou de montar), a 1ª medição pode vir truncada.
+        var t = 0;
+        (function reRefresh() {
+          if (!edState || edState.cm !== cm) return;
+          cm.refresh();
+          cm.scrollTo(0, 0);
+          cm.setCursor({ line: 0, ch: 0 });
+          edUpdateLine();
+          if (++t < 4) setTimeout(reRefresh, 160);
+        })();
+      } catch (e) {
+        // qualquer falha do CodeMirror mantém o modo texto simples
+        console.warn("[LayoutPanel] CodeMirror falhou ao ativar:", e);
+        showPlain();
+      }
+    }
+
+    function maybeUpgrade() { if (contentReady && cmReady) upgradeToCM(); }
+
+    // carrega o conteúdo em paralelo com os assets do editor
+    fetch(fileApiUrl(f.rel, f.root), { method: "GET" })
+      .then(function (r) { return r.json().then(function (d) { return { status: r.status, d: d }; }); })
       .then(function (res) {
         if (!res || !res.d) return;
         var area = document.getElementById("dlp-ed-area");
@@ -721,51 +784,28 @@ const PANEL_JS = `(function () {
           edStatus("err", "não foi possível abrir: " + (res.d.error || "erro"));
           return;
         }
-        if (cmLoaded && typeof CodeMirror !== "undefined") {
-          var cm = CodeMirror.fromTextArea(area, {
-            mode: edState.mode ? (typeof edState.mode === "object" ? edState.mode : edState.mode) : "",
-            theme: "dracula",
-            lineNumbers: true,
-            matchBrackets: true,
-            autoCloseBrackets: true,
-            styleActiveLine: true,
-            indentUnit: 2,
-            tabSize: 2,
-            indentWithTabs: false,
-            lineWrapping: false
-          });
-          // fromTextArea lê o valor do <textarea> (não da opção "value");
-          // por isso o conteúdo é injetado DEPOIS de criar a instância.
-          cm.setValue(res.d.content);
-          cm.scrollTo(0, 0);
-          cm.setCursor({ line: 0, ch: 0 });
-          edState.cm = cm;
-          cm.on("change", function () { edState.dirty = true; });
-          cm.on("cursorActivity", edUpdateLine);
-          edUpdateLine();
-          edStatus("", "pronto · " + fmtSize(res.d.size) + " · UTF-8 · " + (edState.mode || "texto"));
-          // O CodeMirror mede a altura do container na criação; se o modal
-          // ainda não teve o layout calculado (flex acabou de montar), ele
-          // renderiza a viewport errada. refresh() após um tick re-mede e
-          // recoloca no topo — sem isso o gutter mostra linha ~140.
-          setTimeout(function () {
-            if (!edState || edState.cm !== cm) return;
-            cm.refresh();
-            cm.scrollTo(0, 0);
-            cm.setCursor({ line: 0, ch: 0 });
-            edUpdateLine();
-          }, 120);
-        } else {
-          area.value = res.d.content;
-          area.disabled = false;
-          edStatus("", "pronto · " + fmtSize(res.d.size) + " · UTF-8 (texto)");
-        }
+        area.value = res.d.content;
+        area.disabled = false;
+        edState.size = res.d.size;
+        contentOk = true;
+        contentReady = true;
+        showPlain();
+        maybeUpgrade();
       })
       .catch(function () {
         var area = document.getElementById("dlp-ed-area");
         if (area) { area.disabled = true; }
         edStatus("err", "erro de rede ao abrir arquivo");
       });
+
+    ensureCmLoaded(mode).then(function () {
+      cmReady = true;
+      maybeUpgrade();
+    }, function (err) {
+      // assets do CodeMirror indisponíveis (ex.: Windows) — modo texto segue útil
+      cmReady = true;
+      console.warn("[LayoutPanel] CodeMirror indisponível, usando modo texto:", err && err.message ? err.message : err);
+    });
   }
 
   function refreshGateway() {
