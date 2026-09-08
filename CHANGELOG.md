@@ -328,3 +328,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.75.
 ## [v0.2.77] — 2026-09-08 04:46 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.76.
   - d194a6e docs(landing): README/README.pt-BR com finalidade + como instalar e rodar (Linux e Windows)
+
+## [v0.2.78] — 2026-09-08 04:55 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.77.
+  - a43b3c5 feat(win): GUI segue idioma do sistema (pt-BR/zh-CN/en-US, padrao en)
