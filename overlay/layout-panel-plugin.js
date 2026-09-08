@@ -296,9 +296,9 @@ const PANEL_CSS = `
 #dlp-editor-modal .ed-btn.close:hover{background:#21262d;color:#fff;}
 #dlp-editor-modal .ed-wrap{flex:1;display:flex;min-height:0;background:#0d1117;position:relative;}
 #dlp-editor-modal .ed-area-cm{flex:1;min-width:0;position:relative;}
-#dlp-editor-modal .ed-preview{flex:1;min-width:0;overflow:auto;padding:16px 20px;background:#0d1117;color:#e6edf3;
-  font:13px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:none;}
+#dlp-editor-modal .ed-preview{flex:1;min-width:0;overflow:hidden;padding:0;background:#fff;display:none;position:relative;}
 #dlp-editor-modal .ed-preview.active{display:block;}
+#dlp-editor-modal .ed-preview iframe{display:block;width:100%;height:100%;border:0;background:#fff;}
 #dlp-editor-modal .ed-preview h1,#dlp-editor-modal .ed-preview h2,#dlp-editor-modal .ed-preview h3{color:#9ecbff;margin:14px 0 8px;}
 #dlp-editor-modal .ed-preview h1{font-size:20px;border-bottom:1px solid #21262d;padding-bottom:6px;}
 #dlp-editor-modal .ed-preview h2{font-size:17px;}
@@ -349,6 +349,64 @@ function dshEnvFlmUrl() {
   }
   return "http://127.0.0.1:3002";
 }
+
+/**
+ * Helpers de preview (markdown). São definidos AQUI (código Node normal, sem
+ * double-escape) e injetados no PANEL_JS via toString(), para não depender de
+ * marked e para não sofrer com escapes de template literal.
+ */
+function mdInlineBrowser(src) {
+  var s = esc(src);
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+  s = s.replace(/(^|[\s(])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return s;
+}
+function mdToHtmlBrowser(src) {
+  var out = [];
+  var lines = String(src || "").replace(/\r\n?/g, "\n").split("\n");
+  var i = 0;
+  function block(html) { out.push(html); }
+  while (i < lines.length) {
+    var L = lines[i];
+    var m;
+    if (/^\s*```/.test(L)) {
+      i++;
+      var code = [];
+      while (i < lines.length && !/^\s*```/.test(lines[i])) { code.push(esc(lines[i])); i++; }
+      i++;
+      block("<pre><code>" + code.join("\n") + "</code></pre>");
+      continue;
+    }
+    if ((m = L.match(/^(#{1,6})\s+(.*)$/))) {
+      var lvl = Math.min(m[1].length, 6);
+      block("<h" + lvl + ">" + mdInlineBrowser(m[2]) + "</h" + lvl + ">");
+      i++;
+      continue;
+    }
+    if (/^\s*(?:---+|___+|\*\*\*+)\s*$/.test(L)) { block("<hr>"); i++; continue; }
+    m = L.match(/^\s*(?:[-*+]|\d+\.)\s+(.*)$/);
+    if (m) {
+      var tag = /^\s*\d/.test(L) ? "ol" : "ul";
+      var items = [];
+      while (i < lines.length) {
+        var lm = lines[i].match(/^\s*(?:[-*+]|\d+\.)\s+(.*)$/);
+        if (!lm) break;
+        items.push("<li>" + mdInlineBrowser(lm[1]) + "</li>");
+        i++;
+      }
+      block("<" + tag + ">" + items.join("") + "</" + tag + ">");
+      continue;
+    }
+    if (/^\s*$/.test(L)) { i++; continue; }
+    block("<p>" + mdInlineBrowser(L) + "</p>");
+    i++;
+  }
+  return out.join("");
+}
+
 const PANEL_JS = `(function () {
   var DSH_INSTANCE = ${JSON.stringify(process.env.DSH_ENV_NAME || "")};
   "use strict";
@@ -602,16 +660,39 @@ const PANEL_JS = `(function () {
     ln.textContent = (cur.line + 1) + ":" + (cur.ch + 1);
   }
 
+  // ── Preview (markdown/html) — funciona mesmo sem CodeMirror ──
+  // mdInline/mdToHtml são injetados aqui via toString() (definidos fora do
+  // template, sem problemas de escape de barra invertida/crase).
+  ${mdInlineBrowser.toString()}
+  ${mdToHtmlBrowser.toString()}
   function edRenderPreview() {
     var pv = document.getElementById("dlp-ed-preview");
-    var cm = edState && edState.cm;
-    if (!pv || !cm) return;
-    if (typeof marked !== "undefined" && edState.mode === "markdown") {
-      pv.innerHTML = marked.parse(cm.getValue() || "");
+    if (!pv) return;
+    var val = edGetValue() || "";
+    var isHtml = edState && edState.previewHtml;
+    var bodyHtml;
+    if (isHtml) {
+      bodyHtml = val;
+    } else if (typeof marked !== "undefined") {
+      try { bodyHtml = marked.parse(val); } catch (e) { bodyHtml = mdToHtmlBrowser(val); }
     } else {
-      pv.innerHTML = "<pre>" + esc(cm.getValue() || "") + "</pre>";
+      bodyHtml = mdToHtmlBrowser(val);
     }
-    pv.scrollTop = 0;
+    var css = "body{font:14px/1.65 -apple-system,'Segoe UI',Roboto,sans-serif;color:#1f2328;margin:18px 24px;max-width:920px}" +
+      "h1,h2,h3{line-height:1.3;margin:18px 0 8px}h1{font-size:22px;border-bottom:1px solid #eaeef2;padding-bottom:6px}" +
+      "h2{font-size:18px;border-bottom:1px solid #eaeef2;padding-bottom:4px}h3{font-size:15px}" +
+      "pre{background:#f6f8fa;border:1px solid #eaeef2;border-radius:6px;padding:12px;overflow:auto;line-height:1.45}" +
+      "code{background:#f6f8fa;border-radius:4px;padding:2px 5px;font:13px Consolas,'Courier New',monospace}" +
+      "pre code{background:transparent;padding:0;border:0}" +
+      "a{color:#0969da}img{max-width:100%}" +
+      "table{border-collapse:collapse;margin:10px 0}th,td{border:1px solid #d0d7de;padding:5px 12px}th{background:#f6f8fa}" +
+      "blockquote{border-left:4px solid #d0d7de;color:#57606a;margin:10px 0;padding:2px 14px}" +
+      "hr{border:0;border-top:1px solid #eaeef2;margin:18px 0}" +
+      "ul,ol{padding-left:26px}li{margin:3px 0}";
+    var doc = '<!doctype html><html><head><meta charset="utf-8"><style>' + css + "</style></head><body>" + bodyHtml + "</body></html>";
+    pv.innerHTML = '<iframe sandbox="allow-popups" title="preview"></iframe>';
+    var f = pv.querySelector("iframe");
+    try { f.srcdoc = doc; } catch (e) { f.setAttribute("srcdoc", doc); }
   }
 
   function edShowTab(which) {
@@ -675,6 +756,9 @@ const PANEL_JS = `(function () {
     var mode = cmModeFor(f.rel);
     edState.mode = mode;
     var isMd = mode === "markdown";
+    var isHtml = mode === "htmlmixed" || mode === "html";
+    edState.previewHtml = isHtml;
+    var hasPreview = isMd || isHtml;
 
     var m = document.createElement("div");
     m.id = "dlp-editor-modal";
@@ -685,7 +769,7 @@ const PANEL_JS = `(function () {
           '<span class="ed-path">' + esc(f.path) + "</span>" +
           '<div class="ed-tabs">' +
             '<button class="ed-tab active" data-tab="edit">Editar</button>' +
-            (isMd ? '<button class="ed-tab" data-tab="preview">Preview</button>' : "") +
+            (hasPreview ? '<button class="ed-tab" data-tab="preview">Preview</button>' : "") +
           "</div>" +
           '<button class="ed-btn" id="dlp-ed-copy" title="Copiar caminho">📋</button>' +
           '<button class="ed-btn save" id="dlp-ed-save">💾 Salvar (Ctrl+S)</button>' +

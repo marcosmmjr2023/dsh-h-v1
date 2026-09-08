@@ -70,6 +70,14 @@ if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $home
 $Repo = Split-Path $PSScriptRoot -Parent   # tools/run-gui.ps1 -> <repo>
 # Overlay (nossa camada: badges, menu lateral, funcionalidades)
 Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
+# Assets do editor (CodeMirror/temas/marked/modos) ficam em subpasta e precisam
+# ser copiados recursivamente; sem eles o CodeMirror nunca ativa no Windows.
+$srcAssets = Join-Path $Repo "overlay\editor-assets"
+$dstAssets = Join-Path $homeCfg "editor-assets"
+if (Test-Path $srcAssets) {
+  if (Test-Path $dstAssets) { Remove-Item $dstAssets -Recurse -Force }
+  Copy-Item $srcAssets $dstAssets -Recurse -Force
+}
 $tpl = Join-Path $Repo "overlay\cordis.patch.yml.win.tpl"
 if (-not (Test-Path $tpl)) { $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl" }
 if (Test-Path $tpl) {

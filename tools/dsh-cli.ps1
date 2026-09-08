@@ -35,6 +35,13 @@ switch ($Action) {
     $homeCfg = Join-Path $env:USERPROFILE ".dsh"
     if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $homeCfg | Out-Null }
     Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
+    # editor-assets (CodeMirror/temas/marked/modos) tambem precisam ir (subpasta)
+    $srcAssets = Join-Path $Repo "overlay\editor-assets"
+    $dstAssets = Join-Path $homeCfg "editor-assets"
+    if (Test-Path $srcAssets) {
+      if (Test-Path $dstAssets) { Remove-Item $dstAssets -Recurse -Force }
+      Copy-Item $srcAssets $dstAssets -Recurse -Force
+    }
     $tpl = Join-Path $Repo "overlay\cordis.patch.yml.win.tpl"
     if (-not (Test-Path $tpl)) { $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl" }
     if (Test-Path $tpl) {
