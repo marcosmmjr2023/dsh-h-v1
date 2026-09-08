@@ -2,6 +2,19 @@
 # Se o servidor ja estiver no ar, so abre o navegador. Usa HOME=%USERPROFILE%\.dsh
 param([int]$Port = 3081)
 $ErrorActionPreference = "Stop"
+
+function Remove-FailingPlugins([string]$yaml) {
+  $bad = @("id: smart-router", "id: openrouter-enhanced", "id: model-visibility")
+  $paras = $yaml -split "(?m)^\s*$"
+  $keep = New-Object System.Collections.Generic.List[string]
+  foreach ($p in $paras) {
+    $skip = $false
+    foreach ($b in $bad) { if ($p -match [regex]::Escape($b)) { $skip = $true; break } }
+    if (-not $skip) { $keep.Add($p) }
+  }
+  return ($keep -join "`r`n")
+}
+
 $bin = Join-Path (& npm root -g).Trim() "@deepseek-ai\dsh\lib\bin.js"
 if (-not (Test-Path $bin)) { Write-Host "[X] core nao encontrado: $bin (rode: npm install -g @deepseek-ai/dsh)"; exit 1 }
 $homeCfg = Join-Path $env:USERPROFILE ".dsh"
@@ -12,7 +25,9 @@ Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Dest
 $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl"
 if (Test-Path $tpl) {
   $homeUrl = "file:///" + ($homeCfg -replace "\\", "/")   # loader ESM exige file:/// no Windows
-  (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
+  $y = (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl
+  $y = Remove-FailingPlugins $y   # smart-router/openrouter/model-visibility (schemastery) - so no Windows
+  $y | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
   Write-Host "[OK] cordis.patch.yml gerado em $homeCfg"
 }
 $tag = (git -C $Repo describe --tags 2>$null | Select-Object -First 1)
