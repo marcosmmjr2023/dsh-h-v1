@@ -324,3 +324,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.74.
 ## [v0.2.76] — 2026-09-08 04:33 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.75.
   - a18f35f feat(win): instalador - opcao limpa MANTENDO chaves/configuracoes (-CleanKeep)
+
+## [v0.2.77] — 2026-09-08 04:46 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.76.
+  - d194a6e docs(landing): README/README.pt-BR com finalidade + como instalar e rodar (Linux e Windows)
