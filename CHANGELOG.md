@@ -373,3 +373,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.85.
 Publicação automática — última sincronização desta máquina.
 - Arquivos alterados (1):
   - attachments/v1/objects/33/3329a130e083ad115424d638849880e0d203d69a7ac62fda1112b356ab165394
+
+## [v0.2.88] — 2026-09-08 12:12 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.87.
+  - a092973 fix(editor): conteudo visivel mesmo sem CodeMirror (Windows)
