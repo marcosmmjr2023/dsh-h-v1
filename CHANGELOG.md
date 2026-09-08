@@ -316,3 +316,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.72.
 ## [v0.2.74] — 2026-09-08 04:26 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.73.
   - 9108659 feat(win): pt-BR via --lang na janela de app + FreeLLMAPI integrado ao instalador
+
+## [v0.2.75] — 2026-09-08 04:29 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.74.
+  - e4e5379 feat(win): instalador INTERATIVO completo (dsh-setup.ps1)
