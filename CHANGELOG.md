@@ -353,3 +353,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.81.
 Release manual/estrutural — 2 commit(s) desde v0.2.82.
   - 5db56a4 assets: demo visual FreeDSH (28s) — FreeLLMAPI, roteador, modelos e core seguro
   - 759a34b community: launch FreeDSH public identity and contributor experience
+
+## [v0.2.84] — 2026-09-08 05:58 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.83.
+  - 80e92d5 docs: exibe demo animada FreeDSH no topo dos READMEs EN e pt-BR
