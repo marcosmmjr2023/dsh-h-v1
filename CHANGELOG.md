@@ -308,3 +308,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.70.
 ## [v0.2.72] — 2026-09-08 04:23 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.71.
   - 17087d1 feat(win): FreeLLMAPI local (dsh flm-setup) + icone oficial DeepSeek (baleia 225px)
+
+## [v0.2.73] — 2026-09-08 04:23 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.72.
+  - 4c20186 fix(win): flm-setup.ps1 em ASCII puro (PS5.1)
