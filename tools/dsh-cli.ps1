@@ -35,12 +35,11 @@ switch ($Action) {
     $homeCfg = Join-Path $env:USERPROFILE ".dsh"
     if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $homeCfg | Out-Null }
     Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
-    $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl"
+    $tpl = Join-Path $Repo "overlay\cordis.patch.yml.win.tpl"
+    if (-not (Test-Path $tpl)) { $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl" }
     if (Test-Path $tpl) {
       $homeUrl = "file:///" + ($homeCfg -replace "\\", "/")   # loader ESM exige file:/// no Windows
-      $y = (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl
-      $y = Remove-FailingPlugins $y
-      $y | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
+      (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
     }
     Write-Host "[OK] overlay sincronizado em $homeCfg (cordis.patch.yml gerado)"
   }

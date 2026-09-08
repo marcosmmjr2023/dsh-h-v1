@@ -22,12 +22,11 @@ if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $home
 $Repo = Split-Path $PSScriptRoot -Parent   # tools/run-gui.ps1 -> <repo>
 # Overlay (nossa camada: badges, menu lateral, funcionalidades)
 Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
-$tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl"
+$tpl = Join-Path $Repo "overlay\cordis.patch.yml.win.tpl"
+if (-not (Test-Path $tpl)) { $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl" }
 if (Test-Path $tpl) {
   $homeUrl = "file:///" + ($homeCfg -replace "\\", "/")   # loader ESM exige file:/// no Windows
-  $y = (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl
-  $y = Remove-FailingPlugins $y   # smart-router/openrouter/model-visibility (schemastery) - so no Windows
-  $y | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
+  (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
   Write-Host "[OK] cordis.patch.yml gerado em $homeCfg"
 }
 $tag = (git -C $Repo describe --tags 2>$null | Select-Object -First 1)
