@@ -1,6 +1,6 @@
 # 🐋 dsh-h-v1 — A camada que torna o DeepSeek Harness **grátis na prática**, flexível e ótimo de usar
 
-**dsh-h-v1** vira o [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) em um assistente que você **realmente usa todos os dias, sem assinatura**: roda dezenas de **modelos gratuitos** (FreeLLMAPI, OpenRouter `:free`, OpenCode free/zen) com roteamento e fallback automáticos, traz uma **interface em pt-BR** (que acompanha o idioma do sistema: pt/zh/en), um **painel lateral com badges**, e **atualiza o core com segurança** (instância paralela com progresso ao vivo — o sistema em execução nunca é tocado).
+**dsh-h-v1** turns [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) into an assistant you **actually use every day — free**: it runs dozens of **free models** (FreeLLMAPI, OpenRouter `:free`, OpenCode free/zen) com roteamento e fallback automáticos, traz uma **interface em pt-BR** (que acompanha o idioma do sistema: pt/zh/en), um **painel lateral com badges**, e **atualiza o core com segurança** (instância paralela com progresso ao vivo — o sistema em execução nunca é tocado).
 
 > ⚙️ Construído sobre [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) ("*Everything is a Plugin*").
 > **Não oficial** — uma distribuição pessoal, sem afiliação com a DeepSeek.
