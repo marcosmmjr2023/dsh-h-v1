@@ -368,3 +368,8 @@ Publicação automática — última sincronização desta máquina.
 ## [v0.2.86] — 2026-09-08 11:51 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.85.
   - af85435 fix(windows): abre o arquivo correto no painel com multiplos roots/junctions
+
+## [v0.2.87] — 2026-09-08 12:00 (máquina v2202608297065493408)
+Publicação automática — última sincronização desta máquina.
+- Arquivos alterados (1):
+  - attachments/v1/objects/33/3329a130e083ad115424d638849880e0d203d69a7ac62fda1112b356ab165394
