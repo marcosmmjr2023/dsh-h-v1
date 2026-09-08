@@ -381,3 +381,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.87.
 ## [v0.2.89] — 2026-09-08 12:44 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.88.
   - 7c38069 fix(windows): copia editor-assets p/ CodeMirror ativar + preview md/html
+
+## [v0.2.90] — 2026-09-09 00:42 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.89.
+  - 70a7e33 feat(providers): Meta como provider padrao do sistema
