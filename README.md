@@ -1,206 +1,146 @@
-# 🐋 dsh-h-v1 — The layer that makes DeepSeek Harness **free in practice**, flexible, and a joy to use
+# 🐋 FreeDSH
 
-**dsh-h-v1** turns [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) into an assistant you **actually use every day — no subscription**: run dozens of **free models** (FreeLLMAPI, OpenRouter `:free`, OpenCode free/zen) with smart routing and automatic fallback, get a **pt-BR interface** (that follows your OS language: pt/zh/en), a **side panel with badges**, and **update the core safely** (a parallel instance with live progress — the running system is never touched).
+### Run DeepSeek Harness with free and low-cost AI models — with automatic routing, fallback and safe updates.
 
-> ⚙️ Built on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) ("*Everything is a Plugin*").
-> **Unofficial** — a personal distribution, not affiliated with DeepSeek.
+**FreeDSH** is the community-facing name for this repository (`dsh-h-v1`). It adds a practical distribution layer on top of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): free-model routing, a local provider gateway, a friendlier UI, pt-BR support, versioned configuration and rollback-safe updates.
+
+> **Unofficial project.** FreeDSH is not affiliated with or endorsed by DeepSeek.
+
+[![Windows](https://img.shields.io/badge/Windows-supported-0078D4?logo=windows)](#install-in-1-minute)
+[![Linux](https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=black)](#install-in-1-minute)
+[![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen)](CONTRIBUTING.md)
+[![License](https://img.shields.io/badge/original%20code-MIT-blue)](LICENSE)
+
+**Português:** [README.pt-BR.md](README.pt-BR.md)
 
 ---
 
-### ✨ Why you'll want to use it
+## Why FreeDSH?
 
-| | What you get |
+DeepSeek Harness is powerful, but a daily setup can become expensive or fragile when you depend on a single model/provider. FreeDSH focuses on a different experience:
+
+| | FreeDSH adds |
 |---|---|
-| 🎁 **Free models, for real** | **FreeLLMAPI** gateway + smart router (**OpenRouter `:free`**, **OpenCode free/zen**) with automatic fallback — ride the wave of free models without paid plans |
-| 🖥️ **Your own panel** | Side menu with recent files, core status, FreeLLMAPI, Router and Models — one click away, no scattered windows |
-| 🌎 **A language that follows you** | UI in **Brazilian Portuguese (pt-BR)**, Chinese or English, matching your OS language (default: English) |
-| 🛡️ **New core, no fear** | Hit "Update": it creates a **parallel instance** with the new core (**real-time progress**), you try it and **uninstall** with one button — what's already running stays intact |
-| 🧩 **Your layer, versioned** | Settings, plugins and presets as **code**: git, `vX.Y.Z` tags, changelog and **safe rollback**; synced across all your machines |
-| 💻 **Windows and Linux** | **One-line interactive installers** (detect what exists, language, keys) — the same experience on both OSes |
+| 🎁 **Free-first routing** | Use FreeLLMAPI, OpenRouter `:free`, OpenCode free/zen and other configured providers before paid fallback. |
+| 🔁 **Automatic fallback** | If a provider fails or becomes unavailable, the router can move to another configured option. |
+| 🧠 **Task-aware routing** | `auto`, `eco` and `ultra` profiles let the router choose different model tiers for different workloads. |
+| 🖥️ **Integrated panel** | Provider/router/core status, recent files and model controls in the Harness UI. |
+| 🛡️ **Safer core updates** | Test a new core in a parallel instance instead of overwriting the working environment. |
+| ↩️ **Rollback** | Local snapshots + git history/tags make it possible to return to a known-good configuration. |
+| 🌎 **International UI** | Brazilian Portuguese, English and Chinese support, following the OS language where available. |
+| 💻 **Windows + Linux** | Interactive one-line installers for both platforms. |
 
-**Start in 1 minute** 👉 [Install & run](#-install--run-end-user)
+### The idea in one diagram
 
-## 💻 Install & run (end user)
+```mermaid
+flowchart LR
+    U[You / DeepSeek Harness] --> R[FreeDSH Smart Router]
+    R --> F[FreeLLMAPI]
+    R --> O[OpenRouter :free]
+    R --> C[OpenCode free / zen]
+    R --> P[Optional paid fallback]
+    F --> G[Groq / Cerebras / Mistral / others]
+```
 
-> This is the **landing page**. Detailed manuals: [Linux/server map](docs/SERVER-MAP.md) ·
-> [core update / A/B instances](docs/CORE-UPDATE.md) · [Windows (PT)](docs/WINDOWS-PT.md) ·
-> [Windows (EN)](docs/WINDOWS.md) · [two-way sync](docs/SYNC.md).
+Free tiers change over time. FreeDSH does **not** bypass provider terms or create free access where none exists; it integrates and routes the providers/keys you configure.
 
-### Windows (one line — interactive installer)
+---
+
+## Install in 1 minute
+
+### Windows
+
+Open PowerShell and run:
 
 ```powershell
 irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
 ```
 
-It detects what is installed (repo, core, config, FreeLLMAPI, instances, `dsh` command), then lets you
-choose: **1)** clean install from scratch · **2)** clean install **keeping your API keys/configs**
-(`.credentials.yaml`, `settings.yaml`, `llm-*`, FreeLLMAPI db) · **3)** update existing · **4)** manage
-instances (list/remove) · **5)** open the GUI.
+The interactive installer detects an existing installation and can install, update, preserve local configuration, manage parallel instances or open the GUI.
 
-Non-interactive: `installer/install-windows.ps1 | iex` (full install: core + pt-BR + overlay + FreeLLMAPI +
-desktop/start-menu shortcuts + GUI). Afterwards, in a **new** PowerShell:
+After installation, open a **new** PowerShell:
 
 ```powershell
-dsh up            # open the GUI (own app window, port 3081)
-dsh update        # pull repo + pinned core + pt-BR + overlay
-dsh flm-setup     # FreeLLMAPI gateway (port 3002) + admin (admin@example.com / Freellmapi@2026)
-dsh doctor        # diagnostics
-dsh env list      # parallel instances and their ports
+dsh up          # open the GUI
+dsh update      # update repo/core/overlay
+dsh doctor      # diagnostics
+dsh env list    # list parallel instances
 ```
 
-The GUI itself (chip in the core badge) can **create a parallel instance with a new core** (with live
-progress) and **uninstall it** (footer of the side panel) — the running system is never touched.
+### Linux
 
-### Linux (Debian/Ubuntu-like, pm2 or your own supervisor)
+Debian/Ubuntu-like systems:
 
-**Interactive installer (detects what exists + language):**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.sh)
 ```
-Or step by step:
 
-```bash
-mkdir -p ~/projects/dsh && cd ~/projects/dsh
-git clone https://github.com/marcosmmjr2023/dsh-h-v1.git dsh-h-v1 && cd dsh-h-v1
+For manual/server installation, see [docs/SERVER-MAP.md](docs/SERVER-MAP.md).
 
-# pinned core + pt-BR dictionaries (writes into the npm-installed core)
-./core-i18n-pt/tools/apply-pt-core.sh --force
+> Provider credentials stay local and must never be committed. See [SECURITY.md](SECURITY.md) before exposing any FreeLLMAPI/admin interface beyond localhost.
 
-# sync the overlay (plugins/settings) into the live config dir and run the GUI:
-DSH_CLONE=~/projects/dsh/dsh-h-v1 DSH_LIVE=~/.dsh-v2 ./tools/sync-pull.sh
-export DSH_HOME=~/.dsh-v2 DSH_WEB_URL=http://127.0.0.1:3081
-node "$(npm root -g)/@deepseek-ai/dsh/lib/bin.js" --profile web --no-open --port 3081 --host 127.0.0.1
-```
+---
 
-Open http://127.0.0.1:3081 — same overlay/plugins as Windows (side panel, badges, pt-BR interface,
-FreeLLMAPI), and the same **parallel-instance** flow from the chip (see [CORE-UPDATE.md](docs/CORE-UPDATE.md)).
+## What is inside?
 
-## 🎯 What this repo is for
+- **Smart Model Router** — free-first, task-aware model selection and runtime fallback.
+- **FreeLLMAPI integration** — a local gateway for multiple free/low-cost providers.
+- **UI overlay** — status badges, shortcuts and model controls inside DeepSeek Harness.
+- **Safe core updater** — parallel A/B-style core instances with live progress.
+- **Versioned overlay** — settings, plugins and presets managed as code.
+- **Sync + rollback tools** — local snapshots, git tags/history and restore tooling.
+- **pt-BR localization** — experimental DeepSeek Harness localization and translated docs.
 
-1. **One source of truth for your custom layer** — settings, plugins and presets as
-   versioned, reviewable code (git history, tags, diffs) instead of exported ZIPs.
-2. **Auto-update on every machine** — a scheduled/startup sync pulls the latest overlay;
-   nothing is ever replaced **without a local snapshot first**.
-3. **Safe rollback** — if a machine that hasn't been touched in months auto-updates and
-   breaks, you return to the exact state that was working (local snapshots, git tags,
-   or a previous core version).
-4. **Free/cheap model access, integrated** — smart routing over free tiers
-   (FreeLLM API gateway, OpenRouter `:free`, OpenCode free/zen) with automatic
-   fallback, plus a one-click Windows installer.
+Technical overview: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-## ✨ Feature pillars
+---
 
-### 1) Your overlay, versioned (`overlay/`)
-`overlay/` mirrors 1:1 the live config dir (`~/.dsh` on Linux, `%USERPROFILE%\.dsh` on
-Windows): `settings.yaml`, the Smart Model Router, UI plugins (layout panel, model
-visibility, FreeLLMAPI shortcut), presets and editor assets (CodeMirror/marked, MIT).
-Credentials, sessions, logs and runtime state **never** enter the repo.
+## Documentation
 
-### 2) Auto-update with rollback safety (`tools/`)
-- `sync-pull` — pulls the repo and applies the overlay **after snapshotting** the
-  current working state into `~/.dsh-snapshots/` (last 8 kept).
-- `sync-push` — publishes local edits back (`--tag vX.Y.Z` marks a known-good version).
-- `auto-push` — **two-way routine publisher on every machine you edit**: pulls what the
-  others published and pushes your local live-config changes by itself — each release is
-  **documented over the last version** (descriptive commit with the changed files, an
-  automatic `vX.Y.Z` tag, and a `CHANGELOG.md` entry). If two machines edit the same
-  file before syncing, the machine that syncs last becomes the current version and the
-  other stays preserved in history/tags — never force-pushed, never lost. Guardrails:
-  the `.dsh-autoupdate.off` ON/OFF switch (panel badge) disables it, secret guard blocks
-  bad commits. Schedule once per machine (`tools/auto-sync.sh` or Windows Task Scheduler
-  with `tools\auto-sync.ps1`); preview with `tools/auto-push.sh --dry-run`.
-  Manuals: `docs/SYNC.md`.
-- `rollback` — `--snapshot <name>` restores the exact pre-update machine state,
-  `<tag|commit>` reverts the overlay to a published version (removing files added by
-  newer versions too), `--core <version>` reinstalls a previous npm core.
-  **From the GUI:** click the version badge (or its ↩ button) to list versions/snapshots
-  and go back if an update broke something — auto-update is switched OFF and the harness
-  restarts itself (pm2).
-- `check-core` — notifies when the official core (`@deepseek-ai/dsh`) has a new
-  version; applying core updates is **manual and tested** (plugins hook DSH internals).
-- `guard-secrets` — pre-commit hook that **blocks** any commit containing a key/credential.
+| Topic | Guide |
+|---|---|
+| Windows | [docs/WINDOWS.md](docs/WINDOWS.md) · [Português](docs/WINDOWS-PT.md) |
+| Linux / server | [docs/SERVER-MAP.md](docs/SERVER-MAP.md) |
+| Core updates / parallel instances | [docs/CORE-UPDATE.md](docs/CORE-UPDATE.md) |
+| Two-way sync / rollback | [docs/SYNC.en.md](docs/SYNC.en.md) · [Português](docs/SYNC.md) |
+| Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Roadmap | [ROADMAP.md](ROADMAP.md) |
+| Changelog | [CHANGELOG.md](CHANGELOG.md) |
 
-### 3) Free/cheap model usage, integrated
-Custom plugins in this overlay wire the harness to low-cost/free providers:
-- **FreeLLM API gateway** (local, `http://127.0.0.1:3002`): add free-tier provider keys
-  (Groq, Cerebras, Mistral, …) in one place; a dashboard badge shows gateway health and
-  which model actually answered the last request (incl. failover indicator).
-- **Smart Model Router** (`smart-router/auto|eco|ultra`): task complexity picks a free
-  tier and the router falls back at runtime when a provider errors — free chain:
-  `freellmapi → openrouter → opencode free → opencode zen/deepseek → deepseek official`.
-- Provider keys are read from **environment variables or the local `.credentials.yaml`**
-  — never committed. See `manifest.json` for the env var names.
+---
 
-### 4) Windows installer (`installer/`, `start-dsh-gui.bat`)
-Installs the official core via npm (`npm install -g @deepseek-ai/dsh`), applies the
-overlay and creates a desktop launcher that runs `sync-pull` before opening the GUI
-on `http://127.0.0.1:3080`.
+## Help build FreeDSH
 
-## ⚠️ Honest notes about "free"
-Free tiers depend on each provider's terms and availability and can change or disappear.
-This repo provides the **routing and integration**, not the keys or the service — you
-bring your own keys per provider. Nothing here bypasses provider terms.
+You do **not** need to be an expert in the whole project. Useful contributions include:
 
-## 🚀 Quickstart
+- test a free provider and report compatibility;
+- add or improve a provider adapter;
+- improve Windows/Linux installation;
+- add translations;
+- reproduce bugs;
+- improve documentation;
+- propose better routing rules or benchmarks.
 
-```bash
-# receive updates on this machine (snapshots current state first)
-tools/sync-pull.sh
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), then look for issues tagged **`good first issue`** or **`help wanted`**.
 
-# publish your local edits (add --tag vX.Y.Z for a known-good release)
-tools/sync-push.sh "what changed"
+If you use FreeDSH and it helps you, a ⭐ on the repository helps other DeepSeek Harness users discover it.
 
-# full auto cycle on EVERY machine you edit (cron 30 min / Task Scheduler):
-#   tools/auto-sync.sh            (Linux; dry-run: tools/auto-push.sh --dry-run)
-#   tools\auto-sync.ps1           (Windows)
-# each publish documents itself: descriptive commit + automatic vX.Y.Z tag + CHANGELOG.md
+---
 
-# structural changes already pushed by git without a version? publish the sub-version:
-#   tools/release.sh              (dry-run: tools/release.sh --dry-run)
-# details: docs/SYNC.md → "Sincronização automática via de mão dupla em TODAS as máquinas"
+## Project principles
 
-# something broke after an update? go back
-tools/rollback.sh list
-tools/rollback.sh --snapshot <name>    # exact pre-update machine state
-tools/rollback.sh v1.2.0               # a published overlay version
-tools/rollback.sh --core 0.1.1-rc.2    # previous core (npm)
-```
+1. **Free-first, not free-at-any-cost.** Respect provider terms and use paid fallback when that is the reliable choice.
+2. **Never break a working environment silently.** Snapshot before replacement and make rollback practical.
+3. **Credentials stay local.** Secrets, sessions and runtime state do not belong in git.
+4. **Upstream first.** FreeDSH extends DeepSeek Harness; it does not pretend to be the upstream project.
+5. **Community over private customization.** Reusable improvements should become documented, reviewable contributions.
 
-Manuals: [`docs/SYNC.en.md`](docs/SYNC.en.md) (EN) · [`docs/SYNC.md`](docs/SYNC.md) (PT-BR)
-· Windows guide: [`docs/WINDOWS.md`](docs/WINDOWS.md) (EN) · [`docs/WINDOWS-PT.md`](docs/WINDOWS-PT.md) (PT-BR)
-· [`README.pt-BR.md`](README.pt-BR.md)
+---
 
-## 🆚 How it compares
+## License and attribution
 
-| | Upstream DeepSeek Harness | [dsh-config-manager](https://github.com/xiajiajun516/dsh-config-manager) | [dsh-vibe-pack](https://github.com/LeemanCheung/dsh-vibe-pack) | **this repo** |
-|---|---|---|---|---|
-| Manages | runtime + plugins | backup/migrate/sync config (UI plugin) | data-only transactional packs | **your custom JS plugins & settings as git** |
-| Rollback | — | snapshot before restore | atomic ledger + uninstall | snapshots + git history/tags + **core** rollback |
-| Secrets guard | assumes | never exports | rejects | guard **blocks at commit time** |
-| Custom JS plugins sync | n/a | — | no (data-only) | **yes** |
+- Original FreeDSH overlay/tools/installer/docs: **MIT** — see [LICENSE](LICENSE).
+- Third-party assets: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+- DeepSeek Harness is installed separately and is not redistributed as this project's core.
 
-## 🗄️ Archived lineage (preserved, not canonical)
-
-`main` follows the overlay + sync model above. The earlier **Windows-bundle lineage**
-(legacy `source/` bundle, `bin.js` launchers, icons, `preload.cjs`,
-`start-parallel-dsh.bat`) is preserved for reference, not maintained:
-- branches `versao-pc1`, `versao-pc2` · tag `main-anterior-e553f9b`
-
-Useful improvements from that lineage were already migrated into `main` (e.g.
-`layout-panel-plugin` v1.1 multi-dir/junctions, updated FreeLLMAPI badge).
-
-## 🛡️ Security
-
-- No credentials in this repo — keys come from env vars or the local `.credentials.yaml`
-  (gitignored, excluded from sync and snapshots).
-- `guard-secrets.sh` (pre-commit hook + CI) blocks key/credential commits.
-- Sensitive/reproducible hygiene: repo is audited before going public.
-
-## 📜 License
-
-- Original files (overlay, tools, installer, docs): **MIT** — [`LICENSE`](LICENSE)
-- Third-party assets (`overlay/editor-assets/`): MIT — [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
-- DeepSeek Harness core: **MIT © DeepSeek**, installed from npm, not redistributed here
-  ([github.com/deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness))
-
-> Núcleo em pt-BR (experimental): [`core-i18n-pt/README.md`](core-i18n-pt/README.md)
+Security reports: [SECURITY.md](SECURITY.md) · Community standards: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)

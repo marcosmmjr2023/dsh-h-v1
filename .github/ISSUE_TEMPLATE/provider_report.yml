@@ -1,0 +1,57 @@
+name: Provider compatibility report
+description: Report whether a model/provider route works and how it behaves
+title: "[Provider]: "
+labels: []
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider
+      placeholder: Groq / Cerebras / Mistral / OpenRouter / other
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model(s) tested
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: Date tested
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Access tier at the time of testing
+      options:
+        - Free
+        - Trial / credits
+        - Paid
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result
+      description: Success rate, errors, latency impressions, rate limits and fallback behavior.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: FreeDSH version/commit, OS and relevant route/profile.
+    validations:
+      required: true
+  - type: checkboxes
+    id: sanitized
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed API keys, account identifiers and private prompt data.
+          required: true

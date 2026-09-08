@@ -1,210 +1,146 @@
-# 🐋 dsh-h-v1 — A camada que torna o DeepSeek Harness **grátis na prática**, flexível e ótimo de usar
+# 🐋 FreeDSH
 
-**dsh-h-v1** transforma o [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) num assistente que você **usa de verdade todos os dias, sem assinar nada**: roda dezenas de **modelos gratuitos** (FreeLLMAPI, OpenRouter `:free`, OpenCode free/zen) com roteamento e fallback automáticos, traz uma **interface em português (pt-BR)** que acompanha o idioma do sistema (pt/zh/en), um **painel lateral com badges**, e atualiza o **core com segurança** (instância paralela com progresso ao vivo — o sistema em execução nunca é tocado).
+### Rode o DeepSeek Harness com modelos gratuitos e de baixo custo — com roteamento automático, fallback e atualizações seguras.
 
-> ⚙️ Construído sobre o [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) ("*Everything is a Plugin*").
-> **Não oficial** — uma distribuição pessoal, sem afiliação com a DeepSeek.
+**FreeDSH** é o nome público/comunitário deste repositório (`dsh-h-v1`). Ele adiciona uma camada prática sobre o [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): roteamento entre modelos gratuitos, gateway local de provedores, interface mais amigável, suporte pt-BR, configuração versionada e atualizações com rollback seguro.
+
+> **Projeto não oficial.** FreeDSH não é afiliado nem endossado pela DeepSeek.
+
+[![Windows](https://img.shields.io/badge/Windows-suportado-0078D4?logo=windows)](#instale-em-1-minuto)
+[![Linux](https://img.shields.io/badge/Linux-suportado-FCC624?logo=linux&logoColor=black)](#instale-em-1-minuto)
+[![Contribuições bem-vindas](https://img.shields.io/badge/contribuições-bem--vindas-brightgreen)](CONTRIBUTING.md)
+[![Licença](https://img.shields.io/badge/código%20original-MIT-blue)](LICENSE)
+
+**English:** [README.md](README.md)
 
 ---
 
-### ✨ Por que você vai querer usar
+## Por que FreeDSH?
 
-| | O que você ganha |
+O DeepSeek Harness é poderoso, mas o uso diário pode ficar caro ou frágil quando depende de um único modelo/provedor. O FreeDSH tenta oferecer outra experiência:
+
+| | O que o FreeDSH adiciona |
 |---|---|
-| 🎁 **Modelos gratuitos, de verdade** | Gateway **FreeLLMAPI** + roteador inteligente (**OpenRouter `:free`**, **OpenCode free/zen**) com fallback automático — aproveite a onda de modelos grátis sem criar plano pago |
-| 🖥️ **Painel próprio** | Menu lateral com arquivos recentes, status do core, FreeLLMAPI, Roteador e Modelos — tudo num clique, sem janelas soltas |
-| 🌎 **Idioma que segue você** | Interface em **português (pt-BR)**, chinês ou inglês conforme o idioma do sistema (padrão: inglês) |
-| 🛡️ **Core novo sem medo** | Clique em “Atualizar”: cria uma **instância paralela** com o core novo (com **progresso em tempo real**), você testa e **desinstala** com um botão — o que já está rodando continua intacto |
-| 🧩 **Sua camada, versionada** | Settings, plugins e presets como **código**: git, tags `vX.Y.Z`, changelog e **rollback seguro**; sincronizados entre todas as suas máquinas |
-| 💻 **Windows e Linux** | Instaladores **interativos em 1 linha** (detectam o que existe, idioma e chaves) — mesma experiência nos dois sistemas |
+| 🎁 **Roteamento free-first** | Usa FreeLLMAPI, OpenRouter `:free`, OpenCode free/zen e outros provedores configurados antes do fallback pago. |
+| 🔁 **Fallback automático** | Se um provedor falhar ou ficar indisponível, o roteador pode migrar para outra opção configurada. |
+| 🧠 **Roteamento por tarefa** | Perfis `auto`, `eco` e `ultra` permitem usar níveis diferentes de modelo conforme o trabalho. |
+| 🖥️ **Painel integrado** | Status de provedor/roteador/core, arquivos recentes e controles de modelo dentro da interface do Harness. |
+| 🛡️ **Atualização mais segura do core** | Teste um core novo em instância paralela sem sobrescrever o ambiente que já funciona. |
+| ↩️ **Rollback** | Snapshots locais + histórico/tags do git permitem voltar para uma configuração conhecida. |
+| 🌎 **Interface internacional** | Português brasileiro, inglês e chinês, seguindo o idioma do sistema quando disponível. |
+| 💻 **Windows + Linux** | Instaladores interativos em uma linha nos dois sistemas. |
 
-**Comece em 1 minuto** 👉 [Instalar e rodar](#-instalar-e-rodar-usuário-final)
+### A ideia em um diagrama
 
-## 💻 Instalar e rodar (usuário final)
+```mermaid
+flowchart LR
+    U[Você / DeepSeek Harness] --> R[FreeDSH Smart Router]
+    R --> F[FreeLLMAPI]
+    R --> O[OpenRouter :free]
+    R --> C[OpenCode free / zen]
+    R --> P[Fallback pago opcional]
+    F --> G[Groq / Cerebras / Mistral / outros]
+```
 
-> Esta é a **página principal**. Manuais completos: [Mapa do servidor (Linux)](docs/SERVER-MAP.md) ·
-> [Atualização de core / instâncias A/B](docs/CORE-UPDATE.md) · [Windows (PT)](docs/WINDOWS-PT.md) ·
-> [Windows (EN)](docs/WINDOWS.md) · [Sincronização de mão dupla](docs/SYNC.md).
+Os tiers gratuitos mudam com o tempo. O FreeDSH **não** burla termos de provedores nem cria acesso gratuito onde ele não existe; ele integra e roteia os provedores/chaves que você configurar.
 
-### Windows (uma linha — instalador interativo)
+---
+
+## Instale em 1 minuto
+
+### Windows
+
+Abra o PowerShell e execute:
 
 ```powershell
 irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
 ```
 
-Ele detecta o que já existe (repo, core, config, FreeLLMAPI, instâncias, comando `dsh`) e pergunta:
-**1)** instalação limpa do zero · **2)** limpa **mantendo suas chaves/configurações** (`.credentials.yaml`,
-`settings.yaml`, `llm-*`, banco do FreeLLMAPI) e importa no sistema novo · **3)** atualizar o existente ·
-**4)** gerenciar instâncias (listar/desinstalar) · **5)** abrir a GUI.
+O instalador interativo detecta instalações existentes e pode instalar, atualizar, preservar configurações locais, gerenciar instâncias paralelas ou abrir a GUI.
 
-Sem interação: `installer/install-windows.ps1 | iex` (instala tudo: core + pt-BR + overlay + FreeLLMAPI +
-atalhos Desktop/Menu Iniciar + abre a GUI). Depois, num PowerShell **novo**:
+Depois da instalação, abra um **novo** PowerShell:
 
 ```powershell
-dsh up            # abre a GUI (janela própria, porta 3081)
-dsh update        # atualiza repo + core pinado + pt-BR + overlay
-dsh flm-setup     # gateway FreeLLMAPI (porta 3002) + admin (admin@example.com / Freellmapi@2026)
-dsh doctor        # diagnóstico
-dsh env list      # instâncias paralelas e portas
+dsh up          # abre a GUI
+dsh update      # atualiza repo/core/overlay
+dsh doctor      # diagnóstico
+dsh env list    # lista instâncias paralelas
 ```
 
-Pela própria GUI (chip do core) é possível **criar uma instância paralela com um core novo** (com
-progresso ao vivo) e **desinstalá-la** (rodapé do painel lateral) — o sistema em execução nunca é tocado.
+### Linux
 
-### Linux (Debian/Ubuntu e similares, pm2 ou seu supervisor)
+Debian/Ubuntu e semelhantes:
 
-**Instalador interativo (detecta o que existe + idioma):**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.sh)
 ```
-Ou passo a passo:
 
-```bash
-mkdir -p ~/projects/dsh && cd ~/projects/dsh
-git clone https://github.com/marcosmmjr2023/dsh-h-v1.git dsh-h-v1 && cd dsh-h-v1
+Para instalação manual/servidor, consulte [docs/SERVER-MAP.md](docs/SERVER-MAP.md).
 
-# core pinado + dicionários pt-BR (escreve no core instalado via npm)
-./core-i18n-pt/tools/apply-pt-core.sh --force
+> Credenciais de provedores ficam locais e nunca devem ser commitadas. Leia [SECURITY.md](SECURITY.md) antes de expor qualquer interface do FreeLLMAPI/admin além do localhost.
 
-# sincroniza o overlay (plugins/settings) para a pasta de config viva e roda a GUI:
-DSH_CLONE=~/projects/dsh/dsh-h-v1 DSH_LIVE=~/.dsh-v2 ./tools/sync-pull.sh
-export DSH_HOME=~/.dsh-v2 DSH_WEB_URL=http://127.0.0.1:3081
-node "$(npm root -g)/@deepseek-ai/dsh/lib/bin.js" --profile web --no-open --port 3081 --host 127.0.0.1
-```
+---
 
-Abra http://127.0.0.1:3081 — o mesmo overlay/plugins do Windows (painel lateral, badges, interface
-pt-BR, FreeLLMAPI) e o mesmo fluxo de **instância paralela** pelo chip (veja [CORE-UPDATE.md](docs/CORE-UPDATE.md)).
+## O que existe no projeto?
 
-## 🎯 Para que serve este repositório
+- **Smart Model Router** — seleção free-first por tipo de tarefa e fallback em runtime.
+- **Integração FreeLLMAPI** — gateway local para múltiplos provedores gratuitos/de baixo custo.
+- **Overlay de interface** — badges de status, atalhos e controles dentro do DeepSeek Harness.
+- **Atualizador seguro do core** — instâncias paralelas estilo A/B com progresso ao vivo.
+- **Overlay versionado** — settings, plugins e presets tratados como código.
+- **Ferramentas de sync + rollback** — snapshots locais, tags/histórico git e restauração.
+- **Localização pt-BR** — tradução experimental do DeepSeek Harness e documentação em português.
 
-1. **Uma fonte da verdade para a sua camada personalizada** — settings, plugins e
-   presets como código versionado e revisável (histórico git, tags, diffs), em vez de
-   ZIPs exportados na mão.
-2. **Auto-atualização em todas as máquinas** — sync agendado/na inicialização puxa o
-   overlay mais recente; nada é substituído **sem antes criar um snapshot local**.
-3. **Rollback seguro** — se um PC parado há meses receber o update automático e quebrar,
-   você volta ao estado exato que funcionava (snapshots locais, tags do git ou a versão
-   anterior do core).
-4. **Uso gratuito/barato de modelos, integrado** — roteamento inteligente sobre tiers
-   gratuitos (gateway FreeLLM API, OpenRouter `:free`, OpenCode free/zen) com fallback
-   automático, além do instalador Windows em um clique.
+Visão técnica: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-## ✨ Pilares de funcionalidade
+---
 
-### 1) Seu overlay versionado (`overlay/`)
-`overlay/` espelha 1:1 o diretório de config vivo (`~/.dsh` no Linux,
-`%USERPROFILE%\.dsh` no Windows): `settings.yaml`, o Smart Model Router, plugins de UI
-(painel lateral, visibilidade de modelos, atalho FreeLLMAPI), presets e assets de editor
-(CodeMirror/marked, MIT). Credenciais, sessões, logs e estado de runtime **nunca** entram
-no repo.
+## Documentação
 
-### 2) Auto-atualização com rollback (`tools/`)
-- `sync-pull` — puxa o repo e aplica o overlay **depois de snapshottar** o estado atual
-  em `~/.dsh-snapshots/` (mantém as últimas 8).
-- `sync-push` — publica as edições locais (`--tag vX.Y.Z` marca uma versão conhecida-boa).
-- `auto-push` — **publicador rotineiro de mão dupla em TODA máquina onde você edita**:
-  recebe o que as outras publicaram e sobe as suas edições da config viva sozinho — cada
-  publicação fica **documentada sobre a última versão** (commit descritivo com os arquivos
-  alterados, tag automática `vX.Y.Z` e entrada no `CHANGELOG.md`). Se duas máquinas
-  editarem o mesmo arquivo antes de sincronizar, a última sincronização vira a versão
-  atual e a outra fica preservada no histórico/tag — nunca força push, nada se perde.
-  Guardrails: o interruptor `.dsh-autoupdate.off` (badge no painel) desliga a rotina e o
-  guard de segredos bloqueia commit suspeito. Agende uma vez por máquina
-  (`tools/auto-sync.sh` ou `tools\auto-sync.ps1` no Windows); ensaie com
-  `tools/auto-push.sh --dry-run`. Manual: `docs/SYNC.md`.
-- `rollback` — `--snapshot <nome>` restaura o estado exato pré-update da máquina;
-  `<tag|commit>` reverte o overlay para uma versão publicada (removendo também arquivos
-  que versões novas adicionaram); `--core <versão>` reinstala o core npm anterior.
-  **Pelo painel:** clique no badge de versão (ou no botão ↩) para listar tags/snapshots
-  e voltar se uma atualização quebrou — o auto-update é desligado e o harness reinicia
-  sozinho (pm2).
-- `check-core` — avisa quando o core oficial (`@deepseek-ai/dsh`) tem versão nova;
-  aplicar update do core é **manual e testado** (plugins usam internals do DSH).
-- `guard-secrets` — hook de pre-commit que **bloqueia** qualquer commit com chave/credencial.
+| Tema | Guia |
+|---|---|
+| Windows | [docs/WINDOWS-PT.md](docs/WINDOWS-PT.md) · [English](docs/WINDOWS.md) |
+| Linux / servidor | [docs/SERVER-MAP.md](docs/SERVER-MAP.md) |
+| Atualização do core / instâncias paralelas | [docs/CORE-UPDATE.md](docs/CORE-UPDATE.md) |
+| Sincronização / rollback | [docs/SYNC.md](docs/SYNC.md) · [English](docs/SYNC.en.md) |
+| Arquitetura | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Roadmap | [ROADMAP.md](ROADMAP.md) |
+| Histórico | [CHANGELOG.md](CHANGELOG.md) |
 
-### 3) Uso gratuito/barato de modelos, integrado
-Plugins customizados do overlay ligam o harness a provedores gratuitos/de baixo custo:
-- **Gateway FreeLLM API** (local, `http://127.0.0.1:3002`): adicione as chaves dos
-  provedores gratuitos (Groq, Cerebras, Mistral, …) num só lugar; um badge no dashboard
-  mostra a saúde do gateway e qual modelo REAL respondeu à última requisição (com
-  indicador de failover).
-- **Smart Model Router** (`smart-router/auto|eco|ultra`): a complexidade da tarefa
-  escolhe um tier gratuito e o roteador faz fallback em runtime quando um provedor erra —
-  cadeia gratuita: `freellmapi → openrouter → opencode free → opencode zen/deepseek →
-  deepseek oficial`.
-- As chaves são lidas de **variáveis de ambiente ou do `.credentials.yaml` local** —
-  nunca commitadas. Veja os nomes das env vars em `manifest.json`.
+---
 
-### 4) Instalador Windows (`installer/`, `start-dsh-gui.bat`)
-Instala o core oficial via npm (`npm install -g @deepseek-ai/dsh`), aplica o overlay e
-cria um atalho na Área de Trabalho que roda o `sync-pull` antes de abrir a GUI em
-`http://127.0.0.1:3080`.
+## Ajude a construir o FreeDSH
 
-## ⚠️ Nota honesta sobre "grátis"
-Tiers gratuitos dependem dos termos e da disponibilidade de cada provedor e podem mudar
-ou sumir. Este repo fornece o **roteamento e a integração**, não as chaves nem o serviço —
-você usa suas próprias chaves por provedor. Nada aqui burla termos de uso de provedor.
+Você **não** precisa dominar o projeto inteiro. Contribuições úteis incluem:
 
-## 🚀 Começo rápido
+- testar um provedor gratuito e relatar compatibilidade;
+- adicionar ou melhorar um adapter de provedor;
+- melhorar instalação Windows/Linux;
+- adicionar traduções;
+- reproduzir bugs;
+- melhorar documentação;
+- propor regras melhores de roteamento ou benchmarks.
 
-```bash
-# receber atualizações nesta máquina (cria snapshot do estado atual primeiro)
-tools/sync-pull.sh
+Comece em [CONTRIBUTING.md](CONTRIBUTING.md) e procure issues marcadas como **`good first issue`** ou **`help wanted`**.
 
-# publicar edições locais (adicione --tag vX.Y.Z para marcar versão conhecida)
-tools/sync-push.sh "o que mudou"
+Se o FreeDSH for útil para você, uma ⭐ no repositório ajuda outros usuários do DeepSeek Harness a encontrá-lo.
 
-# ciclo completo automático em TODA máquina onde você edita (cron 30 min / Task Scheduler):
-#   tools/auto-sync.sh            (Linux; ensaio: tools/auto-push.sh --dry-run)
-#   tools\auto-sync.ps1           (Windows)
-# cada publicação se documenta: commit descritivo + tag automática vX.Y.Z + CHANGELOG.md
-# detalhes: docs/SYNC.md → "Sincronização automática via de mão dupla em TODAS as máquinas"
+---
 
-# mudanças estruturais já enviadas por git sem versão? publique a sub-versão:
-#   tools/release.sh              (ensaio: tools/release.sh --dry-run)
+## Princípios do projeto
 
-# algo quebrou depois de um update? volte
-tools/rollback.sh list
-tools/rollback.sh --snapshot <nome>    # estado exato pré-update da máquina
-tools/rollback.sh v1.2.0               # uma versão publicada do overlay
-tools/rollback.sh --core 0.1.1-rc.2    # core anterior (npm)
-```
+1. **Free-first, não grátis a qualquer custo.** Respeitar os termos dos provedores e usar fallback pago quando for a opção confiável.
+2. **Nunca quebrar silenciosamente um ambiente que funciona.** Criar snapshot antes de substituir e tornar rollback simples.
+3. **Credenciais ficam locais.** Segredos, sessões e estado de runtime não pertencem ao git.
+4. **Upstream primeiro.** O FreeDSH estende o DeepSeek Harness; não se apresenta como o projeto oficial.
+5. **Comunidade acima de customização privada.** Melhorias reutilizáveis devem virar contribuições documentadas e revisáveis.
 
-Manual completo: [`docs/SYNC.md`](docs/SYNC.md) (PT) · [`docs/SYNC.en.md`](docs/SYNC.en.md) (EN)
-· Guia Windows: [`docs/WINDOWS-PT.md`](docs/WINDOWS-PT.md) (PT) · [`docs/WINDOWS.md`](docs/WINDOWS.md) (EN)
-· [`README.md`](README.md) (English)
+---
 
-## 🆚 Comparativo
+## Licença e atribuição
 
-| | DeepSeek Harness (origem) | [dsh-config-manager](https://github.com/xiajiajun516/dsh-config-manager) | [dsh-vibe-pack](https://github.com/LeemanCheung/dsh-vibe-pack) | **este repo** |
-|---|---|---|---|---|
-| Gerencia | runtime + plugins | backup/migração/sync de config (plugin com UI) | packs transacionais só-dados | **seus plugins JS customizados e settings como git** |
-| Rollback | — | snapshot antes de restore | ledger atômico + uninstall | snapshots + histórico git + tags + **rollback do core** |
-| Guard de segredos | assume | nunca exporta | rejeita | guard **bloqueia no commit** |
-| Sync de plugins JS customizados | n/a | — | não (só dados) | **sim** |
+- Overlay/tools/installer/docs originais do FreeDSH: **MIT** — veja [LICENSE](LICENSE).
+- Assets de terceiros: veja [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+- O DeepSeek Harness é instalado separadamente e não é redistribuído como core deste projeto.
 
-## 🗄️ Linhagem arquivada (preservada, não canônica)
-
-O `main` segue o modelo overlay + sync acima. A **linhagem legada de pacote Windows**
-(`source/` antigo, launchers `bin.js`, ícones, `preload.cjs`, `start-parallel-dsh.bat`)
-está preservada para referência, sem manutenção:
-- branches `versao-pc1`, `versao-pc2` · tag `main-anterior-e553f9b`
-
-Melhorias úteis dessa linhagem já foram migradas para o `main` (ex.: `layout-panel-plugin`
-v1.1 multi-dir/junctions, badge FreeLLMAPI atualizado).
-
-## 🛡️ Segurança
-
-- Nenhuma credencial neste repo — chaves vêm de env vars ou do `.credentials.yaml`
-  local (gitignored, excluído do sync e dos snapshots).
-- `guard-secrets.sh` (hook de pre-commit + CI) bloqueia commits com chave/credencial.
-- Repo auditado antes da publicação (sem segredos, histórico limpo).
-
-## 📜 Licenças
-
-- Arquivos originais (overlay, tools, installer, docs): **MIT** — [`LICENSE`](LICENSE)
-- Assets de terceiros (`overlay/editor-assets/`): MIT — [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
-- Core do DeepSeek Harness: **MIT © DeepSeek**, instalado via npm, não redistribuído aqui
-  ([github.com/deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness))
-
-> Núcleo em pt-BR (experimental): [`core-i18n-pt/README.md`](core-i18n-pt/README.md)
+Relatos de segurança: [SECURITY.md](SECURITY.md) · Regras da comunidade: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)

@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible problem in FreeDSH
+title: "[Bug]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not include API keys, tokens, credentials or private prompt data.
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      description: Windows/Linux version and architecture.
+      placeholder: Windows 11 x64 / Debian 13 x64
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: FreeDSH tag/commit and DeepSeek Harness/core version.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps that reliably reproduce the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove secrets, tokens, personal data and prompt content before pasting logs.
+      render: shell
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I checked that this report contains no credentials, tokens or private data.
+          required: true
