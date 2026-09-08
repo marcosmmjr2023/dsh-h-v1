@@ -344,3 +344,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.79.
 ## [v0.2.81] — 2026-09-08 05:04 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.80.
   - 480bbfd docs: frase hero EN polida
+
+## [v0.2.82] — 2026-09-08 05:06 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.81.
+  - 4e43437 docs: README.md (EN) hero em INGLES (nao misturar com pt-BR) — landing 100% en no arquivo EN
