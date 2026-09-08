@@ -320,3 +320,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.73.
 ## [v0.2.75] — 2026-09-08 04:29 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.74.
   - e4e5379 feat(win): instalador INTERATIVO completo (dsh-setup.ps1)
+
+## [v0.2.76] — 2026-09-08 04:33 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.75.
+  - a18f35f feat(win): instalador - opcao limpa MANTENDO chaves/configuracoes (-CleanKeep)
