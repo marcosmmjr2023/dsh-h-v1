@@ -29,13 +29,19 @@ function Ensure-Shortcuts {
 function Open-AppWindow {
   param([int]$Port, [string]$profileDir)
   $url = "http://127.0.0.1:$Port"
+  $ui = [System.Globalization.CultureInfo]::CurrentUICulture.Name.ToLowerInvariant()
+  if ($env:DSH_LANG) { $lang = $env:DSH_LANG }
+  elseif ($ui -like "pt*") { $lang = "pt-BR" }
+  elseif ($ui -like "zh*") { $lang = "zh-CN" }
+  else { $lang = "en-US" }
+  Write-Host "[OK] idioma da janela: $lang (segue o idioma do sistema; env DSH_LANG sobrescreve)"
   $cands = @()
   $pf86 = ${env:ProgramFiles(x86)}; $pf = ${env:ProgramFiles}
   if ($pf86) { $cands += (Join-Path $pf86 "Microsoft\Edge\Application\msedge.exe"); $cands += (Join-Path $pf86 "Google\Chrome\Application\chrome.exe") }
   if ($pf) { $cands += (Join-Path $pf "Microsoft\Edge\Application\msedge.exe"); $cands += (Join-Path $pf "Google\Chrome\Application\chrome.exe") }
   foreach ($exe in $cands) {
     if (Test-Path $exe) {
-      Start-Process -FilePath $exe -ArgumentList @("--app=$url", "--user-data-dir=$profileDir", "--window-size=1440,900", "--lang=pt-BR")
+      Start-Process -FilePath $exe -ArgumentList @("--app=$url", "--user-data-dir=$profileDir", "--window-size=1440,900", "--lang=$lang")
       Write-Host "[OK] GUI aberta como janela de app"
       return
     }
