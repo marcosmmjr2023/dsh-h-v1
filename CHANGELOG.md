@@ -340,3 +340,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.78.
 ## [v0.2.80] — 2026-09-08 05:04 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.79.
   - e9edc9a docs(landing): landing em estilo marketing (diferenciais + instalacao 1 linha) EN/pt-BR
+
+## [v0.2.81] — 2026-09-08 05:04 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.80.
+  - 480bbfd docs: frase hero EN polida
