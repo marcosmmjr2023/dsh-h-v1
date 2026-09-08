@@ -364,3 +364,7 @@ Publicação automática — última sincronização desta máquina.
   - attachments/v1/objects/57/57b49f2b9b3e82629a93cd5238ff43e6e1b73675349ea71ca76bbfac9c2999fa
   - attachments/v1/objects/65/652c94c21bdcb212172b621a37b525311d1bb95219992d2f119127fbdee4a071
   - attachments/v1/objects/b2/b2a60f11f365429b99ea11f2ec9bf883982dad765b1c5e4d5089372a0e3155fd
+
+## [v0.2.86] — 2026-09-08 11:51 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.85.
+  - af85435 fix(windows): abre o arquivo correto no painel com multiplos roots/junctions
