@@ -102,12 +102,45 @@ function Do-Open {
   if (Test-Path $g) { & $g } else { Say "[i] Repo ausente - escolha a opcao 1 (instalacao limpa) primeiro." }
 }
 
+
+function Do-CleanKeep {
+  Say ""
+  Say "[MODO: limpa MANTENDO chaves/configuracoes]"
+  Say "Vai apagar: repo, core global, instancias, atalhos e o que NAO for chave/config."
+  Say "Vai PRESERVAR e reimportar no sistema novo:"
+  Say "  - .credentials.yaml  (chaves de API)"
+  Say "  - settings.yaml      (suas configuracoes)"
+  Say "  - pastas llm-*       (configs de provedores/roteador)"
+  Say "  - editor-assets / .agent-presets / .anonymous-user-id"
+  Say "  - freeapi.db         (chaves do FreeLLMAPI, se existir)"
+  if (-not (Test-Path $HomeCfg)) { Say "[i] Nao ha config atual - sera instalacao limpa simples."; Do-CleanInstall; return }
+  $c = Ask "Digite 'limpar' para confirmar (Enter cancela):"
+  if ($c -ne "limpar") { Say "Cancelado."; return }
+  $bak = Join-Path $env:USERPROFILE (".dsh-keep-" + (Get-Date -Format "yyyyMMdd-HHmmss"))
+  New-Item -ItemType Directory -Force -Path $bak | Out-Null
+  $keep = @(".credentials.yaml", "settings.yaml", ".anonymous-user-id", "editor-assets", ".agent-presets", "freeapi.db")
+  foreach ($k in $keep) {
+    $src = Join-Path $HomeCfg $k
+    if (Test-Path $src) { Copy-Item -Recurse -Force $src $bak }
+  }
+  Get-ChildItem -Path $HomeCfg -Filter "llm-*" -ErrorAction SilentlyContinue | ForEach-Object {
+    Copy-Item -Recurse -Force $_.FullName (Join-Path $bak $_.Name)
+  }
+  Say "Backup preservado em: $bak"
+  Run-Remote "clean-windows.ps1"
+  Run-Remote "install-windows.ps1"
+  Say "Reimportando chaves/configuracoes..."
+  if (-not (Test-Path $HomeCfg)) { New-Item -ItemType Directory -Force -Path $HomeCfg | Out-Null }
+  Get-ChildItem -Force $bak | ForEach-Object { Copy-Item -Recurse -Force $_.FullName (Join-Path $HomeCfg $_.Name) }
+  Say "[OK] Sistema limpo instalado COM suas chaves/configs (backup em $bak)."
+}
 # -------- modos nao-interativos --------
 switch ($Mode) {
   "-Doctor"        { Show-State (Detect); exit 0 }
   "-ListInstances" { Show-Instances; exit 0 }
   "-RemoveAllInstances" { Do-RemoveAll; exit 0 }
   "-Clean"         { Do-CleanInstall; exit 0 }
+  "-CleanKeep"     { Do-CleanKeep; exit 0 }
   "-Update"        { Do-Update; exit 0 }
   "-Open"          { Do-Open; exit 0 }
 }
@@ -120,16 +153,18 @@ Show-State $state
 while ($true) {
   Say ""
   Say "O que voce quer fazer?"
-  Say "  1) Instalacao LIMPA do zero (apaga o que tem e instala tudo novo)"
-  if ($state.repo -or $state.core -or $state.cfg) { Say "  2) Atualizar/completar instalacao existente (nao apaga nada)" }
-  if ($state.instances.Count -gt 0) { Say "  3) Gerenciar instancias (listar / desinstalar)" }
-  Say "  4) Abrir a GUI (sobe servidor + FreeLLMAPI se preciso)"
+  Say "  1) Instalacao LIMPA total (apaga TUDO e instala novo, sem nada)"
+  Say "  2) Instalacao LIMPA MANTENDO chaves/configuracoes (importa p/ novo)"
+  if ($state.repo -or $state.core -or $state.cfg) { Say "  3) Atualizar/completar instalacao existente (nao apaga nada)" }
+  if ($state.instances.Count -gt 0) { Say "  4) Gerenciar instancias (listar / desinstalar)" }
+  Say "  5) Abrir a GUI (sobe servidor + FreeLLMAPI se preciso)"
   Say "  0) Sair"
   $opt = Ask "Escolha:"
   switch ($opt) {
     "1" { Do-CleanInstall; $state = Detect }
-    "2" { if ($state.repo -or $state.core -or $state.cfg) { Do-Update; $state = Detect } else { Say "Nada para atualizar." } }
-    "3" {
+    "2" { Do-CleanKeep; $state = Detect }
+    "3" { if ($state.repo -or $state.core -or $state.cfg) { Do-Update; $state = Detect } else { Say "Nada para atualizar." } }
+    "4" {
       if ($state.instances.Count -gt 0) {
         Show-Instances
         $w = Ask "(r)emover uma  |  (t)odas  |  Enter p/ voltar:"
@@ -137,7 +172,7 @@ while ($true) {
         $state = Detect
       } else { Say "Nenhuma instancia." }
     }
-    "4" { Do-Open }
+    "5" { Do-Open }
     "0" { Say "Tchau!"; break }
     default { Say "Opcao invalida." }
   }
