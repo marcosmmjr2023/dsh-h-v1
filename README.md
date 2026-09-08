@@ -1,24 +1,24 @@
-# 🐋 dsh-h-v1 — A camada que torna o DeepSeek Harness **grátis na prática**, flexível e ótimo de usar
+# 🐋 dsh-h-v1 — The layer that makes DeepSeek Harness **free in practice**, flexible, and a joy to use
 
-**dsh-h-v1** turns [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) into an assistant you **actually use every day — free**: it runs dozens of **free models** (FreeLLMAPI, OpenRouter `:free`, OpenCode free/zen) com roteamento e fallback automáticos, traz uma **interface em pt-BR** (que acompanha o idioma do sistema: pt/zh/en), um **painel lateral com badges**, e **atualiza o core com segurança** (instância paralela com progresso ao vivo — o sistema em execução nunca é tocado).
+**dsh-h-v1** turns [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) into an assistant you **actually use every day — no subscription**: run dozens of **free models** (FreeLLMAPI, OpenRouter `:free`, OpenCode free/zen) with smart routing and automatic fallback, get a **pt-BR interface** (that follows your OS language: pt/zh/en), a **side panel with badges**, and **update the core safely** (a parallel instance with live progress — the running system is never touched).
 
-> ⚙️ Construído sobre [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) ("*Everything is a Plugin*").
-> **Não oficial** — uma distribuição pessoal, sem afiliação com a DeepSeek.
+> ⚙️ Built on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) ("*Everything is a Plugin*").
+> **Unofficial** — a personal distribution, not affiliated with DeepSeek.
 
 ---
 
-### ✨ Por que você vai querer usar
+### ✨ Why you'll want to use it
 
-| | O que você ganha |
+| | What you get |
 |---|---|
-| 🎁 **Modelos gratuitos, de verdade** | Gateway **FreeLLMAPI** + roteador inteligente (**OpenRouter `:free`**, **OpenCode free/zen**) com fallback automático — explore a onda de modelos grátis sem criar planos pagos |
-| 🖥️ **Painel próprio** | Menu lateral com arquivos recentes, status do core, FreeLLMAPI, Roteador e Modelos — tudo a um clique, sem abrir janelas soltas |
-| 🌎 **Idioma que segue você** | Interface em **português (pt-BR)**, chinês ou inglês conforme o idioma do seu sistema (padrão: inglês) |
-| 🛡️ **Core novo sem medo** | Clique em “Atualizar”: cria uma **instância paralela** com o core novo (com **progresso em tempo real**), você testa e **desinstala** com um botão — o que já está rodando continua intacto |
-| 🧩 **Sua camada, versionada** | Settings, plugins e presets como **código**: git, tags `vX.Y.Z`, changelog e **rollback seguro**; sincronizado entre todas as suas máquinas |
-| 💻 **Windows e Linux** | Instaladores **interativos em 1 linha** (detectam o que existe, idioma, chaves) — a mesma experiência nos dois sistemas |
+| 🎁 **Free models, for real** | **FreeLLMAPI** gateway + smart router (**OpenRouter `:free`**, **OpenCode free/zen**) with automatic fallback — ride the wave of free models without paid plans |
+| 🖥️ **Your own panel** | Side menu with recent files, core status, FreeLLMAPI, Router and Models — one click away, no scattered windows |
+| 🌎 **A language that follows you** | UI in **Brazilian Portuguese (pt-BR)**, Chinese or English, matching your OS language (default: English) |
+| 🛡️ **New core, no fear** | Hit "Update": it creates a **parallel instance** with the new core (**real-time progress**), you try it and **uninstall** with one button — what's already running stays intact |
+| 🧩 **Your layer, versioned** | Settings, plugins and presets as **code**: git, `vX.Y.Z` tags, changelog and **safe rollback**; synced across all your machines |
+| 💻 **Windows and Linux** | **One-line interactive installers** (detect what exists, language, keys) — the same experience on both OSes |
 
-**Comece em 1 minuto** 👉 [Instalar e rodar](#-install--run-end-user)
+**Start in 1 minute** 👉 [Install & run](#-install--run-end-user)
 
 ## 💻 Install & run (end user)
 
