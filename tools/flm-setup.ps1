@@ -1,4 +1,4 @@
-# flm-setup.ps1 — FreeLLMAPI local no Windows (porta 3002) + admin
+# flm-setup.ps1  FreeLLMAPI local no Windows (porta 3002) + admin
 # Cria o codigo (clone + build), sobe o gateway em segundo plano e o admin.
 # Uso:  dsh flm-setup   (ou: powershell -File tools\flm-setup.ps1)
 $ErrorActionPreference = "Stop"
