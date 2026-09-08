@@ -377,3 +377,7 @@ Publicação automática — última sincronização desta máquina.
 ## [v0.2.88] — 2026-09-08 12:12 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.87.
   - a092973 fix(editor): conteudo visivel mesmo sem CodeMirror (Windows)
+
+## [v0.2.89] — 2026-09-08 12:44 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.88.
+  - 7c38069 fix(windows): copia editor-assets p/ CodeMirror ativar + preview md/html
