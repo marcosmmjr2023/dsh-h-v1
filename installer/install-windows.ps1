@@ -64,20 +64,24 @@ if (-not $NoDshAlias) {
 
 # 6) Atalhos Desktop + Menu Iniciar
 try {
-  $ws = New-Object -ComObject WScript.Shell
-  $target = Join-Path $Repo "start-dsh-gui.bat"
-  $desk = Join-Path ([Environment]::GetFolderPath("Desktop")) "DeepSeek Harness.lnk"
-  $sm   = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\DeepSeek Harness.lnk"
-  foreach ($lnkPath in @($desk, $sm)) {
-    $lnk = $ws.CreateShortcut($lnkPath)
-    $lnk.TargetPath = "cmd.exe"
-    $lnk.Arguments  = "/c `"$target`""
-    $lnk.WorkingDirectory = $Repo
-    $lnk.Description = "DeepSeek Harness (dsh-h-v1)"
-    $lnk.Save()
-    Write-Host "[OK] atalho criado: $lnkPath"
-  }
-} catch { Write-Host "[i] nao foi possivel criar atalhos (Desktop/Menu Iniciar)" }
+    $ws = New-Object -ComObject WScript.Shell
+    $ico = Join-Path $Repo "assets\deepseek.ico"
+    if (-not (Test-Path $ico)) { $ico = "" }
+    $tgt = "powershell.exe"
+    $a = "-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Repo "tools\run-gui.ps1") + "`""
+    $desk = Join-Path ([Environment]::GetFolderPath("Desktop")) "DeepSeek Harness.lnk"
+    $sm = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\DeepSeek Harness.lnk"
+    foreach ($lp in @($desk, $sm)) {
+      $lnk = $ws.CreateShortcut($lp)
+      $lnk.TargetPath = $tgt
+      $lnk.Arguments = $a
+      $lnk.WorkingDirectory = $Repo
+      $lnk.Description = "DeepSeek Harness (dsh-h-v1)"
+      if ($ico) { $lnk.IconLocation = "$ico,0" }
+      $lnk.Save()
+      Write-Host "[OK] atalho com icone: $lp"
+    }
+  } catch { Write-Host "[i] nao foi possivel criar atalhos: $($_.Exception.Message)" }
 
 # 7) Abre a GUI (automatico) e verifica o overlay
 if (-not $NoGui) {

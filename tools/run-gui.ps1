@@ -3,6 +3,48 @@
 param([int]$Port = 3081)
 $ErrorActionPreference = "Stop"
 
+function Ensure-Shortcuts {
+  param([string]$Repo)
+  try {
+    $ws = New-Object -ComObject WScript.Shell
+    $ico = Join-Path $Repo "assets\deepseek.ico"
+    if (-not (Test-Path $ico)) { $ico = "" }
+    $tgt = "powershell.exe"
+    $args = "-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Repo "tools\run-gui.ps1") + "`""
+    $desk = Join-Path ([Environment]::GetFolderPath("Desktop")) "DeepSeek Harness.lnk"
+    $sm = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\DeepSeek Harness.lnk"
+    foreach ($p in @($desk, $sm)) {
+      $lnk = $ws.CreateShortcut($p)
+      $lnk.TargetPath = $tgt
+      $lnk.Arguments = $args
+      $lnk.WorkingDirectory = $Repo
+      $lnk.Description = "DeepSeek Harness (dsh-h-v1)"
+      if ($ico) { $lnk.IconLocation = "$ico,0" }
+      $lnk.Save()
+    }
+    Write-Host "[OK] atalhos com icone: Desktop + Menu Iniciar"
+  } catch { Write-Host "[i] nao criei atalhos: $($_.Exception.Message)" }
+}
+
+function Open-AppWindow {
+  param([int]$Port, [string]$profileDir)
+  $url = "http://127.0.0.1:$Port"
+  $cands = @()
+  $pf86 = ${env:ProgramFiles(x86)}; $pf = ${env:ProgramFiles}
+  if ($pf86) { $cands += (Join-Path $pf86 "Microsoft\Edge\Application\msedge.exe"); $cands += (Join-Path $pf86 "Google\Chrome\Application\chrome.exe") }
+  if ($pf) { $cands += (Join-Path $pf "Microsoft\Edge\Application\msedge.exe"); $cands += (Join-Path $pf "Google\Chrome\Application\chrome.exe") }
+  foreach ($exe in $cands) {
+    if (Test-Path $exe) {
+      Start-Process -FilePath $exe -ArgumentList @("--app=$url", "--user-data-dir=$profileDir", "--window-size=1440,900")
+      Write-Host "[OK] GUI aberta como janela de app"
+      return
+    }
+  }
+  Start-Process $url
+  Write-Host "[OK] GUI aberta no navegador (sem Edge/Chrome encontrado)"
+}
+
+
 function Remove-FailingPlugins([string]$yaml) {
   $bad = @("id: smart-router", "id: openrouter-enhanced", "id: model-visibility")
   $paras = $yaml -split "(?m)^\s*$"
@@ -52,4 +94,5 @@ if (-not (Test-Up)) {
   for ($i=0; $i -lt 30; $i++) { Start-Sleep -Seconds 1; if (Test-Up) { break } }
 }
 Write-Host "[OK] GUI: http://127.0.0.1:$Port (log: $log)"
-Start-Process "http://127.0.0.1:$Port"
+Ensure-Shortcuts $Repo
+Open-AppWindow $Port (Join-Path $homeCfg "app-profile")
