@@ -300,3 +300,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.68.
 ## [v0.2.70] — 2026-09-08 04:07 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.69.
   - 74ce43d fix(win): cordis.patch.yml.win.tpl valido (remove 3 plugins por linhas) + geradores limpos
+
+## [v0.2.71] — 2026-09-08 04:17 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.70.
+  - deee339 feat(win): icone da baleia + janela de app (Edge/Chrome --app) + atalhos Desktop/Menu Iniciar com icone
