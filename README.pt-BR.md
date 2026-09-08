@@ -44,6 +44,12 @@ progresso ao vivo) e **desinstalá-la** (rodapé do painel lateral) — o sistem
 
 ### Linux (Debian/Ubuntu e similares, pm2 ou seu supervisor)
 
+**Instalador interativo (detecta o que existe + idioma):**
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.sh)
+```
+Ou passo a passo:
+
 ```bash
 mkdir -p ~/projects/dsh && cd ~/projects/dsh
 git clone https://github.com/marcosmmjr2023/dsh-h-v1.git dsh-h-v1 && cd dsh-h-v1

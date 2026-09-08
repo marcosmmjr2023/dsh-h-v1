@@ -42,6 +42,12 @@ progress) and **uninstall it** (footer of the side panel) — the running system
 
 ### Linux (Debian/Ubuntu-like, pm2 or your own supervisor)
 
+**Interactive installer (detects what exists + language):**
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.sh)
+```
+Or step by step:
+
 ```bash
 mkdir -p ~/projects/dsh && cd ~/projects/dsh
 git clone https://github.com/marcosmmjr2023/dsh-h-v1.git dsh-h-v1 && cd dsh-h-v1
