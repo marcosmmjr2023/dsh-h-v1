@@ -11,6 +11,55 @@ vínculo com a DeepSeek.
 
 ---
 
+## 💻 Instalar e rodar (usuário final)
+
+> Esta é a **página principal**. Manuais completos: [Mapa do servidor (Linux)](docs/SERVER-MAP.md) ·
+> [Atualização de core / instâncias A/B](docs/CORE-UPDATE.md) · [Windows (PT)](docs/WINDOWS-PT.md) ·
+> [Windows (EN)](docs/WINDOWS.md) · [Sincronização de mão dupla](docs/SYNC.md).
+
+### Windows (uma linha — instalador interativo)
+
+```powershell
+irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
+```
+
+Ele detecta o que já existe (repo, core, config, FreeLLMAPI, instâncias, comando `dsh`) e pergunta:
+**1)** instalação limpa do zero · **2)** limpa **mantendo suas chaves/configurações** (`.credentials.yaml`,
+`settings.yaml`, `llm-*`, banco do FreeLLMAPI) e importa no sistema novo · **3)** atualizar o existente ·
+**4)** gerenciar instâncias (listar/desinstalar) · **5)** abrir a GUI.
+
+Sem interação: `installer/install-windows.ps1 | iex` (instala tudo: core + pt-BR + overlay + FreeLLMAPI +
+atalhos Desktop/Menu Iniciar + abre a GUI). Depois, num PowerShell **novo**:
+
+```powershell
+dsh up            # abre a GUI (janela própria, porta 3081)
+dsh update        # atualiza repo + core pinado + pt-BR + overlay
+dsh flm-setup     # gateway FreeLLMAPI (porta 3002) + admin (admin@example.com / Freellmapi@2026)
+dsh doctor        # diagnóstico
+dsh env list      # instâncias paralelas e portas
+```
+
+Pela própria GUI (chip do core) é possível **criar uma instância paralela com um core novo** (com
+progresso ao vivo) e **desinstalá-la** (rodapé do painel lateral) — o sistema em execução nunca é tocado.
+
+### Linux (Debian/Ubuntu e similares, pm2 ou seu supervisor)
+
+```bash
+mkdir -p ~/projects/dsh && cd ~/projects/dsh
+git clone https://github.com/marcosmmjr2023/dsh-h-v1.git dsh-h-v1 && cd dsh-h-v1
+
+# core pinado + dicionários pt-BR (escreve no core instalado via npm)
+./core-i18n-pt/tools/apply-pt-core.sh --force
+
+# sincroniza o overlay (plugins/settings) para a pasta de config viva e roda a GUI:
+DSH_CLONE=~/projects/dsh/dsh-h-v1 DSH_LIVE=~/.dsh-v2 ./tools/sync-pull.sh
+export DSH_HOME=~/.dsh-v2 DSH_WEB_URL=http://127.0.0.1:3081
+node "$(npm root -g)/@deepseek-ai/dsh/lib/bin.js" --profile web --no-open --port 3081 --host 127.0.0.1
+```
+
+Abra http://127.0.0.1:3081 — o mesmo overlay/plugins do Windows (painel lateral, badges, interface
+pt-BR, FreeLLMAPI) e o mesmo fluxo de **instância paralela** pelo chip (veja [CORE-UPDATE.md](docs/CORE-UPDATE.md)).
+
 ## 🎯 Para que serve este repositório
 
 1. **Uma fonte da verdade para a sua camada personalizada** — settings, plugins e

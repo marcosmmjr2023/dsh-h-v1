@@ -9,6 +9,55 @@ Built on top of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harne
 
 ---
 
+## 💻 Install & run (end user)
+
+> This is the **landing page**. Detailed manuals: [Linux/server map](docs/SERVER-MAP.md) ·
+> [core update / A/B instances](docs/CORE-UPDATE.md) · [Windows (PT)](docs/WINDOWS-PT.md) ·
+> [Windows (EN)](docs/WINDOWS.md) · [two-way sync](docs/SYNC.md).
+
+### Windows (one line — interactive installer)
+
+```powershell
+irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
+```
+
+It detects what is installed (repo, core, config, FreeLLMAPI, instances, `dsh` command), then lets you
+choose: **1)** clean install from scratch · **2)** clean install **keeping your API keys/configs**
+(`.credentials.yaml`, `settings.yaml`, `llm-*`, FreeLLMAPI db) · **3)** update existing · **4)** manage
+instances (list/remove) · **5)** open the GUI.
+
+Non-interactive: `installer/install-windows.ps1 | iex` (full install: core + pt-BR + overlay + FreeLLMAPI +
+desktop/start-menu shortcuts + GUI). Afterwards, in a **new** PowerShell:
+
+```powershell
+dsh up            # open the GUI (own app window, port 3081)
+dsh update        # pull repo + pinned core + pt-BR + overlay
+dsh flm-setup     # FreeLLMAPI gateway (port 3002) + admin (admin@example.com / Freellmapi@2026)
+dsh doctor        # diagnostics
+dsh env list      # parallel instances and their ports
+```
+
+The GUI itself (chip in the core badge) can **create a parallel instance with a new core** (with live
+progress) and **uninstall it** (footer of the side panel) — the running system is never touched.
+
+### Linux (Debian/Ubuntu-like, pm2 or your own supervisor)
+
+```bash
+mkdir -p ~/projects/dsh && cd ~/projects/dsh
+git clone https://github.com/marcosmmjr2023/dsh-h-v1.git dsh-h-v1 && cd dsh-h-v1
+
+# pinned core + pt-BR dictionaries (writes into the npm-installed core)
+./core-i18n-pt/tools/apply-pt-core.sh --force
+
+# sync the overlay (plugins/settings) into the live config dir and run the GUI:
+DSH_CLONE=~/projects/dsh/dsh-h-v1 DSH_LIVE=~/.dsh-v2 ./tools/sync-pull.sh
+export DSH_HOME=~/.dsh-v2 DSH_WEB_URL=http://127.0.0.1:3081
+node "$(npm root -g)/@deepseek-ai/dsh/lib/bin.js" --profile web --no-open --port 3081 --host 127.0.0.1
+```
+
+Open http://127.0.0.1:3081 — same overlay/plugins as Windows (side panel, badges, pt-BR interface,
+FreeLLMAPI), and the same **parallel-instance** flow from the chip (see [CORE-UPDATE.md](docs/CORE-UPDATE.md)).
+
 ## 🎯 What this repo is for
 
 1. **One source of truth for your custom layer** — settings, plugins and presets as
