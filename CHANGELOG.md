@@ -348,3 +348,8 @@ Release manual/estrutural — 1 commit(s) desde v0.2.80.
 ## [v0.2.82] — 2026-09-08 05:06 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.81.
   - 4e43437 docs: README.md (EN) hero em INGLES (nao misturar com pt-BR) — landing 100% en no arquivo EN
+
+## [v0.2.83] — 2026-09-08 05:55 (máquina v2202608297065493408)
+Release manual/estrutural — 2 commit(s) desde v0.2.82.
+  - 5db56a4 assets: demo visual FreeDSH (28s) — FreeLLMAPI, roteador, modelos e core seguro
+  - 759a34b community: launch FreeDSH public identity and contributor experience
