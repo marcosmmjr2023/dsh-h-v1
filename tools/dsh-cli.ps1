@@ -63,6 +63,9 @@ switch ($Action) {
   "core" {
     & (Join-Path $Repo "core-i18n-pt\tools\core-update.ps1") @Rest
   }
+  "flm-setup" {
+    & (Join-Path $Repo "tools\flm-setup.ps1")
+  }
   "doctor" {
     Write-Host "node:   $(& node -v)"
     Write-Host "npm:    $(& npm -v)"
