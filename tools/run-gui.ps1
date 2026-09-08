@@ -35,7 +35,7 @@ function Open-AppWindow {
   if ($pf) { $cands += (Join-Path $pf "Microsoft\Edge\Application\msedge.exe"); $cands += (Join-Path $pf "Google\Chrome\Application\chrome.exe") }
   foreach ($exe in $cands) {
     if (Test-Path $exe) {
-      Start-Process -FilePath $exe -ArgumentList @("--app=$url", "--user-data-dir=$profileDir", "--window-size=1440,900")
+      Start-Process -FilePath $exe -ArgumentList @("--app=$url", "--user-data-dir=$profileDir", "--window-size=1440,900", "--lang=pt-BR")
       Write-Host "[OK] GUI aberta como janela de app"
       return
     }

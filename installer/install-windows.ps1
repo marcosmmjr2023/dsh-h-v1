@@ -62,7 +62,11 @@ if (-not $NoDshAlias) {
   }
 }
 
-# 6) Atalhos Desktop + Menu Iniciar
+# 6) FreeLLMAPI (gateway local 3002 + admin) - integrado
+Write-Host "Preparando FreeLLMAPI local..."
+try { & (Join-Path $Repo "tools\flm-setup.ps1") } catch { Write-Host "[i] FreeLLMAPI nao subiu: $($_.Exception.Message) (rode depois: dsh flm-setup)" }
+
+# 7) Atalhos Desktop + Menu Iniciar
 try {
     $ws = New-Object -ComObject WScript.Shell
     $ico = Join-Path $Repo "assets\deepseek.ico"
