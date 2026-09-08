@@ -292,3 +292,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.66.
 ## [v0.2.68] — 2026-09-08 04:01 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.67.
   - a4f5699 feat(win): cordis.patch.yml gerado no Windows SEM smart-router/openrouter/model-visibility
+
+## [v0.2.69] — 2026-09-08 04:01 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.68.
+  - 45d13b5 fix(win): dsh-cli com Remove-FailingPlugins no sync-overlay (funcao + uso)
