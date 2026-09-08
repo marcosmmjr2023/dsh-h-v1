@@ -12,6 +12,19 @@ param(
   [Parameter(ValueFromRemainingArguments = $true)][string[]]$Rest
 )
 $ErrorActionPreference = "Stop"
+
+function Remove-FailingPlugins([string]$yaml) {
+  $bad = @("id: smart-router", "id: openrouter-enhanced", "id: model-visibility")
+  $paras = $yaml -split "(?m)^\s*$"
+  $keep = New-Object System.Collections.Generic.List[string]
+  foreach ($p in $paras) {
+    $skip = $false
+    foreach ($b in $bad) { if ($p -match [regex]::Escape($b)) { $skip = $true; break } }
+    if (-not $skip) { $keep.Add($p) }
+  }
+  return ($keep -join "`r`n")
+}
+
 $Repo = Split-Path $PSScriptRoot -Parent   # dsh-cli.ps1 fica em <repo>/tools
 
 switch ($Action) {
@@ -25,7 +38,9 @@ switch ($Action) {
     $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl"
     if (Test-Path $tpl) {
       $homeUrl = "file:///" + ($homeCfg -replace "\\", "/")   # loader ESM exige file:/// no Windows
-      (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
+      $y = (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl
+      $y = Remove-FailingPlugins $y
+      $y | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
     }
     Write-Host "[OK] overlay sincronizado em $homeCfg (cordis.patch.yml gerado)"
   }
