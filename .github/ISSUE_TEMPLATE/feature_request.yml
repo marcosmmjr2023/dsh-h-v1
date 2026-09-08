@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest an improvement to FreeDSH
+title: "[Feature]: "
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What user problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior, not just the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Router / fallback
+        - Provider integration
+        - UI / panel
+        - Windows installer
+        - Linux installer
+        - Sync / rollback
+        - Localization
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: contribution
+    attributes:
+      label: Contribution
+      description: If you are willing to help implement or test this, say how.
