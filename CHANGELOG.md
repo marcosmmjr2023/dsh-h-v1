@@ -389,3 +389,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.89.
 ## [v0.2.91] — 2026-09-09 02:37 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.90.
   - e96b8e9 feat(providers): Meta como provider padrao no catalogo do pi-ai
+
+## [v0.2.92] — 2026-09-09 03:41 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.91.
+  - 0dc8e6f feat(providers): modelos novos do OpenCode Go (assinatura)
