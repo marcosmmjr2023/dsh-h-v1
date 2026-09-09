@@ -45,18 +45,31 @@ const CANDIDATE_LIBS = [
 
 let requireCli = null;
 let cliLib = null;
+// Diagnostico: registra por que cada candidato falhou (vai para o web.log;
+// essencial quando um plugin nao ativa no Windows).
+const resolveDiag = [];
 for (const lib of CANDIDATE_LIBS) {
   try {
     requireCli = createRequire(path.join(lib, "index.js"));
     cliLib = lib;
     break;
-  } catch { /* tenta a proxima */ }
+  } catch (e) { resolveDiag.push(lib + " :: " + (e && e.message ? e.message : e)); }
 }
+// Fail-soft: NUNCA derruba o boot do harness por causa de resolucao.
+// Se o CLI nao for localizado (ja aconteceu no Windows), o plugin desativa
+// sozinho — sem provedores extras, mas com a GUI funcionando — e deixa o
+// motivo no log para diagnostico.
 if (!requireCli) {
-  throw new Error("[openrouter-enhanced] nao foi possivel localizar o CLI instalado");
+  console.error("[openrouter-enhanced] desativado: nao foi possivel localizar o CLI instalado.");
+  for (const d of resolveDiag) console.error("[openrouter-enhanced]   tentativa: " + d);
+  console.error("[openrouter-enhanced] dicas: defina DSH_CLI_LIB=<npm-root>/@deepseek-ai/dsh/lib ou NODE_PATH=<npm-root>/@deepseek-ai/dsh/node_modules");
+  module.exports = { name: "openrouter-enhanced", apply() {} };
+  return;
 }
 
-const DATA_FILE = path.join(__dirname, "openrouter-enhanced-data.json");
+// __dirname nao existe se o loader usar ESM; cai para o cwd nesse caso.
+const HERE = (typeof __dirname !== "undefined" && __dirname) ? __dirname : process.cwd();
+const DATA_FILE = path.join(HERE, "openrouter-enhanced-data.json");
 const data = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
 
 const FREE = "openrouter-free";

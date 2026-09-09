@@ -13,6 +13,27 @@
     providers:
       opencode-go:
         apiKeyEnv: OPENCODE_API_KEY
+# 2) Smart Model Router: roteamento automatico entre provedores LLM
+#    (hook agent/request, por-agente via agent/created).
+- insert:
+    - id: smart-router
+      name: '__DSH_HOME__/smart-router-plugin.js'
+      config:
+        enabled: true
+# 3) OpenRouter Enhanced: grupos "OpenRouter Free" (modelos gratuitos) e
+#    "OpenRouter Pro" (escolha de provedor por modelo, provider.order).
+- insert:
+    - id: openrouter-enhanced
+      name: '__DSH_HOME__/openrouter-enhanced-plugin.js'
+      config:
+        enabled: true
+# 4) Model Visibility: filtro do catalogo no seletor de modelos
+#    (settings model-visibility + pagina /models com checkboxes).
+- insert:
+    - id: model-visibility
+      name: '__DSH_HOME__/model-visibility-plugin.js'
+      config:
+        enabled: true
 # 5) Compaction: usa um modelo de CONTEXTO GRANDE para resumir a conversa,
 #    independente do modelo pequeno selecionado na sessao. Assim, ao trocar
 #    para um modelo de 256k com uma sessao de ~300k, a compactacao automatica

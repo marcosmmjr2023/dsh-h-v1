@@ -51,18 +51,6 @@ function Open-AppWindow {
 }
 
 
-function Remove-FailingPlugins([string]$yaml) {
-  $bad = @("id: smart-router", "id: openrouter-enhanced", "id: model-visibility")
-  $paras = $yaml -split "(?m)^\s*$"
-  $keep = New-Object System.Collections.Generic.List[string]
-  foreach ($p in $paras) {
-    $skip = $false
-    foreach ($b in $bad) { if ($p -match [regex]::Escape($b)) { $skip = $true; break } }
-    if (-not $skip) { $keep.Add($p) }
-  }
-  return ($keep -join "`r`n")
-}
-
 $bin = Join-Path (& npm root -g).Trim() "@deepseek-ai\dsh\lib\bin.js"
 if (-not (Test-Path $bin)) { Write-Host "[X] core nao encontrado: $bin (rode: npm install -g @deepseek-ai/dsh)"; exit 1 }
 $homeCfg = Join-Path $env:USERPROFILE ".dsh"
@@ -70,6 +58,10 @@ if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $home
 $Repo = Split-Path $PSScriptRoot -Parent   # tools/run-gui.ps1 -> <repo>
 # Overlay (nossa camada: badges, menu lateral, funcionalidades)
 Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
+# openrouter-enhanced-data.json (lista de modelos do OpenRouter Enhanced; o
+# plugin le este arquivo no load e quebra sem ele)
+$dataSrc = Join-Path $Repo "overlay\openrouter-enhanced-data.json"
+if (Test-Path $dataSrc) { Copy-Item $dataSrc -Destination $homeCfg -Force }
 # Assets do editor (CodeMirror/temas/marked/modos) ficam em subpasta e precisam
 # ser copiados recursivamente; sem eles o CodeMirror nunca ativa no Windows.
 $srcAssets = Join-Path $Repo "overlay\editor-assets"

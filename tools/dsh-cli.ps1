@@ -13,18 +13,6 @@ param(
 )
 $ErrorActionPreference = "Stop"
 
-function Remove-FailingPlugins([string]$yaml) {
-  $bad = @("id: smart-router", "id: openrouter-enhanced", "id: model-visibility")
-  $paras = $yaml -split "(?m)^\s*$"
-  $keep = New-Object System.Collections.Generic.List[string]
-  foreach ($p in $paras) {
-    $skip = $false
-    foreach ($b in $bad) { if ($p -match [regex]::Escape($b)) { $skip = $true; break } }
-    if (-not $skip) { $keep.Add($p) }
-  }
-  return ($keep -join "`r`n")
-}
-
 $Repo = Split-Path $PSScriptRoot -Parent   # dsh-cli.ps1 fica em <repo>/tools
 
 switch ($Action) {
@@ -35,6 +23,10 @@ switch ($Action) {
     $homeCfg = Join-Path $env:USERPROFILE ".dsh"
     if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $homeCfg | Out-Null }
     Get-ChildItem -Path (Join-Path $Repo "overlay") -Filter "*.js" | Copy-Item -Destination $homeCfg -Force
+    # openrouter-enhanced-data.json (lista de modelos do OpenRouter Enhanced; o
+    # plugin le este arquivo no load e quebra sem ele)
+    $dataSrc = Join-Path $Repo "overlay\openrouter-enhanced-data.json"
+    if (Test-Path $dataSrc) { Copy-Item $dataSrc -Destination $homeCfg -Force }
     # editor-assets (CodeMirror/temas/marked/modos) tambem precisam ir (subpasta)
     $srcAssets = Join-Path $Repo "overlay\editor-assets"
     $dstAssets = Join-Path $homeCfg "editor-assets"

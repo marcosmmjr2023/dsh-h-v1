@@ -67,13 +67,16 @@ const CANDIDATE_LIBS = [
 
 let z = null;
 let installSettingsSection = null;
+// Diagnostico: registra por que cada candidato falhou (vai para o web.log;
+// essencial quando um plugin nao ativa no Windows).
+const resolveDiag = [];
 for (const lib of CANDIDATE_LIBS) {
   try {
     const requireCli = createRequire(path.join(lib, "index.js"));
     z = requireCli("@deepseek-ai/schemastery");
     ({ installSettingsSection } = requireCli("@deepseek-ai/dsh-settings"));
     break;
-  } catch { /* tenta a proxima */ }
+  } catch (e) { resolveDiag.push(lib + " :: " + (e && e.message ? e.message : e)); }
 }
   // fallback: caminho absoluto dentro do grafo do core (Windows resolve por nome as vezes falha)
   if (!z || !installSettingsSection) {
@@ -87,12 +90,22 @@ for (const lib of CANDIDATE_LIBS) {
           z = rq(sc);
           ({ installSettingsSection } = rq(ds));
           if (z && installSettingsSection) break;
-        } catch (e) { /* proximo */ }
+        } catch (e) { resolveDiag.push(sc + " :: " + (e && e.message ? e.message : e)); }
+      } else {
+        resolveDiag.push(lib + " :: sem node_modules aninhado do core");
       }
     }
   }
+// Fail-soft: NUNCA derruba o boot do harness por causa de resolucao.
+// Se os modulos do core nao resolverem (ja aconteceu no Windows), o plugin
+// desativa sozinho — sem badges/pagina, mas com a GUI funcionando — e deixa
+// o motivo no log para diagnostico.
 if (!z || !installSettingsSection) {
-  throw new Error("[SmartRouter] nao foi possivel carregar schemastery/dsh-settings");
+  console.error("[SmartRouter] desativado: nao foi possivel carregar schemastery/dsh-settings.");
+  for (const d of resolveDiag) console.error("[SmartRouter]   tentativa: " + d);
+  console.error("[SmartRouter] dicas: defina DSH_CLI_LIB=<npm-root>/@deepseek-ai/dsh/lib ou NODE_PATH=<npm-root>/@deepseek-ai/dsh/node_modules");
+  module.exports = { name: "smart-model-router", apply() {} };
+  return;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
