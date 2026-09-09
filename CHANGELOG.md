@@ -393,3 +393,8 @@ Release manual/estrutural — 1 commit(s) desde v0.2.90.
 ## [v0.2.92] — 2026-09-09 03:41 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.91.
   - 0dc8e6f feat(providers): modelos novos do OpenCode Go (assinatura)
+
+## [v0.2.93] — 2026-09-09 04:00 (máquina v2202608297065493408)
+Publicação automática — última sincronização desta máquina.
+- Arquivos alterados (1):
+  - model-visibility-plugin.js
