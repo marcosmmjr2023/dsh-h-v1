@@ -402,3 +402,7 @@ Publicação automática — última sincronização desta máquina.
 ## [v0.2.94] — 2026-09-09 04:34 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.93.
   - 5f77dba feat(router): cadeia visual em passos com motivo e disponibilidade
+
+## [v0.2.95] — 2026-09-09 11:42 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.94.
+  - 2c3927a fix(win): reativa Roteador, Modelos e badge de consumo no Windows
