@@ -109,6 +109,10 @@ const PAGE = String.raw`<!doctype html>
   .groupHead label { font-weight:600; font-size:14px; display:flex; align-items:center; gap:8px; cursor:pointer; }
   .groupHead .count { color:var(--muted); font-size:12px; }
   .models { display:flex; flex-direction:column; gap:4px; padding-left:28px; }
+  .models.hidden { display:none; }
+  .groupHead .toggle { background:transparent; border:1px solid var(--border); color:var(--muted); border-radius:6px; width:26px; height:26px; line-height:1; cursor:pointer; font-size:13px; flex:none; padding:0; }
+  .groupHead .toggle:hover { color:var(--text); border-color:var(--accent); }
+  .groupHead .toggle[aria-expanded="true"] { color:var(--text); }
   .model { display:flex; align-items:flex-start; gap:8px; padding:4px 6px; border-radius:6px; }
   .model:hover { background:#161b22; }
   .model label { display:flex; align-items:flex-start; gap:8px; cursor:pointer; flex:1; min-width:0; }
@@ -138,7 +142,7 @@ const PAGE = String.raw`<!doctype html>
 <div class="wrap">
   <p><a href="/" style="color:var(--accent);text-decoration:none;">← Voltar ao app</a> · <a href="/smart-router" style="color:var(--accent);text-decoration:none;">⚡ Roteador</a></p>
   <h1>☑ Modelos visíveis no seletor</h1>
-  <p class="sub">Clique no <b>checkbox do grupo (provedor)</b> para marcar/desmarcar <b>todos</b> de uma vez —
+  <p class="sub">Os provedores começam <b>recolhidos</b> — clique na seta (▸) para expandir e ver os modelos.<br>Clique no <b>checkbox do grupo (provedor)</b> para marcar/desmarcar <b>todos</b> de uma vez —
      a lista continua visível para você marcar individualmente os que quiser (ex.: deixe só 20 de 137).
      Vale a partir do próximo turno/render. Modelos já selecionados continuam funcionando mesmo ocultos
      (o filtro é só de exibição; o roteador também ignora modelos ocultos).</p>
@@ -200,6 +204,8 @@ const PAGE = String.raw`<!doctype html>
     <button class="save" id="save">Salvar</button>
     <button class="ghost" id="all">Marcar todos</button>
     <button class="ghost" id="none">Desmarcar todos</button>
+    <button class="ghost" id="expandAll">Expandir todos</button>
+    <button class="ghost" id="collapseAll">Recolher todos</button>
     <span id="msg"></span>
   </div>
   <p class="foot">Config salva em <code>~/.dsh/settings.yaml</code> (namespace <code>model-visibility</code>).
@@ -209,6 +215,20 @@ const PAGE = String.raw`<!doctype html>
 
 <script>
 let state = null;
+// Provedores começam recolhidos; a escolha do usuário persiste no navegador.
+// Chave = id do grupo; true = recolhido, false = expandido.
+let collapsed = {};
+try { collapsed = JSON.parse(localStorage.getItem("mv-collapsed") || "{}") || {}; } catch (e) { collapsed = {}; }
+function isCollapsed(gid) { return collapsed[gid] !== false; }
+function saveCollapsed() { try { localStorage.setItem("mv-collapsed", JSON.stringify(collapsed)); } catch (e) {} }
+function hasActiveFilters(f) {
+  if (f.search) return true;
+  if (f.intel > 0 || f.stars > 0) return true;
+  if (f.mode) return true;
+  if (f.price > 0 || f.tps > 0 || f.lat > 0) return true;
+  if (f.vis && f.vis !== "all") return true;
+  return false;
+}
 async function load() {
   const r = await fetch("/api/model-visibility");
   state = await r.json();
@@ -350,6 +370,8 @@ function render() {
   const host = document.getElementById("groups");
   host.innerHTML = "";
   const f = filters();
+  // Com filtro/busca ativos, expande tudo para os resultados ficarem visíveis.
+  const filtering = hasActiveFilters(f);
   let totalShown = 0, totalModels = 0;
   const groups = (state.groups || []).map(g => ({
     ...g,
@@ -371,6 +393,23 @@ function render() {
     box.className = "group";
     const boxEl = document.createElement("div");
     boxEl.className = "groupHead";
+    const shut = filtering ? false : isCollapsed(g.id);
+    const tg = document.createElement("button");
+    tg.type = "button";
+    tg.className = "toggle";
+    tg.setAttribute("aria-expanded", String(!shut));
+    tg.setAttribute("aria-label", (shut ? "Expandir modelos de " : "Recolher modelos de ") + (g.name || g.id));
+    tg.title = shut ? "Expandir" : "Recolher";
+    tg.textContent = shut ? "▸" : "▾";
+    tg.onclick = (function (gid) {
+      return function (e) {
+        if (e) e.preventDefault();
+        collapsed[gid] = !isCollapsed(gid);
+        saveCollapsed();
+        render();
+      };
+    })(g.id);
+    boxEl.appendChild(tg);
     const lbl = document.createElement("label");
     const cbP = document.createElement("input");
     cbP.type = "checkbox";
@@ -385,10 +424,11 @@ function render() {
     const cnt = document.createElement("span");
     cnt.className = "count";
     cnt.textContent = visibleCount + "/" + g.models.length + " visíveis · " + shown.length + " na busca";
+    if (shut && shown.length > 0) cnt.textContent += " · ▸ recolhido";
     boxEl.appendChild(cnt);
     box.appendChild(boxEl);
     const models = document.createElement("div");
-    models.className = "models";
+    models.className = "models" + (shut ? " hidden" : "");
     if (shown.length === 0) {
       const empty = document.createElement("div");
       empty.className = "muted";
@@ -453,6 +493,16 @@ document.getElementById("none").onclick = () => {
       state.hiddenModels.push(g.id + "/" + m.id);
     }
   }
+  render();
+};
+document.getElementById("expandAll").onclick = () => {
+  for (const g of (state.groups || [])) collapsed[g.id] = false;
+  saveCollapsed();
+  render();
+};
+document.getElementById("collapseAll").onclick = () => {
+  for (const g of (state.groups || [])) collapsed[g.id] = true;
+  saveCollapsed();
   render();
 };
 document.getElementById("save").onclick = async () => {
