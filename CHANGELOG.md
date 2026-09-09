@@ -406,3 +406,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.93.
 ## [v0.2.95] — 2026-09-09 11:42 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.94.
   - 2c3927a fix(win): reativa Roteador, Modelos e badge de consumo no Windows
+
+## [v0.2.96] — 2026-09-09 12:58 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.95.
+  - eddc5e0 feat(update): botao manual no badge + auto-update Windows funcional
