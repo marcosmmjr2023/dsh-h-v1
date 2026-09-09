@@ -411,6 +411,30 @@ const SMART_ROUTER_PAGE = `<!doctype html>
   .chip .x:hover { color:var(--red); }
   .chip .up, .chip .down { cursor:pointer; color:var(--muted); padding:0 2px; }
   .chip .up:hover, .chip .down:hover { color:var(--accent); }
+  .mode .why { display:block; font-size:11px; color:var(--muted); margin-top:4px; }
+  .steps { display:flex; flex-direction:column; }
+  .step { display:flex; gap:10px; align-items:flex-start; background:#0d1117; border:1px solid var(--border); border-radius:8px; padding:8px 10px; position:relative; }
+  .step + .step { margin-top:16px; }
+  .step + .step::before { content:"↓"; position:absolute; top:-16px; left:22px; color:var(--muted); font-size:11px; }
+  .step.off { opacity:.55; }
+  .stepNum { flex:none; width:24px; height:24px; border-radius:50%; background:#21262d; border:1px solid var(--border); color:var(--text); font-size:12px; line-height:22px; text-align:center; }
+  .step.first .stepNum { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .stepBody { flex:1; min-width:0; }
+  .prov { display:inline-block; font:11px ui-monospace,monospace; background:#1f3d2b; color:var(--green); border-radius:20px; padding:1px 8px; margin-right:6px; }
+  .mname { font:12px ui-monospace,monospace; word-break:break-all; }
+  .whyRow { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .why { font-size:11px; color:var(--muted); background:#21262d; border-radius:20px; padding:1px 8px; }
+  .why.bad { color:var(--red); }
+  .stepCtl { display:flex; gap:2px; flex:none; }
+  .stepCtl button { background:transparent; border:1px solid var(--border); color:var(--muted); border-radius:6px; width:24px; height:24px; cursor:pointer; font-size:12px; line-height:1; padding:0; }
+  .stepCtl button:hover { color:var(--text); border-color:var(--accent); }
+  .stepCtl button.del:hover { color:var(--red); border-color:var(--red); }
+  .logic { background:#0d1117; border-left:3px solid var(--accent); border-radius:0 6px 6px 0; padding:6px 10px; font-size:12px; margin-bottom:10px; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 2px; }
+  .dot.ok { background:var(--green); } .dot.off { background:#555; }
+  details.avail { background:#0d1117; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; }
+  details.avail summary { cursor:pointer; padding:6px 10px; font:12px ui-monospace,monospace; }
+  details.avail .models { padding:0 10px 10px; }
   .muted { color:var(--muted); }
 </style>
 </head>
@@ -424,13 +448,21 @@ const SMART_ROUTER_PAGE = `<!doctype html>
      Você pode misturar provedores e modelos livremente (ex.: variantes do OpenRouter com provedor fixo).</p>
 
   <div class="card">
+    <h2>Como ler esta página</h2>
+    <p class="hint" style="margin:0;">Cada categoria abaixo é uma <b>cadeia ordenada</b>: o roteador tenta o <b>passo 1</b>; se aquele provedor falhar, cai para o <b>passo 2</b>, e assim por diante.
+      <span class="dot ok"></span> passo disponível agora · <span class="dot off"></span> passo indisponível (será pulado) ·
+      as etiquetas 💰 explicam o <b>motivo do custo</b> de cada passo. Novos provedores/modelos aparecem no seletor "provedor + modelo" de cada categoria — é só adicionar e reordenar.</p>
+  </div>
+
+  <div class="card">
     <h2>Modo de gasto</h2>
     <div class="modes" id="modes"></div>
   </div>
 
   <div class="card">
     <h2>Modelos por categoria</h2>
-    <p class="hint">Cada lista tem <b>um modelo por linha, na ordem de preferência (fallback)</b>.
+    <p class="hint">Cada categoria é uma <b>cadeia de passos numerados (ordem de preferência/fallback)</b>:
+       use o seletor provedor + modelo para adicionar novos, e as setas ↑ ↓ para reordenar.
        Se um modelo/provedor falhar ou não estiver disponível, o próximo da lista é usado.
        Formato: <code>provider/model</code> (ex.: <code>opencode-go/mimo-v2.5</code>).
        Para fixar provedor no OpenRouter use as variantes (ex.: <code>openrouter-pro/anthropic/claude-3-haiku@amazon-bedrock</code>).
@@ -454,10 +486,14 @@ const SMART_ROUTER_PAGE = `<!doctype html>
 
 <script>
 const MODES = [
-  { id:"eco", label:"Eco", desc:"custo mínimo", badge:"mais barato" },
-  { id:"normal", label:"Normal", desc:"economia padrão", badge:"" },
-  { id:"balanced", label:"Balanced", desc:"equilibrado", badge:"padrão" },
-  { id:"ultra", label:"Ultra", desc:"modelos avançados", badge:"maior capacidade" }
+  { id:"eco", label:"Eco", desc:"custo mínimo", badge:"mais barato",
+    why:"Tenta tudo que é grátis primeiro e só usa pago se nada responder." },
+  { id:"normal", label:"Normal", desc:"economia padrão", badge:"",
+    why:"Começa no grátis confiável e sobe para a assinatura Go quando precisa de mais qualidade." },
+  { id:"balanced", label:"Balanced", desc:"equilibrado", badge:"padrão",
+    why:"Grátis inteligente primeiro, depois assinatura Go, com a API oficial de rede de segurança." },
+  { id:"ultra", label:"Ultra", desc:"modelos avançados", badge:"maior capacidade",
+    why:"Prioriza os modelos mais capazes, mantendo fallback barato antes do pago por uso." }
 ];
 const TIERS = [
   { key:"simple",   tier:"free",  label:"Simples",  hint:"perguntas rápidas, conversa" },
@@ -478,6 +514,33 @@ function listFor(t) {
 }
 function providers() { return (state.available || []).filter(p => p !== "smart-router"); }
 function modelsOf(p) { return (state.models || {})[p] || []; }
+// ── Leitura rápida da cadeia: provedor/modelo, motivo de custo e disponibilidade ──
+function provOf(entry) { const i = String(entry).indexOf("/"); return i > 0 ? String(entry).slice(0, i) : String(entry); }
+function modelOf(entry) { const i = String(entry).indexOf("/"); return i > 0 ? String(entry).slice(i + 1) : String(entry); }
+function costTag(p) {
+  if (p === "freellmapi") return "💰 Grátis · roteador";
+  if (p === "openrouter-free" || p === "opencode-go-free") return "💰 Grátis";
+  if (p === "opencode-go") return "💳 Assinatura Go";
+  if (p === "deepseek-official") return "💳 Pago por uso";
+  if (p === "openrouter" || p === "openrouter-pro") return "💳 Chave própria";
+  if (p === "meta") return "💳 Pago por uso";
+  return "🔌 Provedor configurado";
+}
+function isLive(entry) {
+  const p = provOf(entry), m = modelOf(entry);
+  if ((state.available || []).indexOf(p) === -1) return false;
+  return (modelsOf(p).indexOf(m) !== -1);
+}
+// Frase-resumo da ordem: "Tenta A (grátis) → se falhar, B (assinatura) → por fim C (pago)."
+function logicLine(list) {
+  if (!list || list.length === 0) return "Lista vazia: vale o preset do modo ativo.";
+  const live = [];
+  for (let i = 0; i < list.length; i++) if (isLive(list[i])) live.push(list[i]);
+  if (live.length === 0) return "Nenhum passo desta cadeia está disponível agora — confira provedores e credenciais.";
+  let s = "Tenta " + live[0] + " (" + costTag(provOf(live[0])) + ")";
+  for (let i = 1; i < live.length; i++) s += " → se falhar, " + live[i] + " (" + costTag(provOf(live[i])) + ")";
+  return s + ".";
+}
 function renderTiers() {
   const host = document.getElementById("tier-pickers");
   host.innerHTML = "";
@@ -485,6 +548,10 @@ function renderTiers() {
     const box = document.createElement("div");
     box.className = "tierBox";
     box.innerHTML = "<h4>" + esc(t.label) + " <small>" + esc(t.hint) + " — ordem = fallback</small></h4>";
+    const logic = document.createElement("div");
+    logic.className = "logic";
+    logic.textContent = "Por que nesta ordem? " + logicLine(listFor(t));
+    box.appendChild(logic);
     const picker = document.createElement("div");
     picker.className = "pickerRow";
     const provSel = document.createElement("select");
@@ -512,7 +579,7 @@ function renderTiers() {
     box.appendChild(picker);
 
     const chips = document.createElement("div");
-    chips.className = "chipRow";
+    chips.className = "steps";
     const list = listFor(t);
     if (list.length === 0) {
       const empty = document.createElement("span");
@@ -520,15 +587,52 @@ function renderTiers() {
       empty.textContent = "(vazio — usa o preset do modo)";
       chips.appendChild(empty);
     }
+    let firstLive = -1;
+    for (let k = 0; k < list.length; k++) { if (isLive(list[k])) { firstLive = k; break; } }
     list.forEach((entry, i) => {
-      const chip = document.createElement("span");
-      chip.className = "chip";
-      chip.innerHTML = "<span class='n'>" + (i + 1) + ".</span><span>" + esc(entry) + "</span>" +
-        "<span class='up'>↑</span><span class='down'>↓</span><span class='x'>✕</span>";
-      chip.querySelector(".up").onclick = () => { if (i > 0) { const l = listFor(t); const tmp = l[i - 1]; l[i - 1] = l[i]; l[i] = tmp; render(); } };
-      chip.querySelector(".down").onclick = () => { if (i < list.length - 1) { const l = listFor(t); const tmp = l[i + 1]; l[i + 1] = l[i]; l[i] = tmp; render(); } };
-      chip.querySelector(".x").onclick = () => { listFor(t).splice(i, 1); render(); };
-      chips.appendChild(chip);
+      const live = isLive(entry);
+      const step = document.createElement("div");
+      step.className = "step" + (live ? "" : " off") + (i === firstLive ? " first" : "");
+      const num = document.createElement("span");
+      num.className = "stepNum";
+      num.textContent = String(i + 1);
+      step.appendChild(num);
+      const body = document.createElement("div");
+      body.className = "stepBody";
+      const prov = document.createElement("span");
+      prov.className = "prov";
+      prov.textContent = provOf(entry);
+      const mname = document.createElement("span");
+      mname.className = "mname";
+      mname.textContent = modelOf(entry);
+      body.appendChild(prov);
+      body.appendChild(mname);
+      const whyRow = document.createElement("div");
+      whyRow.className = "whyRow";
+      const cost = document.createElement("span");
+      cost.className = "why";
+      cost.textContent = costTag(provOf(entry));
+      whyRow.appendChild(cost);
+      const role = document.createElement("span");
+      role.className = "why" + (live ? "" : " bad");
+      role.textContent = !live ? "⚠️ indisponível aqui (será pulado)" : (i === firstLive ? "▶ 1ª tentativa" : "🔁 fallback");
+      whyRow.appendChild(role);
+      body.appendChild(whyRow);
+      step.appendChild(body);
+      const ctl = document.createElement("div");
+      ctl.className = "stepCtl";
+      const up = document.createElement("button");
+      up.type = "button"; up.title = "Subir (tenta antes)"; up.textContent = "↑";
+      up.onclick = () => { if (i > 0) { const l = listFor(t); const tmp = l[i - 1]; l[i - 1] = l[i]; l[i] = tmp; render(); } };
+      const down = document.createElement("button");
+      down.type = "button"; down.title = "Descer (tenta depois)"; down.textContent = "↓";
+      down.onclick = () => { if (i < list.length - 1) { const l = listFor(t); const tmp = l[i + 1]; l[i + 1] = l[i]; l[i] = tmp; render(); } };
+      const del = document.createElement("button");
+      del.type = "button"; del.className = "del"; del.title = "Remover da cadeia"; del.textContent = "✕";
+      del.onclick = () => { listFor(t).splice(i, 1); render(); };
+      ctl.appendChild(up); ctl.appendChild(down); ctl.appendChild(del);
+      step.appendChild(ctl);
+      chips.appendChild(step);
     });
     box.appendChild(chips);
     host.appendChild(box);
@@ -540,7 +644,7 @@ function render() {
   for (const m of MODES) {
     const b = document.createElement("button");
     b.className = "mode" + (m.id === state.mode ? " active" : "");
-    b.innerHTML = "<b>" + m.label + "</b><small>" + (m.desc) + "</small>" + (m.badge ? "<span class='badge'>" + m.badge + "</span>" : "");
+    b.innerHTML = "<b>" + m.label + "</b><small>" + (m.desc) + "</small><span class='why'>" + esc(m.why) + "</span>" + (m.badge ? "<span class='badge'>" + m.badge + "</span>" : "");
     b.onclick = () => { state.mode = m.id; render(); };
     modesEl.appendChild(b);
   }
@@ -549,9 +653,21 @@ function render() {
   const avail = document.getElementById("available");
   avail.innerHTML = "";
   for (const provider of providers()) {
-    const span = document.createElement("span");
-    span.textContent = provider + ": " + ((state.models || {})[provider] || []).join(", ");
-    avail.appendChild(span);
+    const ms = (state.models || {})[provider] || [];
+    const det = document.createElement("details");
+    det.className = "avail";
+    const sum = document.createElement("summary");
+    sum.textContent = provider + " (" + ms.length + " modelo" + (ms.length === 1 ? "" : "s") + ")";
+    det.appendChild(sum);
+    const list = document.createElement("div");
+    list.className = "models";
+    for (const m of ms) {
+      const span = document.createElement("span");
+      span.textContent = m;
+      list.appendChild(span);
+    }
+    det.appendChild(list);
+    avail.appendChild(det);
   }
 }
 function msg(text, ok) {
