@@ -385,3 +385,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.88.
 ## [v0.2.90] — 2026-09-09 00:42 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.89.
   - 70a7e33 feat(providers): Meta como provider padrao do sistema
+
+## [v0.2.91] — 2026-09-09 02:37 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.90.
+  - e96b8e9 feat(providers): Meta como provider padrao no catalogo do pi-ai
