@@ -61,6 +61,12 @@ switch ($Action) {
       Write-Host "core ja esta na versao pinada ($pinned)"
     }
     & (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") --force
+    # Reaplica o provider "meta" no catalogo do core (pi-ai) apos update
+    try {
+      & (Join-Path $Repo "tools\piai-meta-patch.ps1")
+    } catch {
+      Write-Host "[i] piai-meta: nao aplicado (rode manualmente: tools\piai-meta-patch.ps1)"
+    }
     Write-Host "[OK] atualizado. Rode: dsh up"
   }
   "env" {

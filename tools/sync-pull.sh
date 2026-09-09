@@ -37,6 +37,13 @@ echo "✔ overlay aplicado em $LIVE"
 # Grava versão instalada + instante (para o badge de versão)
 "$SELF_DIR/stamp-version.sh"
 
+# Reaplica o registro do provider "meta" no catalogo do core (pi-ai),
+# necessario apos reinstall/update do core. Best-effort: com sudo silencioso
+# aplica; sem sudo, apenas avisa para rodar manualmente.
+if [ -x "$SELF_DIR/piai-meta-patch.sh" ]; then
+  "$SELF_DIR/piai-meta-patch.sh" --auto || true
+fi
+
 # Aviso sobre o core (L1) — informativo, não bloqueia
 if [ -x "$SELF_DIR/check-core.sh" ]; then "$SELF_DIR/check-core.sh" || true; fi
 echo "✔ sync-pull concluído. Rollback disponível: tools/rollback.sh list"
