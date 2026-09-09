@@ -101,6 +101,19 @@ function Do-Open {
   $g = Join-Path $Repo "tools\run-gui.ps1"
   if (Test-Path $g) { & $g } else { Say "[i] Repo ausente - escolha a opcao 1 (instalacao limpa) primeiro." }
 }
+function Do-AutoSyncTask {
+  $t = Join-Path $Repo "tools\install-autosync-task.ps1"
+  if (-not (Test-Path $t)) { Say "[X] script nao encontrado no repo - atualize o repo antes (opcao 3)."; return }
+  Say ""
+  Say "[Auto-update agendado]"
+  Say "Cria a tarefa 'DeepSeek Harness AutoSync' no Agendador de Tarefas, que"
+  Say "roda o auto-sync a cada 30 min apos o logon (respeita o flag do badge)."
+  Say "Sem ela, o Windows nao atualiza sozinho e a versao congela."
+  $w = Ask "(i)nstalar  |  (r)emover  |  (s)tatus  |  Enter p/ voltar:"
+  if ($w -eq "i") { & $t }
+  elseif ($w -eq "r") { & $t -Remove }
+  elseif ($w -eq "s") { & $t -Status }
+}
 
 
 function Do-CleanKeep {
@@ -158,6 +171,7 @@ while ($true) {
   if ($state.repo -or $state.core -or $state.cfg) { Say "  3) Atualizar/completar instalacao existente (nao apaga nada)" }
   if ($state.instances.Count -gt 0) { Say "  4) Gerenciar instancias (listar / desinstalar)" }
   Say "  5) Abrir a GUI (sobe servidor + FreeLLMAPI se preciso)"
+  Say "  6) Auto-update agendado (instalar/remover tarefa no Agendador)"
   Say "  0) Sair"
   $opt = Ask "Escolha:"
   switch ($opt) {
@@ -173,6 +187,7 @@ while ($true) {
       } else { Say "Nenhuma instancia." }
     }
     "5" { Do-Open }
+    "6" { Do-AutoSyncTask }
     "0" { Say "Tchau!"; break }
     default { Say "Opcao invalida." }
   }

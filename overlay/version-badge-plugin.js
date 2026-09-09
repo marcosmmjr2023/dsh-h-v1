@@ -17,6 +17,12 @@
  *       DESLIGA o auto-update (flag .dsh-autoupdate.off) e reinicia o harness
  *       sozinho quando ele roda sob pm2 (senão orienta reiniciar manualmente).
  *
+ *   POST /api/dsh-sync {"action":"start"} → roda tools/sync-pull.ps1/.sh
+ *     em BACKGROUND (git pull + overlay + stamp) e devolve {id} para polling;
+ *   GET  /api/dsh-sync?progress=1&id=… → progresso do sync.
+ *     É o botão ⬆ do badge: atualiza sem esperar o agendado. Ao concluir,
+ *     reinicie a GUI para recarregar os plugins (botão Reiniciar agora).
+ *
  * Client-side: badge "v<versão> · <atualizado>" + botão "🔄 auto" (ON/OFF)
  * + botão "↩" que abre o painel de rollback (voltar para uma versão anterior
  * se uma atualização quebrar o sistema). Recolhidos pelo LayoutPanel na
@@ -361,6 +367,44 @@ function coreProgress(name, cb) {
     lines: store.lines.slice(-40),
   });
 }
+// ══ SYNC MANUAL do overlay (badge ⬆): git pull + aplica overlay + stamp ══
+// Roda tools/sync-pull.ps1 (Windows) ou tools/sync-pull.sh (Linux) em
+// BACKGROUND, com progresso por polling — mesmo padrão do coreEnvCreate.
+// Ao concluir, a GUI precisa reiniciar para recarregar os plugins
+// (o painel oferece "Reiniciar agora"; sem pm2, orienta `dsh up` manual).
+const SYNC_PROGRESS = new Map();
+function syncNowStart(cb) {
+  const tool = path.join(cloneDir(), "tools", IS_WIN ? "sync-pull.ps1" : "sync-pull.sh");
+  if (!fs.existsSync(tool)) { cb({ ok: false, error: "ferramenta de sync não encontrada: " + tool }); return; }
+  const id = "sync-" + Date.now().toString(36);
+  const before = versionPayload();
+  const store = { running: true, done: false, ok: false, error: "", lines: [], output: "", before, after: null };
+  SYNC_PROGRESS.set(id, store);
+  const env = Object.assign({}, process.env, { HOME, DSH_CLONE: cloneDir(), DSH_LIVE: __dirname });
+  const child = IS_WIN
+    ? spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", tool], { env })
+    : spawn(tool, [], { env });
+  let acc = "";
+  const push = (chunk) => { acc += chunk; store.lines = acc.split(/\r?\n/); if (store.lines.length > 400) store.lines = store.lines.slice(-400); };
+  child.stdout.on("data", push);
+  child.stderr.on("data", push);
+  child.on("error", (err) => { store.running = false; store.done = true; store.ok = false; store.error = String((err && err.message) || err); store.output = acc; });
+  child.on("close", (code) => {
+    store.running = false; store.done = true; store.ok = code === 0;
+    store.output = acc; store.after = versionPayload();
+    if (!store.ok) store.error = "sync falhou (exit " + code + ") — veja a saída abaixo";
+  });
+  cb({ ok: true, started: true, id });
+}
+function syncProgress(id, cb) {
+  const store = SYNC_PROGRESS.get(id);
+  if (!store) { cb({ ok: true, done: true, found: false }); return; }
+  cb({
+    ok: true, running: store.running, done: store.done, success: store.ok,
+    error: store.error, output: store.output, lines: store.lines.slice(-40),
+    before: store.before, after: store.after,
+  });
+}
 // ↩ = rollback MANUAL do core instalado (canônico) — só para emergências.
 function coreRollback(version, cb) {
   const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-update.sh");
@@ -545,6 +589,7 @@ const BADGE_JS = [
   "    '#dsh-version-badge .v-toggle.on{color:#3fb950;}',",
   "    '#dsh-version-badge .v-toggle.off{color:#f85149;}',",
   "    '#dsh-version-badge .v-rollback{color:#d29922;}',",
+  "    '#dsh-version-badge .v-sync{color:#79c0ff;}',",
   "    '#dsh-rollback-panel{position:fixed;right:16px;bottom:44px;z-index:2147483647;width:320px;max-width:calc(100vw - 24px);max-height:60vh;overflow:auto;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:10px 12px;font:11px/1.5 system-ui,sans-serif;color:#e6edf3;box-shadow:0 8px 30px rgba(0,0,0,.6);}',",
   "    '#dsh-rollback-panel h4{margin:0 0 6px;font-size:11px;color:#79c0ff;}',",
   "    '#dsh-rollback-panel .rb-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 2px;border-top:1px solid #21262d;}',",
@@ -633,6 +678,46 @@ const BADGE_JS = [
   "    });",
   "  };",
   "",
+  "  var openSync = function () {",
+  "    if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }",
+  "    panel.style.display = 'block';",
+  "    panel.innerHTML = '<h4>⬆ Atualizar agora</h4><div class=\"rb-note\">Sincroniza com o GitHub agora (git pull + overlay + versão), sem esperar o agendado. Depois será preciso reiniciar a GUI.</div><div><button id=\"sy-go\">Atualizar agora</button></div>';",
+  "    var go = document.getElementById('sy-go');",
+  "    if (go) go.addEventListener('click', function () {",
+  "      if (!ask('Rodar o sync agora?\\n\\n• Puxa as novidades do GitHub\\n• Aplica o overlay e carimba a versão\\n• Depois será preciso reiniciar a GUI\\n\\nContinuar?')) return;",
+  "      panel.innerHTML = '<h4>⬆ Atualizando…</h4><div class=\"rb-note\">Iniciando…</div>';",
+  "      fetch('/api/dsh-sync', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'start' }) })",
+  "        .then(function (r) { return r.json(); }).then(function (res) {",
+  "          if (!res.ok || !res.id) { panel.innerHTML = '<h4>⬆ Atualizar</h4><div class=\"rb-err\">' + esc(res.error || 'falhou ao iniciar') + '</div>'; return; }",
+  "          pollSync(res.id, 0);",
+  "        }).catch(function () { panel.innerHTML = '<h4>⬆ Atualizar</h4><div class=\"rb-err\">Falha de rede ao iniciar o sync.</div>'; });",
+  "    });",
+  "  };",
+  "  var pollSync = function (id, tick) {",
+  "    if (tick > 900) { panel.innerHTML = '<h4>⬆ Atualizar</h4><div class=\"rb-err\">Tempo esgotado — recarregue (F5) e confira a versão no badge.</div>'; return; }",
+  "    fetch('/api/dsh-sync?progress=1&id=' + encodeURIComponent(id))",
+  "      .then(function (r) { return r.json(); }).then(function (p) {",
+  "        var tail = ((p && p.lines) || []).slice(-14).join('\\n');",
+  "        var spin = ['|', '/', '-', '\\\\'][tick % 4];",
+  "        panel.innerHTML = '<h4>⬆ Atualizando…</h4><div class=\"rb-note\">' + spin + ' Sincronizando com o GitHub… (pode levar 1-2 min)</div><div style=\"max-height:200px;overflow:auto;white-space:pre-wrap;font-size:10px;color:#8b949e;\">' + esc(tail) + '</div>';",
+  "        if (p && p.done) {",
+  "          if (p.success) {",
+  "            var bv = (p.before && p.before.version) || '?';",
+  "            var av = (p.after && p.after.version) || '?';",
+  "            panel.innerHTML = '<h4>⬆ Atualizado</h4><div class=\"rb-ok\">✔ Sync concluído: ' + esc(bv) + ' → ' + esc(av) + '</div><div class=\"rb-note\">Reinicie a GUI para recarregar os plugins com a nova versão.</div><div><button id=\"sy-restart\">Reiniciar agora</button></div><div class=\"rb-note\">Sem pm2 (Windows): se a página não voltar em ~15s, feche a janela e rode <b>dsh up</b>.</div>';",
+  "            var rb2 = document.getElementById('sy-restart');",
+  "            if (rb2) rb2.addEventListener('click', function () {",
+  "              fetch('/api/dsh-core', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'restart' }) })",
+  "                .then(function () { panel.innerHTML = '<h4>⬆ Atualizado</h4><div class=\"rb-note\">Reiniciando… recarregue (F5). No Windows sem pm2: feche e rode <b>dsh up</b>.</div>'; });",
+  "            });",
+  "            return;",
+  "          }",
+  "          panel.innerHTML = '<h4>⬆ Atualizar</h4><div class=\"rb-err\">Falhou: ' + esc(p.error || '') + '</div><div class=\"rb-note\">' + esc((p.output || '').slice(-900)) + '</div>';",
+  "          return;",
+  "        }",
+  "        setTimeout(function () { pollSync(id, tick + 1); }, 1600);",
+  "      }).catch(function () { setTimeout(function () { pollSync(id, tick + 1); }, 1600); });",
+  "  };",
   "  var refresh = function () {",
   "    fetch('/api/dsh-version', { method: 'GET' }).then(function (r) { return r.json(); }).then(function (d) {",
   "      state = d || state;",
@@ -669,6 +754,13 @@ const BADGE_JS = [
   "      span.onclick = function () { openRollback(); };",
   "      b.appendChild(span);",
   "      if (upd) { var u = document.createElement('span'); u.className = 'v-upd'; u.textContent = '· ' + upd; b.appendChild(u); }",
+  "      var sy = document.createElement('button');",
+  "      sy.className = 'v-sync';",
+  "      sy.type = 'button';",
+  "      sy.title = 'Atualizar agora: sync com o GitHub sem esperar o agendado';",
+  "      sy.textContent = '⬆';",
+  "      sy.onclick = function (ev) { ev.stopPropagation(); openSync(); };",
+  "      b.appendChild(sy);",
   "      b.appendChild(btn);",
   "      b.appendChild(rb);",
   "    }).catch(function () {",
@@ -813,7 +905,30 @@ module.exports = function versionBadgePlugin(ctx) {
             json(405, { ok: false, error: "método não suportado" }, res);
           },
         });
+        const registerSync = webServer.register({
+          kind: "exact",
+          path: "/api/dsh-sync",
+          handler: (req, res) => {
+            if (req.method === "GET") {
+              const m = /[?&]progress=1&id=([A-Za-z0-9._-]+)/.exec(req.url || "");
+              if (!m) { json(400, { ok: false, error: "use ?progress=1&id=..." }, res); return; }
+              syncProgress(m[1], (payload) => json(200, payload, res));
+              return;
+            }
+            if (req.method === "POST") {
+              readBody(req, (body) => {
+                let action = "";
+                try { action = String(JSON.parse(body || "{}").action || ""); } catch { /* inválido */ }
+                if (action !== "start") { json(400, { ok: false, error: "action deve ser start" }, res); return; }
+                syncNowStart((r) => json(r.ok ? 200 : 500, r, res));
+              });
+              return;
+            }
+            json(405, { ok: false, error: "método não suportado" }, res);
+          },
+        });
         const disposeAll = () => {
+          try { if (typeof registerSync === "function") registerSync(); } catch { /* já removido */ }
           try { if (typeof registerVersion === "function") registerVersion(); } catch { /* já removido */ }
           try { if (typeof registerRollback === "function") registerRollback(); } catch { /* já removido */ }
           try { if (typeof registerCore === "function") registerCore(); } catch { /* já removido */ }
