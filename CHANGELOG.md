@@ -398,3 +398,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.91.
 Publicação automática — última sincronização desta máquina.
 - Arquivos alterados (1):
   - model-visibility-plugin.js
+
+## [v0.2.94] — 2026-09-09 04:34 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.93.
+  - 5f77dba feat(router): cadeia visual em passos com motivo e disponibilidade
