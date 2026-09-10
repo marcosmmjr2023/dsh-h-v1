@@ -1,6 +1,6 @@
 # install-windows.ps1 - Instalador do DeepSeek Harness + sistema dsh (Windows)
 # Uso (uma linha, do repositorio publico):
-#   irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 | iex
+#   powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 | iex"
 # Opcoes: -NoDshAlias (nao instala o comando 'dsh' no perfil)
 [CmdletBinding()]
 param([switch]$NoDshAlias,[switch]$NoGui)
@@ -23,7 +23,7 @@ foreach ($cmd in @("node","npm","git")) {
     throw "Instale $cmd (Node.js LTS: nodejs.org e Git: git-scm.com) e reabra o PowerShell."
   }
 }
-Write-Host "node: $(& node -v)  | npm: $(& npm -v)"
+Write-Host "node: $(& node -v)  | npm: $(& npm.cmd -v)"
 
 # 2) Clone/update do repo
 $Repo = Join-Path $env:USERPROFILE "projects\dsh\dsh-h-v1"
@@ -37,10 +37,10 @@ Set-Location $Repo
 
 # 3) Core global na versao pinada (se ainda nao estiver)
 $pinned = (Get-Content manifest.json -Raw | ConvertFrom-Json).core.pinned
-$inst = (& npm ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
+$inst = (& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
 if ($inst -notmatch [regex]::Escape($pinned)) {
   Write-Host "Instalando core pinado: $pinned"
-  & npm install -g "@deepseek-ai/dsh@$pinned"
+  & npm.cmd install -g "@deepseek-ai/dsh@$pinned"
 } else {
   Write-Host "core ja instalado: $pinned"
 }

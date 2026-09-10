@@ -1,5 +1,5 @@
 # clean-windows.ps1  desinstala TUDO do DeepSeek Harness local (Windows)
-# Uso: irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/clean-windows.ps1 | iex
+# Uso: powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/clean-windows.ps1 | iex"
 $ErrorActionPreference = "SilentlyContinue"
 Write-Host "== Limpeza DeepSeek Harness (Windows) =="
 # 1) para processos do core
@@ -13,6 +13,6 @@ Remove-Item -Recurse -Force "$env:USERPROFILE\.dsh" -ErrorAction SilentlyContinu
 Remove-Item -Force "$env:USERPROFILE\Desktop\DeepSeek Harness.lnk" -ErrorAction SilentlyContinue
 Remove-Item -Force "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\DeepSeek Harness.lnk" -ErrorAction SilentlyContinue
 # 3) (opcional) core global
-& npm uninstall -g "@deepseek-ai/dsh" 2>$null
+& npm.cmd uninstall -g "@deepseek-ai/dsh" 2>$null
 Write-Host "[OK] limpeza concluida. Rode agora o instalador:"
-Write-Host "  irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 | iex"
+Write-Host "  powershell -ExecutionPolicy Bypass -Command `"irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 | iex`""

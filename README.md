@@ -55,7 +55,7 @@ Free tiers change over time. FreeDSH does **not** bypass provider terms or creat
 Open PowerShell and run:
 
 ```powershell
-irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex"
 ```
 
 The interactive installer detects an existing installation and can install, update, preserve local configuration, manage parallel instances or open the GUI.

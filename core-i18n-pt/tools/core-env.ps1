@@ -70,8 +70,8 @@ switch ($Command) {
       Copy-Item -Recurse -Force $_.FullName $homeDir
     }
     # 2) core isolado
-    & npm install -g --prefix $coreDir "@deepseek-ai/dsh@$Core" 2>&1 | Write-Host
-    $coreRoot = (& npm root -g --prefix $coreDir).Trim()
+    & npm.cmd install -g --prefix $coreDir "@deepseek-ai/dsh@$Core" 2>&1 | Write-Host
+    $coreRoot = (& npm.cmd root -g --prefix $coreDir).Trim()
     # 3) pt-BR via pt-ride (node, multiplataforma)
     $deps = Join-Path $coreRoot "@deepseek-ai\dsh\node_modules\@deepseek-ai"
     if (Test-Path $deps) {

@@ -51,8 +51,8 @@ function Open-AppWindow {
 }
 
 
-$bin = Join-Path (& npm root -g).Trim() "@deepseek-ai\dsh\lib\bin.js"
-if (-not (Test-Path $bin)) { Write-Host "[X] core nao encontrado: $bin (rode: npm install -g @deepseek-ai/dsh)"; exit 1 }
+$bin = Join-Path (& npm.cmd root -g).Trim() "@deepseek-ai\dsh\lib\bin.js"
+if (-not (Test-Path $bin)) { Write-Host "[X] core nao encontrado: $bin (rode: npm.cmd install -g @deepseek-ai/dsh)"; exit 1 }
 $homeCfg = Join-Path $env:USERPROFILE ".dsh"
 if (-not (Test-Path $homeCfg)) { New-Item -ItemType Directory -Force -Path $homeCfg | Out-Null }
 $Repo = Split-Path $PSScriptRoot -Parent   # tools/run-gui.ps1 -> <repo>
@@ -91,7 +91,7 @@ if (-not (Test-Up)) {
   $env:DSH_WEB_URL = "http://127.0.0.1:$Port"
   $env:DSH_CLI_LIB = Split-Path $bin -Parent   # plugins acham schemastery/dsh-settings no core
   # resolve bare requires dos plugins p/ os modulos do core (schemastery etc.)
-  $npmRoot = (& npm root -g).Trim()
+  $npmRoot = (& npm.cmd root -g).Trim()
   $nested  = Join-Path $npmRoot "@deepseek-ai\dsh\node_modules"
   $env:NODE_PATH = ($nested + ";" + $npmRoot)
   Start-Process -FilePath "node" -ArgumentList @("$bin","--profile","web","--no-open","--port","$Port","--host","127.0.0.1") `

@@ -4,7 +4,7 @@
 param([Parameter(Position=0)][string]$Cmd="--force")
 $Repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $ErrorActionPreference = "Stop"
-$root = (& npm root -g).Trim()
+$root = (& npm.cmd root -g).Trim()
 $deps = Join-Path $root "@deepseek-ai\dsh\node_modules\@deepseek-ai"
 if (-not (Test-Path $deps)) {
   # tenta tambem o layout plano (some prefixos)

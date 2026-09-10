@@ -1,7 +1,8 @@
 # dsh-setup.ps1 - Instalador COMPLETO e INTERATIVO do DeepSeek Harness (Windows)
 # Detecta o que existe, mostra o estado e pergunta antes de instalar/limpar.
 #
-# 1 linha:  irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
+# 1 linha (se o PowerShell bloquear scripts, use o Bypass):
+#   powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex"
 #
 # Modos nao-interativos: -Clean | -Update | -ListInstances | -RemoveAllInstances | -Open | -Doctor
 param([string]$Mode = "")
@@ -20,7 +21,7 @@ function Detect {
   $r.repo = Test-Path (Join-Path $Repo ".git")
   $tag = ""; if ($r.repo) { $tag = (git -C $Repo describe --tags 2>$null | Select-Object -First 1) }
   $r.repoTag = $tag
-  $core = (& npm ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
+  $core = (& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
   $r.core = $core -match "@deepseek-ai/dsh"
   $r.cfg = (Test-Path (Join-Path $HomeCfg "cordis.patch.yml")) -or (Test-Path (Join-Path $HomeCfg ".dsh-version.json"))
   $r.flmCode = Test-Path (Join-Path $env:USERPROFILE "projects\freellmapi\server\dist\index.js")

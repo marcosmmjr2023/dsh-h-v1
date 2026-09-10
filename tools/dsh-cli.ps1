@@ -46,9 +46,9 @@ switch ($Action) {
     git -C $Repo pull --ff-only
     & (Join-Path $Repo "tools\dsh-cli.ps1") "sync-overlay"
     $pinned = (Get-Content (Join-Path $Repo "manifest.json") -Raw | ConvertFrom-Json).core.pinned
-    $inst = (& npm ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
+    $inst = (& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
     if ($inst -notmatch [regex]::Escape($pinned)) {
-      & npm install -g "@deepseek-ai/dsh@$pinned"
+      & npm.cmd install -g "@deepseek-ai/dsh@$pinned"
     } else {
       Write-Host "core ja esta na versao pinada ($pinned)"
     }
@@ -73,9 +73,9 @@ switch ($Action) {
   }
   "doctor" {
     Write-Host "node:   $(& node -v)"
-    Write-Host "npm:    $(& npm -v)"
+    Write-Host "npm:    $(& npm.cmd -v)"
     Write-Host "git:    $(& git --version)"
-    $core = (& npm ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
+    $core = (& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
     Write-Host "core:   $core"
     $ok = & (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") --check
     Write-Host "repo:   $Repo"

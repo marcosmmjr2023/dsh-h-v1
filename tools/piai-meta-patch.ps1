@@ -10,14 +10,14 @@
 #   powershell -File piai-meta-patch.ps1 -Remove    # desfaz (restaura .dshbak)
 #
 # Idempotente. Precisa ser reaplicado apos qualquer reinstall do core
-# (npm update -g @deepseek-ai/dsh). O dsh update roda isto automaticamente.
+# (npm.cmd update -g @deepseek-ai/dsh). O dsh update roda isto automaticamente.
 # ============================================================
 param([switch]$Remove)
 
 $ErrorActionPreference = 'Stop'
 
 function Get-PiAiCatalogFile {
-  $npmRoot = (& npm root -g 2>$null | Select-Object -First 1)
+  $npmRoot = (& npm.cmd root -g 2>$null | Select-Object -First 1)
   if (-not $npmRoot) { return $null }
   $cand = Join-Path $npmRoot "@deepseek-ai\dsh\node_modules\@earendil-works\pi-ai\dist\models.generated.js"
   if (Test-Path $cand) {
@@ -38,7 +38,7 @@ function Test-Admin {
 
 $file = Get-PiAiCatalogFile
 if (-not $file) {
-  Write-Host "[X] nao achei models.generated.js do pi-ai (npm root -g)"
+  Write-Host "[X] nao achei models.generated.js do pi-ai (npm.cmd root -g)"
   exit 1
 }
 Write-Host "pi-ai catalog: $file"

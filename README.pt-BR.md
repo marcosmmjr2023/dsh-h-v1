@@ -55,7 +55,7 @@ Os tiers gratuitos mudam com o tempo. O FreeDSH **não** burla termos de provedo
 Abra o PowerShell e execute:
 
 ```powershell
-irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex"
 ```
 
 O instalador interativo detecta instalações existentes e pode instalar, atualizar, preservar configurações locais, gerenciar instâncias paralelas ou abrir a GUI.

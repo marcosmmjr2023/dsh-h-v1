@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 $HistFile = Join-Path $env:USERPROFILE ".dsh\core-history.json"
 
 function Reapply-Pt {
-  $root = (& npm root -g).Trim()
+  $root = (& npm.cmd root -g).Trim()
   $deps = Join-Path $root "@deepseek-ai\dsh\node_modules\@deepseek-ai"
   if (Test-Path $deps) {
     $env:DSH_PT_SKIP = "dsh-client-ui-conversation"
@@ -19,7 +19,7 @@ function Reapply-Pt {
 
 switch ($Cmd) {
   "--check" {
-    $v = (& npm ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
+    $v = (& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
     Write-Host "core instalado: $v"
   }
   "--history" { if (Test-Path $HistFile) { Get-Content $HistFile } else { Write-Host "sem historico" } }
@@ -27,8 +27,8 @@ switch ($Cmd) {
   "--rollback" { if (-not $Ver) { throw "--rollback <versao>" } }
 }
 if ($Cmd -in @("--install","--rollback")) {
-  $old = ((& npm ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join "" )
-  & npm install -g "@deepseek-ai/dsh@$Ver"
+  $old = ((& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join "" )
+  & npm.cmd install -g "@deepseek-ai/dsh@$Ver"
   $ok = Reapply-Pt
   $h = [ordered]@{ version=$Ver; from=$old; patchesOk=$ok; at=(Get-Date -Format o) }
   @($h) | ConvertTo-Json | Set-Content -Encoding UTF8 $HistFile

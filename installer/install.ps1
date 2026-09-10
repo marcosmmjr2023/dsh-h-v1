@@ -36,7 +36,7 @@ Write-Host "[OK] Git encontrado." -ForegroundColor Green
 Write-Host "[3/4] Instalando core @deepseek-ai/dsh..." -ForegroundColor Yellow
 if (-not $SkipCoreInstall) {
     try {
-        npm install -g @deepseek-ai/dsh
+        npm.cmd install -g @deepseek-ai/dsh
         Write-Host "[OK] Core instalado." -ForegroundColor Green
     } catch {
         Write-Host "[X] Erro ao instalar o core: $_" -ForegroundColor Red

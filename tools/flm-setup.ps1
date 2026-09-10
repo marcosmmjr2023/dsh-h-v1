@@ -17,8 +17,8 @@ $needBuild = (-not (Test-Path (Join-Path $proj "server\dist\index.js"))) -or
 if ($needBuild) {
   Write-Host "Instalando dependencias e compilando (pode levar alguns minutos)..."
   Set-Location $proj
-  npm install
-  npm run build
+  npm.cmd install
+  npm.cmd run build
 }
 Write-Host "Preparando banco e admin..."
 $env:FLM_SERVER = Join-Path $proj "server"

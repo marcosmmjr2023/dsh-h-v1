@@ -12,10 +12,10 @@ if (Test-Path $manifest) {
     $PINNED = $json.core.pinned
 }
 
-$INSTALLED = (npm ls -g "@deepseek-ai/dsh" --depth=0 2>$null | Select-String -Pattern "@deepseek-ai/dsh@([^ ]+)" | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -First 1)
+$INSTALLED = (npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null | Select-String -Pattern "@deepseek-ai/dsh@([^ ]+)" | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -First 1)
 if (-not $INSTALLED) { $INSTALLED = "(não encontrado via npm ls -g)" }
 
-$LATEST = (npm view "@deepseek-ai/dsh" version 2>$null)
+$LATEST = (npm.cmd view "@deepseek-ai/dsh" version 2>$null)
 if (-not $LATEST) { $LATEST = "indisponível (sem rede?)" }
 
 Write-Host "── Core do DeepSeek Harness ──────────────────────────────"
@@ -25,5 +25,5 @@ Write-Host "  latest no npm           : $LATEST"
 Write-Host "──────────────────────────────────────────────────────────"
 if ($LATEST -ne "indisponível (sem rede?)" -and $INSTALLED -ne $LATEST) {
     Write-Host "➜ Há versão NOVA do core ($LATEST). Política: notificar e aplicar manualmente."
-    Write-Host "  Para atualizar (teste antes!):  npm update -g @deepseek-ai/dsh"
+    Write-Host "  Para atualizar (teste antes!):  npm.cmd update -g @deepseek-ai/dsh"
 }

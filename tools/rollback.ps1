@@ -61,7 +61,7 @@ switch ($Cmd) {
     "--core" {
         if (-not $Arg) { Write-Host "ERRO: informe a versão (ex.: --core 0.1.1-rc.2)" -ForegroundColor Red; exit 2 }
         Write-Host "▶ Reinstalando core @deepseek-ai/dsh@$Arg"
-        npm install -g "@deepseek-ai/dsh@$Arg"
+        npm.cmd install -g "@deepseek-ai/dsh@$Arg"
         Write-Host "✔ Core $Arg instalado. Teste os plugins."
     }
     default {
