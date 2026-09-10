@@ -64,6 +64,8 @@ if (-not $NoDshAlias) {
     Add-Content -Encoding UTF8 $PROFILE $lines
     Write-Host "[OK] comando 'dsh' adicionado ao perfil (reabra o PowerShell)."
   }
+  Write-Host "[i] 'dsh' na sessao atual ainda pode cair no shim do core (npm). Use um NOVO PowerShell,"
+  Write-Host "    ou rode direto: powershell -ExecutionPolicy Bypass -File `"$Repo\tools\dsh-cli.ps1`" <acao>"
 }
 
 # 6) FreeLLMAPI (gateway local 3002 + admin) - integrado

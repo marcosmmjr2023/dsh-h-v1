@@ -102,6 +102,13 @@ switch ($Action) {
         if ($LASTEXITCODE -eq 0) { Write-Host "[OK] sintaxe: $p" } else { Write-Host "[X] sintaxe quebrada: $p" }
       }
     }
+    $cmd = Get-Command dsh -ErrorAction SilentlyContinue
+    if ($cmd -and $cmd.CommandType -eq "Function") { Write-Host "[OK] comando dsh: funcao do perfil" }
+    else {
+      Write-Host "[X] comando dsh cai no shim do core (npm) em vez da funcao do perfil"
+      Write-Host "    -> reabra o PowerShell (a funcao carrega do perfil) ou rode direto:"
+      Write-Host ("    powershell -ExecutionPolicy Bypass -File `"" + (Join-Path $Repo "tools\dsh-cli.ps1") + "`" doctor")
+    }
   }
   default {
     Write-Host "uso: dsh up | dsh update | dsh env ... | dsh core ... | dsh doctor"
