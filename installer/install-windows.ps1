@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 Write-Host "== Instalador DeepSeek Harness (dsh) =="
 $LogFile = Join-Path $env:USERPROFILE ".dsh-install.log"
 # Transcricao e opcional: em algumas sessoes (ex.: powershell -Command via iex)
-# o host bloqueia Start-Transcript — o install NAO pode morrer por causa do log.
+# o host bloqueia Start-Transcript - o install NAO pode morrer por causa do log.
 $script:TranscriptOn = $false
 try { Start-Transcript -Path $LogFile -Force -ErrorAction Stop | Out-Null; $script:TranscriptOn = $true }
 catch { Write-Host "[i] log em arquivo indisponivel nesta sessao; seguindo sem .dsh-install.log" }
