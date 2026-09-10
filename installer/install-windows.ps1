@@ -29,6 +29,19 @@ foreach ($cmd in @("node","npm","git")) {
 }
 Write-Host "node: $(& node -v)  | npm: $(& npm.cmd -v)"
 
+# 1b) Politica de execucao: sem isso, 'dsh' cai no shim do core e .ps1 bloqueia.
+# So afeta o usuario atual (sem admin); pergunta uma vez.
+try {
+  $pol = Get-ExecutionPolicy -Scope CurrentUser
+  if ($pol -notin @("RemoteSigned","Unrestricted","Bypass")) {
+    $ans = Read-Host "Liberar scripts locais p/ seu usuario (RemoteSigned)? [S/n]"
+    if ($ans -eq "" -or $ans -match "^[SsYy]") {
+      Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+      Write-Host "[OK] politica CurrentUser: RemoteSigned (vale p/ novos shells)"
+    } else { Write-Host "[i] mantido $pol - use Bypass quando precisar" }
+  }
+} catch { Write-Host ("[i] nao ajustei a politica: " + $_.Exception.Message) }
+
 # 2) Clone/update do repo
 $Repo = Join-Path $env:USERPROFILE "projects\dsh\dsh-h-v1"
 if (-not (Test-Path (Join-Path $Repo ".git"))) {
@@ -47,6 +60,17 @@ if ($inst -notmatch [regex]::Escape($pinned)) {
   & npm.cmd install -g "@deepseek-ai/dsh@$pinned"
 } else {
   Write-Host "core ja instalado: $pinned"
+}
+# 3b) koffi duplicado no npm global quebra o boot (Mismatched native Koffi
+# modules -> servidor nunca escuta -> ERR_CONNECTION_REFUSED). Detecta e
+# reinstala o core limpo.
+$koffiRefs = (& npm.cmd ls koffi -g --depth=10 2>$null) -join "`n"
+$koffiCount = ([regex]::Matches($koffiRefs, "koffi@")).Count
+if ($koffiCount -gt 1) {
+  Write-Host "[X] koffi duplicado no npm global ($koffiCount copias) - reinstalando o core limpo..."
+  & npm.cmd uninstall -g "@deepseek-ai/dsh" 2>$null | Out-Null
+  & npm.cmd install -g "@deepseek-ai/dsh@$pinned"
+  Write-Host "[OK] core reinstalado limpo"
 }
 
 # 4) pt-BR (pt-ride)
