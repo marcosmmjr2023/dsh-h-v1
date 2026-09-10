@@ -426,3 +426,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.98.
 ## [v0.2.100] — 2026-09-10 12:00 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.99.
   - 01aa96d fix(win): instalador sai ao concluir + diagnostico de badges/versao
+
+## [v0.2.101] — 2026-09-10 12:29 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.100.
+  - 3cbc7e9 fix(win): sem [OK] falso + sem pagina morta quando a GUI nao sobe
