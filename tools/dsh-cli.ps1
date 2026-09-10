@@ -79,6 +79,29 @@ switch ($Action) {
     Write-Host "core:   $core"
     $ok = & (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") --check
     Write-Host "repo:   $Repo"
+    $homeCfg = Join-Path $env:USERPROFILE ".dsh"
+    foreach ($f in @("smart-router-plugin.js","openrouter-enhanced-plugin.js","model-visibility-plugin.js","openrouter-enhanced-data.json","cordis.patch.yml",".dsh-version.json")) {
+      if (Test-Path (Join-Path $homeCfg $f)) { Write-Host "[OK] .dsh/$f" }
+      else { Write-Host "[X] ausente: .dsh/$f  -> rode: dsh update" }
+    }
+    $cp = Join-Path $homeCfg "cordis.patch.yml"
+    if (Test-Path $cp) {
+      $txt = Get-Content -Raw $cp
+      foreach ($id in @("smart-router","openrouter-enhanced","model-visibility")) {
+        if ($txt -match [regex]::Escape("id: $id")) { Write-Host "[OK] cordis: $id" }
+        else { Write-Host "[X] cordis sem: $id  -> rode: dsh update" }
+      }
+    }
+    $ver = Join-Path $homeCfg ".dsh-version.json"
+    if (Test-Path $ver) { Write-Host ("badge versao: " + ((Get-Content -Raw $ver | ConvertFrom-Json).version)) }
+    else { Write-Host "[X] sem .dsh-version.json (badge mostra v?)" }
+    foreach ($p in @("smart-router-plugin.js","openrouter-enhanced-plugin.js","model-visibility-plugin.js")) {
+      $fp = Join-Path $homeCfg $p
+      if (Test-Path $fp) {
+        & node --check $fp 2>$null
+        if ($LASTEXITCODE -eq 0) { Write-Host "[OK] sintaxe: $p" } else { Write-Host "[X] sintaxe quebrada: $p" }
+      }
+    }
   }
   default {
     Write-Host "uso: dsh up | dsh update | dsh env ... | dsh core ... | dsh doctor"

@@ -85,6 +85,35 @@ $log = Join-Path $homeCfg "web.log"
 function Test-Up {
   try { $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 -Uri "http://127.0.0.1:$Port/" ; return $true } catch { return $false }
 }
+# Verifica arquivos do overlay + plugins no cordis (falha aqui = badges somem)
+function Test-Overlay([string]$homeCfg) {
+  $ok = $true
+  foreach ($f in @("smart-router-plugin.js","openrouter-enhanced-plugin.js","model-visibility-plugin.js","openrouter-enhanced-data.json","cordis.patch.yml",".dsh-version.json")) {
+    if (-not (Test-Path (Join-Path $homeCfg $f))) { Write-Host "[X] ausente em .dsh: $f"; $ok = $false }
+  }
+  $cp = Join-Path $homeCfg "cordis.patch.yml"
+  if (Test-Path $cp) {
+    $txt = Get-Content -Raw $cp
+    foreach ($id in @("smart-router","openrouter-enhanced","model-visibility")) {
+      if ($txt -notmatch [regex]::Escape("id: $id")) { Write-Host "[X] cordis sem plugin: $id"; $ok = $false }
+    }
+  }
+  if ($ok) { Write-Host "[OK] overlay verificado (.js + data.json + cordis + versao)" }
+  else { Write-Host "[i] para corrigir, rode: dsh update" }
+  return $ok
+}
+# Sonda as APIs dos plugins (prova que Roteador/Modelos carregaram de verdade)
+function Test-PluginApi([int]$Port, [string]$log) {
+  $pairs = @( @("/api/smart-router", "smart-router (Roteador)"), @("/api/model-visibility", "model-visibility (Modelos/consumo)") )
+  foreach ($p in $pairs) {
+    try {
+      $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 -Uri ("http://127.0.0.1:$Port" + $p[0])
+      if ($r.StatusCode -eq 200) { Write-Host ("[OK] plugin no ar: " + $p[1]) }
+      else { Write-Host ("[X] plugin respondeu " + $r.StatusCode + ": " + $p[1]) }
+    } catch { Write-Host ("[X] plugin fora do ar: " + $p[1] + " (veja $log e $log.err)") }
+  }
+}
+Test-Overlay $homeCfg | Out-Null
 $started = $false
 if (-not (Test-Up)) {
   $env:DSH_HOME = $homeCfg
@@ -100,5 +129,6 @@ if (-not (Test-Up)) {
   for ($i=0; $i -lt 30; $i++) { Start-Sleep -Seconds 1; if (Test-Up) { break } }
 }
 Write-Host "[OK] GUI: http://127.0.0.1:$Port (log: $log)"
+Test-PluginApi $Port $log
 Ensure-Shortcuts $Repo
 Open-AppWindow $Port (Join-Path $homeCfg "app-profile")

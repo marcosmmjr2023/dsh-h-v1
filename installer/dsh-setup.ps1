@@ -175,10 +175,11 @@ while ($true) {
   Say "  6) Auto-update agendado (instalar/remover tarefa no Agendador)"
   Say "  0) Sair"
   $opt = Ask "Escolha:"
+  $done = $false
   switch ($opt) {
-    "1" { Do-CleanInstall; $state = Detect }
-    "2" { Do-CleanKeep; $state = Detect }
-    "3" { if ($state.repo -or $state.core -or $state.cfg) { Do-Update; $state = Detect } else { Say "Nada para atualizar." } }
+    "1" { Do-CleanInstall; $state = Detect; $done = $true }
+    "2" { Do-CleanKeep; $state = Detect; $done = $true }
+    "3" { if ($state.repo -or $state.core -or $state.cfg) { Do-Update; $state = Detect; $done = $true } else { Say "Nada para atualizar." } }
     "4" {
       if ($state.instances.Count -gt 0) {
         Show-Instances
@@ -192,4 +193,5 @@ while ($true) {
     "0" { Say "Tchau!"; break }
     default { Say "Opcao invalida." }
   }
+  if ($done) { Say ""; Say "[OK] Concluido - saindo do instalador. Para outras acoes, rode de novo."; break }
 }
