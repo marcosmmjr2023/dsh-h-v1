@@ -434,3 +434,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.100.
 ## [v0.2.102] — 2026-09-10 12:38 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.101.
   - 20b1974 fix(win): detecta colisao do comando dsh com shim do core
+
+## [v0.2.103] — 2026-09-10 12:48 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.102.
+  - e3d03d7 fix(win): oferece RemoteSigned + reinstala core com koffi duplicado
