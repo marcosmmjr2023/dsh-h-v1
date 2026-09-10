@@ -422,3 +422,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.97.
 ## [v0.2.99] — 2026-09-10 11:43 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.98.
   - ea77e53 fix(win): ascii puro em comentario do install-windows.ps1
+
+## [v0.2.100] — 2026-09-10 12:00 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.99.
+  - 01aa96d fix(win): instalador sai ao concluir + diagnostico de badges/versao
