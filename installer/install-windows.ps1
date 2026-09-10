@@ -8,7 +8,11 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "== Instalador DeepSeek Harness (dsh) =="
 $LogFile = Join-Path $env:USERPROFILE ".dsh-install.log"
-Start-Transcript -Path $LogFile -Force | Out-Null
+# Transcricao e opcional: em algumas sessoes (ex.: powershell -Command via iex)
+# o host bloqueia Start-Transcript — o install NAO pode morrer por causa do log.
+$script:TranscriptOn = $false
+try { Start-Transcript -Path $LogFile -Force -ErrorAction Stop | Out-Null; $script:TranscriptOn = $true }
+catch { Write-Host "[i] log em arquivo indisponivel nesta sessao; seguindo sem .dsh-install.log" }
 # 1) Pre-requisitos
 foreach ($cmd in @("node","npm","git")) {
   if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
@@ -98,9 +102,8 @@ if (-not $NoGui) {
     else { Write-Host "[X] OVERLAY ausente na GUI - veja logs abaixo e cole aqui." }
   } catch { Write-Host "[i] nao consegui verificar a pagina (talvez ainda subindo)" }
 }
-Stop-Transcript | Out-Null
-Write-Host ""
-Write-Host "Log completo: $LogFile"
+try { if ($script:TranscriptOn) { Stop-Transcript | Out-Null } } catch { }
+if ($script:TranscriptOn) { Write-Host ""; Write-Host "Log completo: $LogFile" }
 
 Write-Host ""
 Write-Host "== Pronto! =="
