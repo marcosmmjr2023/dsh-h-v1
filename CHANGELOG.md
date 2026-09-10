@@ -410,3 +410,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.94.
 ## [v0.2.96] — 2026-09-09 12:58 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.95.
   - eddc5e0 feat(update): botao manual no badge + auto-update Windows funcional
+
+## [v0.2.97] — 2026-09-10 11:30 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.96.
+  - b235747 fix(win): npm.cmd em vez de npm + one-liner com Bypass
