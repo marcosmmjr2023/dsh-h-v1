@@ -430,3 +430,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.99.
 ## [v0.2.101] — 2026-09-10 12:29 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.100.
   - 3cbc7e9 fix(win): sem [OK] falso + sem pagina morta quando a GUI nao sobe
+
+## [v0.2.102] — 2026-09-10 12:38 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.101.
+  - 20b1974 fix(win): detecta colisao do comando dsh com shim do core
