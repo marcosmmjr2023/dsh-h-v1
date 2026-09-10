@@ -418,3 +418,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.96.
 ## [v0.2.98] — 2026-09-10 11:43 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.97.
   - ef15f92 fix(win): transcricao opcional no install-windows.ps1
+
+## [v0.2.99] — 2026-09-10 11:43 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.98.
+  - ea77e53 fix(win): ascii puro em comentario do install-windows.ps1
