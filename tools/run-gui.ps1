@@ -123,12 +123,27 @@ if (-not (Test-Up)) {
   $npmRoot = (& npm.cmd root -g).Trim()
   $nested  = Join-Path $npmRoot "@deepseek-ai\dsh\node_modules"
   $env:NODE_PATH = ($nested + ";" + $npmRoot)
-  Start-Process -FilePath "node" -ArgumentList @("$bin","--profile","web","--no-open","--port","$Port","--host","127.0.0.1") `
+  $nodeExe = "node"
+  try { $found = Get-Command node -ErrorAction Stop; if ($found.Source) { $nodeExe = $found.Source } } catch { }
+  Start-Process -FilePath $nodeExe -ArgumentList @("$bin","--profile","web","--no-open","--port","$Port","--host","127.0.0.1") `
     -WindowStyle Hidden -RedirectStandardOutput $log -RedirectStandardError ($log + ".err")
   $started = $true
   for ($i=0; $i -lt 30; $i++) { Start-Sleep -Seconds 1; if (Test-Up) { break } }
 }
-Write-Host "[OK] GUI: http://127.0.0.1:$Port (log: $log)"
-Test-PluginApi $Port $log
-Ensure-Shortcuts $Repo
-Open-AppWindow $Port (Join-Path $homeCfg "app-profile")
+if (Test-Up) {
+  Write-Host "[OK] GUI: http://127.0.0.1:$Port (log: $log)"
+  Test-PluginApi $Port $log
+  Ensure-Shortcuts $Repo
+  Open-AppWindow $Port (Join-Path $homeCfg "app-profile")
+} else {
+  Write-Host "[X] o servidor nao respondeu em 30s - o navegador mostraria ERR_CONNECTION_REFUSED."
+  $errLog = $log + ".err"
+  if ((Test-Path $errLog) -and ((Get-Item $errLog).Length -gt 0)) {
+    Write-Host "--- ultimas linhas de $errLog ---"
+    Get-Content $errLog -Tail 25
+  } elseif (Test-Path $log) {
+    Write-Host "--- ultimas linhas de $log ---"
+    Get-Content $log -Tail 25
+  } else { Write-Host "[X] nem o log foi criado em $homeCfg" }
+  Write-Host "[i] cole a saida acima no repo (projeto dsh-h-v1) para diagnostico."
+}
