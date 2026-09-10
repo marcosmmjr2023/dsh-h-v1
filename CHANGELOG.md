@@ -414,3 +414,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.95.
 ## [v0.2.97] — 2026-09-10 11:30 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.96.
   - b235747 fix(win): npm.cmd em vez de npm + one-liner com Bypass
+
+## [v0.2.98] — 2026-09-10 11:43 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.97.
+  - ef15f92 fix(win): transcricao opcional no install-windows.ps1
