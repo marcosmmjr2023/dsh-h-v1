@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # piai-meta-patch.ps1 - registra "meta" no catalogo nativo do pi-ai
 #
 # Igual ao piai-meta-patch.sh (Linux): insere a rota "meta" no
@@ -53,9 +53,13 @@ try {
 }
 
 if (-not $canWrite -and -not (Test-Admin)) {
-  # Re-executa elevado (UAC) para gravar no core instalado como admin
+  # Re-executa elevado (UAC) para gravar no core instalado como admin.
+  # Usa o MESMO host atual (5.1 ou 7+): nao exigimos versao especifica.
+  . (Join-Path $PSScriptRoot "ps-host.ps1")
+  $psExe = Get-PsHostPath
+  if (-not $psExe) { $psExe = "powershell.exe" }
   $arg = if ($Remove) { "-Remove" } else { "" }
-  Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
+  Start-Process $psExe -Verb RunAs -Wait -ArgumentList @(
     '-NoProfile','-ExecutionPolicy','Bypass','-File',"`"$PSCommandPath`"",$arg
   )
   Write-Host "executado elevado (UAC). Verifique o resultado acima."

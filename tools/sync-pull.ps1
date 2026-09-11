@@ -1,7 +1,12 @@
-# sync-pull.ps1 — RECEBE atualizações (Windows)
+﻿# sync-pull.ps1 — RECEBE atualizações (Windows)
 # Puxa o repo e aplica overlay\ sobre a config viva (%USERPROFILE%\.dsh).
 # Uso:  powershell -ExecutionPolicy Bypass -File tools\sync-pull.ps1
 # Vars: DSH_CLONE (padrão: pasta pai de tools\), DSH_LIVE (padrão: $env:USERPROFILE\.dsh)
+# Saida em UTF-8 nos dois hosts: com stdout em pipe o PowerShell escreve na codepage
+# OEM (cp850/cp1252 no 5.1) e o app le UTF-8 - sem isto o texto acentuado chega
+# corrompido no painel. Tem de ser a PRIMEIRA instrucao executavel do script.
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
+try { $OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
 $ErrorActionPreference = "Stop"
 
 $SELF    = Split-Path -Parent $MyInvocation.MyCommand.Path

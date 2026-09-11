@@ -1,9 +1,10 @@
-# install-windows.ps1 - Instalador do DeepSeek Harness + sistema dsh (Windows)
+﻿# install-windows.ps1 - Instalador do DeepSeek Harness + sistema dsh (Windows)
 # Uso (uma linha, do repositorio publico):
 #   powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 | iex"
 # Opcoes: -NoDshAlias (nao instala o comando 'dsh' no perfil)
 [CmdletBinding()]
 param([switch]$NoDshAlias,[switch]$NoGui)
+. (Join-Path (Split-Path -Parent $PSScriptRoot) "tools\ps-text.ps1")
 $ErrorActionPreference = "Stop"
 
 Write-Host "== Instalador DeepSeek Harness (dsh) =="
@@ -97,7 +98,7 @@ else {
 }
 
 # 4) pt-BR (pt-ride)
-& .\core-i18n-pt\tools\apply-pt-core.ps1 --force
+& .\core-i18n-pt\tools\apply-pt-core.ps1 -Cmd --force
 
 # 5) Comando 'dsh' no perfil do PowerShell (se permitido)
 if (-not $NoDshAlias) {
@@ -106,9 +107,9 @@ if (-not $NoDshAlias) {
   $lines = @(
     "function dsh { & `"$Repo\tools\dsh-cli.ps1`" @args }"
   )
-  $has = if (Test-Path $PROFILE) { Get-Content $PROFILE -Raw -ErrorAction SilentlyContinue } else { "" }
+  $has = if (Test-Path $PROFILE) { Get-Content -Encoding UTF8 $PROFILE -Raw -ErrorAction SilentlyContinue } else { "" }
   if ($has -notmatch "function dsh") {
-    Add-Content -Encoding UTF8 $PROFILE $lines
+    $lines | Out-Utf8NoBom -Path $PROFILE -Append
     Write-Host "[OK] comando 'dsh' adicionado ao perfil (reabra o PowerShell)."
   }
   Write-Host "[i] 'dsh' na sessao atual ainda pode cair no shim do core (npm). Use um NOVO PowerShell,"
@@ -124,7 +125,11 @@ try {
     $ws = New-Object -ComObject WScript.Shell
     $ico = Join-Path $Repo "assets\deepseek.ico"
     if (-not (Test-Path $ico)) { $ico = "" }
-    $tgt = "powershell.exe"
+    # atalho aponta para o MESMO host que esta rodando (5.1 ou 7+)
+    $psHostHelper = Join-Path $Repo "tools\ps-host.ps1"
+    if (Test-Path $psHostHelper) { . $psHostHelper }
+    $tgt = if (Get-Command Get-PsHostPersistPath -ErrorAction SilentlyContinue) { Get-PsHostPersistPath } else { $null }
+    if (-not $tgt) { $tgt = "powershell.exe" }
     $a = "-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Repo "tools\run-gui.ps1") + "`""
     $desk = Join-Path ([Environment]::GetFolderPath("Desktop")) "DeepSeek Harness.lnk"
     $sm = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\DeepSeek Harness.lnk"

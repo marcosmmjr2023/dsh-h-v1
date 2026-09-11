@@ -1,9 +1,14 @@
-# stamp-version.ps1 — grava %USERPROFILE%\.dsh\.dsh-version.json com a versão
+﻿# stamp-version.ps1 — grava %USERPROFILE%\.dsh\.dsh-version.json com a versão
 # instalada do overlay (tag/commit do clone) e o instante da atualização.
 # Chamado pelo sync-pull.ps1 e rollback.ps1 (o badge de versão lê este arquivo).
 # O arquivo é LOCAL da máquina — nunca entra no repo (sync-excludes).
 # Uso:  stamp-version.ps1 [-Ref <ref>]   (sem ref = HEAD; rollback passa o ref)
 param([string]$Ref = "HEAD")
+# Saida em UTF-8 nos dois hosts: com stdout em pipe o PowerShell escreve na codepage
+# OEM (cp850/cp1252 no 5.1) e o app le UTF-8 - sem isto o texto acentuado chega
+# corrompido no painel. Tem de ser a PRIMEIRA instrucao executavel do script.
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
+try { $OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
 $ErrorActionPreference = "Stop"
 $SELF  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $CLONE = if ($env:DSH_CLONE) { $env:DSH_CLONE } else { Split-Path -Parent $SELF }

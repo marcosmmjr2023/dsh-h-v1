@@ -1,4 +1,4 @@
-# install-autosync-task.ps1 - instala/remove a tarefa agendada do auto-sync (Windows)
+﻿# install-autosync-task.ps1 - instala/remove a tarefa agendada do auto-sync (Windows)
 #
 # Cria a tarefa "DeepSeek Harness AutoSync" no Agendador de Tarefas, que roda
 # tools\auto-sync.ps1 a cada N minutos apos o logon (respeita o flag
@@ -45,7 +45,11 @@ if ($Remove) {
 
 if (-not (Test-Path $script)) { Write-Host "[X] nao achei $script"; exit 1 }
 if ($Interval -lt 5) { $Interval = 5 }
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$script`"" -WorkingDirectory $CLONE
+# Executavel da tarefa = o host que esta rodando (5.1 ou 7+) — nunca fixamos a versao
+. (Join-Path $PSScriptRoot "ps-host.ps1")
+$psExe = Get-PsHostPersistPath
+if (-not $psExe) { $psExe = "powershell.exe" }
+$action = New-ScheduledTaskAction -Execute $psExe -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$script`"" -WorkingDirectory $CLONE
 $trigger = New-ScheduledTaskTrigger -AtLogOn
 $rep = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Minutes $Interval) -RepetitionDuration (New-TimeSpan -Days 1)
 $trigger.Repetition = $rep.Repetition

@@ -36,11 +36,23 @@
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { execFile, spawn } = require("node:child_process");
+const { execFile, execFileSync, execSync, spawn } = require("node:child_process");
+
+const IS_WIN = process.platform === "win32";
 
 const VERSION_FILE = path.join(__dirname, ".dsh-version.json");
 const AUTO_UPDATE_OFF = path.join(__dirname, ".dsh-autoupdate.off");
 const HOME = os.homedir();
+
+/**
+ * Le um JSON tolerando o BOM UTF-8.
+ * O Windows PowerShell 5.1 grava `Set-Content -Encoding UTF8` COM BOM
+ * (EF BB BF) e o JSON.parse lanca excecao nesse caso — era o que fazia o badge
+ * de versao mostrar "local" em vez da versao real no Windows.
+ */
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
+}
 
 function autoUpdateEnabled() {
   return !fs.existsSync(AUTO_UPDATE_OFF);
@@ -68,8 +80,23 @@ function snapRoot() {
 function versionPayload() {
   let data = { ok: false, version: "local", commit: "", updatedAt: "" };
   try {
-    data = JSON.parse(fs.readFileSync(VERSION_FILE, "utf8"));
-  } catch { /* sem arquivo: instalado manualmente */ }
+    data = readJson(VERSION_FILE);
+  } catch { /* sem arquivo (ou arquivo ilegivel): cai no fallback abaixo */ }
+  // Fallback: sem o carimbo do sync, a versao do overlay e a tag do clone.
+  // Assim o badge nunca fica em "local" so porque o arquivo faltou/veio
+  // corrompido (era o sintoma no Windows, onde o launcher gravava com BOM).
+  if (data.version === "local") {
+    try {
+      const clone = cloneDir();
+      const tag = String(execFileSync("git", ["-C", clone, "describe", "--tags", "--abbrev=0"], {
+        encoding: "utf8", timeout: 8000, windowsHide: true,
+      }) || "").trim();
+      const sha = String(execFileSync("git", ["-C", clone, "rev-parse", "--short", "HEAD"], {
+        encoding: "utf8", timeout: 8000, windowsHide: true,
+      }) || "").trim();
+      if (tag) data = { version: tag, commit: sha, updatedAt: "" };
+    } catch { /* sem git/clone: mantem "local" */ }
+  }
   return {
     ok: true,
     version: String(data.version ?? "?"),
@@ -143,19 +170,26 @@ function rollbackList(cb) {
 
 function doRollback(target, cb) {
   const clone = cloneDir();
-  const rollbackTool = path.join(clone, "tools", "rollback.sh");
+  const toolName = IS_WIN ? "rollback.ps1" : "rollback.sh";
+  const rollbackTool = path.join(clone, "tools", toolName);
   if (!fs.existsSync(rollbackTool)) {
-    cb({ ok: false, error: "tools/rollback.sh não encontrado no clone: " + clone });
+    cb({ ok: false, error: "tools/" + toolName + " não encontrado no clone: " + clone });
     return;
   }
   const isSnapshot = /^snap-/.test(target);
-  const args = isSnapshot ? ["--snapshot", target] : [target];
   const env = Object.assign({}, process.env, {
     DSH_CLONE: clone,
     DSH_LIVE: __dirname,
     DSH_SNAP_ROOT: snapRoot(),
   });
-  execFile(rollbackTool, args, { env, timeout: 180000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
+  // No Windows os parametros do .ps1 sao nomeados (-Cmd/-Arg): passar "--snapshot"
+  // cru e erro fatal de binding; e o host (pwsh 7+/5.1) e resolvido em runtime.
+  const file = IS_WIN ? psHost() : rollbackTool;
+  if (IS_WIN && !file) { cb({ ok: false, error: "PowerShell não encontrado nesta máquina (nem pwsh, nem powershell.exe)" }); return; }
+  const args = IS_WIN
+    ? psFileArgs(rollbackTool, isSnapshot ? ["-Cmd", "--snapshot", "-Arg", target] : ["-Cmd", target])
+    : (isSnapshot ? ["--snapshot", target] : [target]);
+  execFile(file, args, { env, timeout: 180000, maxBuffer: 8 * 1024 * 1024, windowsHide: true }, (err, stdout, stderr) => {
     const output = String(stdout || "") + (stderr ? "\n[stderr]\n" + stderr : "");
     if (err) {
       cb({ ok: false, error: "rollback falhou (exit " + (err.code ?? "?") + ")", output });
@@ -192,6 +226,7 @@ function scheduleRestart(delayMs) {
       const child = spawn("pm2", ["restart", name], {
         detached: true,
         stdio: "ignore",
+        windowsHide: true,
         env: process.env,
       });
       child.unref();
@@ -200,6 +235,10 @@ function scheduleRestart(delayMs) {
 }
 
 // ══ CORE (kernel-like): status + atualização/rollback MANUAL via sudo ══
+// Caminhos fixos do Linux ficam como fallback; nesta maquina (ou em qualquer
+// outra) a versao REAL do nucleo e resolvida a partir do proprio nucleo em uso:
+// DSH_CLI_LIB (launcher), argv/require.main (<core>/lib/bin.js), a instalacao
+// global do npm (%APPDATA%\npm\node_modules) e 'npm root -g'.
 const CORE_CANDIDATES = [
   "/opt/dsh-tui/node/lib/node_modules/@deepseek-ai/dsh/package.json",
   "/usr/lib/node_modules/@deepseek-ai/dsh/package.json",
@@ -207,26 +246,104 @@ const CORE_CANDIDATES = [
 const CORE_CHECK_CACHE = path.join(__dirname, ".dsh-core-check.json");
 const CORE_HISTORY = path.join(__dirname, ".dsh-core-history.json");
 
+let corePathsCache = null;
+/** Caminhos candidatos do package.json do nucleo, do mais confiavel ao fixo. */
+function corePackageJsonPaths() {
+  if (corePathsCache) return corePathsCache;
+  const out = [];
+  const push = (p) => { if (p && !out.includes(p)) out.push(p); };
+  // pasta lib/ do nucleo em uso (run-gui/dsh-cli exportam DSH_CLI_LIB)
+  if (process.env.DSH_CLI_LIB) push(path.join(process.env.DSH_CLI_LIB, "..", "package.json"));
+  // o proprio processo que roda a GUI: <core>/lib/bin.js
+  try { if (process.argv[1]) push(path.resolve(path.dirname(process.argv[1]), "..", "package.json")); } catch { /* ok */ }
+  try { if (require.main && require.main.filename) { push(path.resolve(path.dirname(require.main.filename), "..", "package.json")); } } catch { /* ok */ }
+  // instalacao global do npm no Windows: %APPDATA%\npm\node_modules
+  if (process.env.APPDATA) push(path.join(process.env.APPDATA, "npm", "node_modules", "@deepseek-ai", "dsh", "package.json"));
+  // 'npm root -g' (cobre prefixos fora do padrao); uma vez so, na primeira consulta
+  try {
+    const root = (execSync("npm root -g", { encoding: "utf8", shell: true, timeout: 20000, windowsHide: true }) || "").trim();
+    if (root) push(path.join(root, "@deepseek-ai", "dsh", "package.json"));
+  } catch { /* sem npm no PATH */ }
+  for (const c of CORE_CANDIDATES) push(c);
+  corePathsCache = out;
+  return out;
+}
+
+/** Diretorio do nucleo instalado (para marcadores/cache), ou null. */
+function coreDir() {
+  for (const f of corePackageJsonPaths()) {
+    try { if (fs.existsSync(f)) return path.dirname(f); } catch { /* proximo */ }
+  }
+  return null;
+}
+
 function coreInstalledVersion() {
   if (process.env.DSH_CORE_VERSION) return process.env.DSH_CORE_VERSION; // ambiente paralelo (core-env)
-  for (const f of CORE_CANDIDATES) {
-    try { return JSON.parse(fs.readFileSync(f, "utf8")).version; } catch { /* tenta próximo */ }
+  for (const f of corePackageJsonPaths()) {
+    try {
+      const j = readJson(f);
+      // Confere o NOME: argv/require.main de outro launcher poderia apontar para
+      // um package.json que nao e o nucleo (ha 2 clones e 3 GUIs nesta maquina).
+      if (j && j.name === "@deepseek-ai/dsh" && j.version) return String(j.version);
+    } catch { /* tenta próximo */ }
   }
   return "?";
 }
 function corePinned() {
   const clone = cloneDir();
   try {
-    const m = JSON.parse(fs.readFileSync(path.join(clone, "manifest.json"), "utf8"));
+    const m = readJson(path.join(clone, "manifest.json"));
     return { pkg: m.core && m.core.package, pinned: m.core && m.core.pinned };
   } catch { return { pkg: "@deepseek-ai/dsh", pinned: "" }; }
 }
+/**
+ * Comando do `npm view` sem depender do shell: no Windows `npm` e um `.cmd`
+ * (execFile direto -> ENOENT) e usar o proprio node com o npm-cli.js evita o
+ * shell e o aviso de deprecacao do Node (DEP0190) por passar args com shell:true.
+ */
+function npmViewCommand() {
+  const args = ["view", "@deepseek-ai/dsh", "version"];
+  try {
+    const cli = path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
+    if (IS_WIN && fs.existsSync(cli)) return { file: process.execPath, args: [cli].concat(args), shell: false };
+  } catch { /* sem npm-cli.js adjacente */ }
+  return { file: IS_WIN ? "npm.cmd" : "npm", args, shell: IS_WIN };
+}
+
+// ── Host do PowerShell ────────────────────────────────────────────────────────
+// O sistema NAO pode exigir uma versao especifica de PowerShell: cada maquina
+// Windows pode ter so o 5.1 (que acompanha o Windows), so o 7.x (pwsh) ou os
+// dois. Resolvemos em tempo de execucao o host que existir (pwsh tem preferencia)
+// e usamos SEMPRE a mesma forma de chamada, aceita pelas duas familias.
+let psHostCache;
+function psHost() {
+  if (psHostCache !== undefined) return psHostCache;
+  const probe = ["-NoProfile", "-NonInteractive", "-Command", "$PSVersionTable.PSVersion.Major"];
+  for (const exe of ["pwsh", "pwsh.exe", "powershell.exe", "powershell"]) {
+    try {
+      const major = parseInt(String(execFileSync(exe, probe, { encoding: "utf8", timeout: 25000, windowsHide: true }) || "").trim(), 10);
+      if (major >= 5) {
+        psHostCache = exe;
+        console.log("[VersionBadge] host PowerShell: " + exe + " (" + major + ".x)");
+        return exe;
+      }
+    } catch { /* tenta o proximo host */ }
+  }
+  psHostCache = null;
+  console.error("[VersionBadge] nenhum PowerShell encontrado (nem pwsh, nem powershell.exe) — acoes do nucleo/sync indisponiveis.");
+  return null;
+}
+/** Args padrao para rodar um .ps1 do repo nos dois hosts (5.1 e 7+). */
+function psFileArgs(script, args) {
+  return ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script].concat(args || []);
+}
 function coreLatest(force, cb) {
   let cached = null;
-  try { cached = JSON.parse(fs.readFileSync(CORE_CHECK_CACHE, "utf8")); } catch { /* sem cache */ }
+  try { cached = readJson(CORE_CHECK_CACHE); } catch { /* sem cache */ }
   const fresh = cached && cached.latest && (Date.now() - (cached.at || 0)) < 60 * 60 * 1000;
   if (fresh && !force) { cb(cached.latest, cached.at); return; }
-  execFile("npm", ["view", "@deepseek-ai/dsh", "version"], { timeout: 25000 }, (err, stdout) => {
+  const cmd = npmViewCommand();
+  execFile(cmd.file, cmd.args, { timeout: 30000, shell: !!cmd.shell, windowsHide: true }, (err, stdout) => {
     const latest = err ? "" : String(stdout || "").trim().split("\n").pop() || "";
     if (latest) {
       try { fs.writeFileSync(CORE_CHECK_CACHE, JSON.stringify({ latest, at: Date.now() })); } catch { /* ok */ }
@@ -237,17 +354,24 @@ function coreLatest(force, cb) {
 function corePatchesOk(installed) {
   // ambiente paralelo (core-env): pt aplicado por pt-ride — confere o arquivo real
   if (process.env.DSH_CORE_VERSION || process.env.DSH_ENV_NAME || (process.env.DSH_HOME || "").includes(".dsh-envs")) {
+    // Layout das dependencias de uma instancia paralela: a fonte autoritativa e o
+    // campo coreRoot do meta.json (core-env.ps1 instala com npm --prefix <env>\core,
+    // ou seja <env>\core\node_modules). Os outros dois sao fallback de plataforma.
+    const envDeps = (envName) => {
+      const out = [];
+      try {
+        const m = readJson(path.join(HOME, ".dsh-envs", envName, "meta.json"));
+        if (m && m.coreRoot) out.push(path.join(m.coreRoot, "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
+      } catch { /* sem meta.json */ }
+      out.push(path.join(HOME, ".dsh-envs", envName, "core", "node_modules", "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
+      out.push(path.join(HOME, ".dsh-envs", envName, "core", "lib", "node_modules", "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
+      return out;
+    };
     const roots = [];
-    if (process.env.DSH_ENV_NAME) {
-      roots.push(path.join(HOME, ".dsh-envs", process.env.DSH_ENV_NAME, "core", "lib", "node_modules", "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
-    }
+    if (process.env.DSH_ENV_NAME) roots.push(...envDeps(process.env.DSH_ENV_NAME));
     try {
       const base = path.join(HOME, ".dsh-envs");
-      for (const e of fs.readdirSync(base)) {
-        if (fs.existsSync(path.join(base, e, "meta.json"))) {
-          roots.push(path.join(base, e, "core", "lib", "node_modules", "@deepseek-ai", "dsh", "node_modules", "@deepseek-ai"));
-        }
-      }
+      for (const e of fs.readdirSync(base)) roots.push(...envDeps(e));
     } catch { /* sem envs */ }
     for (const dep of roots) {
       try {
@@ -257,24 +381,39 @@ function corePatchesOk(installed) {
     }
     return { ok: false, note: "sem pt-BR no ambiente (pt-ride)" };
   }
-  // núcleo canônico: marcador do apply-pt-core.sh
-  const roots = [
+  // núcleo canônico: marcador do apply-pt-core (gravado em <core>/node_modules)
+  const roots = [];
+  const dir = coreDir();
+  if (dir) roots.push(path.join(dir, "node_modules"));
+  roots.push(
     "/opt/dsh-tui/node/lib/node_modules/@deepseek-ai/dsh/node_modules",
-    "/usr/lib/node_modules/@deepseek-ai/dsh/node_modules",
-  ];
+    "/usr/lib/node_modules/@deepseek-ai/dsh/node_modules"
+  );
   for (const r of roots) {
     try {
       const marker = fs.readFileSync(path.join(r, ".dsh-core-pt-applied"), "utf8");
       if (marker.includes("core=" + installed)) return { ok: true, note: "pt-BR aplicado" };
     } catch { /* sem marcador */ }
   }
-  return { ok: false, note: "sem pt-BR (reaplicar: apply-pt-core.sh --force)" };
+  // sem marcador: confere se o cliente do nucleo ja esta traduzido (pt-ride)
+  if (dir) {
+    try {
+      const text = fs.readFileSync(path.join(dir, "node_modules", "@deepseek-ai", "dsh-client-locale", "lib", "client.js"), "utf8");
+      if (text.includes("Português") && text.includes('"pt"')) return { ok: true, note: "pt-BR (pt-ride)" };
+    } catch { /* nucleo sem cliente traduzido */ }
+  }
+  return { ok: false, note: IS_WIN ? "sem pt-BR (reaplicar: core-i18n-pt\\tools\\pt-ride.mjs)" : "sem pt-BR (reaplicar: apply-pt-core.sh --force)" };
 }
 function coreHistory() {
-  try {
-    const h = JSON.parse(fs.readFileSync(CORE_HISTORY, "utf8"));
-    return Array.isArray(h) ? h.slice(0, 5) : [];
-  } catch { return []; }
+  // O nome canonico e ".dsh-core-history.json" (core-update.sh/.ps1); aceita
+  // tambem o nome legado sem ponto, que a versao Windows gravava antes.
+  for (const f of [CORE_HISTORY, path.join(__dirname, "core-history.json")]) {
+    try {
+      const h = readJson(f);
+      if (Array.isArray(h)) return h.slice(0, 5);
+    } catch { /* tenta o proximo nome */ }
+  }
+  return [];
 }
 function sudoersOk(cb) {
   execFile("sudo", ["-n", "-l"], { timeout: 8000 }, (err) => cb(!err));
@@ -309,21 +448,29 @@ function runCoreAction(action, version, json, res) {
 // "Atualizar" do chip = criar uma SEGUNDA instância isolada (core-env), sem tocar na GUI atual.
 // Criação da instância roda em BACKGROUND (o painel acompanha por polling).
 const CREATE_PROGRESS = new Map();
-const IS_WIN = process.platform === "win32";
 function toolExt(name) { return IS_WIN ? name + ".ps1" : name + ".sh"; }
 function toolFull(name) { return path.join(cloneDir(), "core-i18n-pt", "tools", toolExt(name)); }
 function spawnTool(name, args, opts) {
   const t = toolFull(name);
-  if (IS_WIN) return spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", t].concat(args), opts);
-  return spawn(t, args, opts);
+  const base = Object.assign({ windowsHide: true }, opts);
+  if (IS_WIN) return spawn(psHost() || "powershell.exe", psFileArgs(t, args), base);
+  return spawn(t, args, base);
 }
 function execToolAsync(name, args, timeout, cb) {
-  const child = spawnTool(name, args, { env: Object.assign({}, process.env, { HOME }), timeout: timeout || 0 });
+  // `spawn` IGNORA a opcao timeout (so exec/execFile honram): sem isto, um
+  // PowerShell travado (ex.: npm instalando e pedindo input) nunca morreria.
+  const child = spawnTool(name, args, { env: Object.assign({}, process.env, { HOME }) });
   let acc = "";
+  let done = false;
+  const finish = (r) => { if (!done) { done = true; clearTimeout(timer); cb(r); } };
+  const timer = timeout ? setTimeout(() => {
+    try { child.kill(); } catch { /* ja morreu */ }
+    finish({ err: new Error("timeout de " + timeout + "ms"), code: -1, out: acc });
+  }, timeout) : null;
   child.stdout.on("data", (d) => { acc += d; });
   child.stderr.on("data", (d) => { acc += d; });
-  child.on("error", (err) => cb({ err, code: -1, out: acc }));
-  child.on("close", (code) => cb({ err: null, code, out: acc }));
+  child.on("error", (err) => finish({ err, code: -1, out: acc }));
+  child.on("close", (code) => finish({ err: null, code, out: acc }));
   return child;
 }
 
@@ -382,7 +529,7 @@ function syncNowStart(cb) {
   SYNC_PROGRESS.set(id, store);
   const env = Object.assign({}, process.env, { HOME, DSH_CLONE: cloneDir(), DSH_LIVE: __dirname });
   const child = IS_WIN
-    ? spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", tool], { env })
+    ? spawn(psHost() || "powershell.exe", psFileArgs(tool), { env, windowsHide: true })
     : spawn(tool, [], { env });
   let acc = "";
   const push = (chunk) => { acc += chunk; store.lines = acc.split(/\r?\n/); if (store.lines.length > 400) store.lines = store.lines.slice(-400); };
@@ -407,9 +554,26 @@ function syncProgress(id, cb) {
 }
 // ↩ = rollback MANUAL do core instalado (canônico) — só para emergências.
 function coreRollback(version, cb) {
+  if (!/^[0-9A-Za-z._-]+$/.test(String(version || ""))) { cb({ ok: false, error: "versão inválida" }); return; }
+  if (IS_WIN) {
+    // Windows: sem sudo — core-update.ps1 instala a versão pedida no prefixo
+    // global do usuario e reaplica o pt-BR via pt-ride (funcao Reapply-Pt).
+    const toolWin = path.join(cloneDir(), "core-i18n-pt", "tools", "core-update.ps1");
+    if (!fs.existsSync(toolWin)) { cb({ ok: false, error: "core-update.ps1 não encontrado no repo" }); return; }
+    const host = psHost();
+    if (!host) { cb({ ok: false, error: "PowerShell não encontrado nesta máquina (nem pwsh, nem powershell.exe)" }); return; }
+    // Parametros NOMEADOS: em `-File` um "--flag" que nao bate com nenhum
+    // parametro e erro fatal de binding (o core-update.ps1 nao tem -Live).
+    execFile(host, psFileArgs(toolWin, ["-Cmd", "--rollback", "-Ver", String(version)]),
+      { timeout: 600000, maxBuffer: 16 * 1024 * 1024, windowsHide: true }, (err, stdout, stderr) => {
+        const output = String(stdout || "") + (stderr ? "\n" + stderr : "");
+        if (err) { cb({ ok: false, error: "falha ao reverter (npm install -g?)", output }); return; }
+        cb({ ok: true, output });
+      });
+    return;
+  }
   const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-update.sh");
   if (!fs.existsSync(tool)) { cb({ ok: false, error: "core-update.sh não encontrado no repo" }); return; }
-  if (!/^[0-9A-Za-z._-]+$/.test(String(version || ""))) { cb({ ok: false, error: "versão inválida" }); return; }
   const args = ["-n", tool, "--live", __dirname, "--rollback", version];
   execFile("sudo", args, { timeout: 300000, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
     const output = String(stdout || "") + (stderr ? "\n" + stderr : "");
@@ -882,6 +1046,8 @@ module.exports = function versionBadgePlugin(ctx) {
                   json(200, { ok: true, uninstalling: true, envName }, res);
                   setTimeout(() => {
                     const c = spawnTool("core-env", ["remove", envName], { env: Object.assign({}, process.env, { HOME }), detached: true, stdio: "ignore" });
+                    // sem listener de 'error' um ENOENT aqui derrubaria o processo da GUI
+                    c.on("error", (err) => console.error("[VersionBadge] core-env remove falhou: " + (err && err.message ? err.message : err)));
                     c.unref();
                   }, 1500);
                   return;

@@ -1,10 +1,15 @@
-# rollback.ps1 — volta para uma versão ANTERIOR que funcionava (Windows)
+﻿# rollback.ps1 — volta para uma versão ANTERIOR que funcionava (Windows)
 #   list                → snapshots locais + tags/commits disponíveis
 #   --snapshot <nome>   → restaura config viva de um snapshot local
 #   <tag|commit>        → volta o overlay àquela versão do repo
 #   --core <versão>     → reinstala o core (npm)
 # Vars: DSH_CLONE, DSH_LIVE, DSH_SNAP_ROOT
 param([string]$Cmd = "list", [string]$Arg = "")
+# Saida em UTF-8 nos dois hosts: com stdout em pipe o PowerShell escreve na codepage
+# OEM (cp850/cp1252 no 5.1) e o app le UTF-8 - sem isto o texto acentuado chega
+# corrompido no painel. Tem de ser a PRIMEIRA instrucao executavel do script.
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
+try { $OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
 
 $ErrorActionPreference = "Stop"
 $SELF      = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -86,7 +91,10 @@ switch ($Cmd) {
         # Conteúdo do ref → espelho → config viva
         $tmp = Join-Path $env:TEMP ("rollback-" + [guid]::NewGuid().ToString("N"))
         New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-        git -C $CLONE archive $Cmd overlay | Out-File -FilePath (Join-Path $tmp "o.zip") -Encoding Byte
+        # git archive escreve o zip direto no arquivo: evita o pipeline binario e
+        # o "-Encoding Byte", que existe no Windows PowerShell 5.1 mas NAO no 7+
+        # (no 7 seria "-AsByteStream") — assim roda igual nos dois hosts.
+        git -C $CLONE archive --format=zip -o (Join-Path $tmp "o.zip") $Cmd overlay
         Expand-Archive -Path (Join-Path $tmp "o.zip") -DestinationPath $tmp -Force
         robocopy (Join-Path $tmp "overlay") $MANAGED /E /IS /IT /NFL /NDL /NJH /NJS | Out-Null
         robocopy $MANAGED $LIVE /E /IS /IT $XD $XF /NFL /NDL /NJH /NJS | Out-Null

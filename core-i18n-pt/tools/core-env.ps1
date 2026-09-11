@@ -1,4 +1,4 @@
-# core-env.ps1 - AMBIENTES PARALELOS do DeepSeek Harness no WINDOWS
+﻿# core-env.ps1 - AMBIENTES PARALELOS do DeepSeek Harness no WINDOWS
 # (equivalente ao core-env.sh do Linux; sem pm2 - gerenciamento por registro
 #  ~/.dsh-envs/.registry.json com PID/porta/url; Start-Process + launcher .bat)
 #
@@ -18,6 +18,11 @@ param(
   [string]$Core = "",
   [string]$From = ""
 )
+# Saida em UTF-8 nos dois hosts: com stdout em pipe o PowerShell escreve na codepage
+# OEM (cp850/cp1252 no 5.1) e o app le UTF-8 - sem isto o texto acentuado chega
+# corrompido no painel. Tem de ser a PRIMEIRA instrucao executavel do script.
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
+try { $OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
 $ErrorActionPreference = "Stop"
 
 $Repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent   # ...\dsh-h-v1
@@ -26,11 +31,15 @@ $RegistryFile = Join-Path $Base ".registry.json"
 if (-not (Test-Path $Base)) { New-Item -ItemType Directory -Force -Path $Base | Out-Null }
 function Read-Registry {
   if (Test-Path $RegistryFile) {
-    try { return (Get-Content -Raw $RegistryFile | ConvertFrom-Json) } catch { }
+    try { return (Get-Content -Raw -Encoding UTF8 $RegistryFile | ConvertFrom-Json) } catch { }
   }
   return @()
 }
-function Write-Registry([array]$List) { $List | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 $RegistryFile }
+function Write-Registry([array]$List) {
+  # SEM BOM: Set-Content -Encoding UTF8 no PS 5.1 grava BOM e quebra JSON.parse
+  $rj = ($List | ConvertTo-Json -Depth 6)
+  [System.IO.File]::WriteAllText($RegistryFile, ($rj + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
+}
 
 function New-Port([int]$Start = 3110, [int]$End = 3900) {
   $used = @()
@@ -86,7 +95,11 @@ switch ($Command) {
     $bin = Join-Path $coreRoot "@deepseek-ai\dsh\lib\bin.js"
     $meta = [ordered]@{ name=$Name; core=$Core; port=$port; url="http://127.0.0.1:$port";
                        home=$homeDir; coreRoot=$coreRoot; created=(Get-Date -Format o) }
-    ($meta | ConvertTo-Json) | Set-Content -Encoding UTF8 (Join-Path $envDir "meta.json")
+    # SEM BOM: este meta.json e lido por JSON.parse no layout-panel-plugin.js e
+    # no freellmapi-shortcut-plugin.js — com BOM a leitura falhava em silencio
+    # (o badge FreeLLMAPI caia no gateway global em vez da porta da instancia).
+    $metaJson = ($meta | ConvertTo-Json -Depth 6)
+    [System.IO.File]::WriteAllText((Join-Path $envDir "meta.json"), ($metaJson + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
     # 5) inicia (Start-Process com PID no registro)
     $env:DSH_HOME=$homeDir; $env:DSH_WEB_URL="http://127.0.0.1:$port"; $env:DSH_ENV_NAME=$Name; $env:DSH_CORE_VERSION=$Core; $env:HOME=$env:USERPROFILE
     $proc = Start-Process -FilePath "node" -ArgumentList @("$bin","--profile","web","--no-open","--port","$port","--host","127.0.0.1") `

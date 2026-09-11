@@ -1,7 +1,14 @@
-# run-gui.ps1 - sobe a GUI principal do DeepSeek Harness no Windows (porta 3081)
+﻿# run-gui.ps1 - sobe a GUI principal do DeepSeek Harness no Windows (porta 3081)
 # Se o servidor ja estiver no ar, so abre o navegador. Usa HOME=%USERPROFILE%\.dsh
 param([int]$Port = 3081)
+# Saida em UTF-8 nos dois hosts: com stdout em pipe o PowerShell escreve na codepage
+# OEM (cp850/cp1252 no 5.1) e o app le UTF-8 - sem isto o texto acentuado chega
+# corrompido no painel. Tem de ser a PRIMEIRA instrucao executavel do script.
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
+try { $OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
 $ErrorActionPreference = "Stop"
+# Host do PowerShell (5.1 ou 7+): nunca fixamos a versao
+. (Join-Path $PSScriptRoot "ps-host.ps1")
 
 function Ensure-Shortcuts {
   param([string]$Repo)
@@ -9,7 +16,9 @@ function Ensure-Shortcuts {
     $ws = New-Object -ComObject WScript.Shell
     $ico = Join-Path $Repo "assets\deepseek.ico"
     if (-not (Test-Path $ico)) { $ico = "" }
-    $tgt = "powershell.exe"
+    # atalho aponta para o MESMO host que esta rodando (5.1 ou 7+)
+    $tgt = Get-PsHostPersistPath
+    if (-not $tgt) { $tgt = "powershell.exe" }
     $args = "-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Repo "tools\run-gui.ps1") + "`""
     $desk = Join-Path ([Environment]::GetFolderPath("Desktop")) "DeepSeek Harness.lnk"
     $sm = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\DeepSeek Harness.lnk"
@@ -74,12 +83,18 @@ $tpl = Join-Path $Repo "overlay\cordis.patch.yml.win.tpl"
 if (-not (Test-Path $tpl)) { $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl" }
 if (Test-Path $tpl) {
   $homeUrl = "file:///" + ($homeCfg -replace "\\", "/")   # loader ESM exige file:/// no Windows
-  (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
+  # SEM BOM: Set-Content -Encoding UTF8 no Windows PowerShell 5.1 grava BOM (EF BB BF)
+  $cml = (Get-Content -Raw -Encoding UTF8 $tpl) -replace "__DSH_HOME__", $homeUrl
+  [System.IO.File]::WriteAllText((Join-Path $homeCfg "cordis.patch.yml"), $cml, (New-Object System.Text.UTF8Encoding($false)))
   Write-Host "[OK] cordis.patch.yml gerado em $homeCfg"
 }
 $tag = (git -C $Repo describe --tags 2>$null | Select-Object -First 1)
 if ($tag) {
-  @{ version=$tag; updatedAt=(Get-Date -Format o) } | ConvertTo-Json | Set-Content -Encoding UTF8 (Join-Path $homeCfg ".dsh-version.json")
+  # SEM BOM: o badge de versao faz JSON.parse deste arquivo — com BOM a leitura
+  # falhava e o badge mostrava "local" em vez da versao real (bug do Windows).
+  $vfile = Join-Path $homeCfg ".dsh-version.json"
+  $vjson = (@{ version=$tag; updatedAt=(Get-Date -Format o) } | ConvertTo-Json -Depth 6)
+  [System.IO.File]::WriteAllText($vfile, ($vjson + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
 }
 $log = Join-Path $homeCfg "web.log"
 function Test-Up {
@@ -93,7 +108,7 @@ function Test-Overlay([string]$homeCfg) {
   }
   $cp = Join-Path $homeCfg "cordis.patch.yml"
   if (Test-Path $cp) {
-    $txt = Get-Content -Raw $cp
+    $txt = Get-Content -Raw -Encoding UTF8 $cp
     foreach ($id in @("smart-router","openrouter-enhanced","model-visibility")) {
       if ($txt -notmatch [regex]::Escape("id: $id")) { Write-Host "[X] cordis sem plugin: $id"; $ok = $false }
     }
@@ -140,10 +155,10 @@ if (Test-Up) {
   $errLog = $log + ".err"
   if ((Test-Path $errLog) -and ((Get-Item $errLog).Length -gt 0)) {
     Write-Host "--- ultimas linhas de $errLog ---"
-    Get-Content $errLog -Tail 25
+    Get-Content -Encoding UTF8 $errLog -Tail 25
   } elseif (Test-Path $log) {
     Write-Host "--- ultimas linhas de $log ---"
-    Get-Content $log -Tail 25
+    Get-Content -Encoding UTF8 $log -Tail 25
   } else { Write-Host "[X] nem o log foi criado em $homeCfg" }
   Write-Host "[i] cole a saida acima no repo (projeto dsh-h-v1) para diagnostico."
 }

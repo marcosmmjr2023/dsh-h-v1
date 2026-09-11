@@ -1,4 +1,4 @@
-# dsh-cli.ps1 - comando 'dsh' estilo package-manager (Windows)
+﻿# dsh-cli.ps1 - comando 'dsh' estilo package-manager (Windows)
 # Chamado pela funcao 'dsh' instalada no perfil do PowerShell.
 #   dsh up           abre a GUI principal
 #   dsh update       atualiza o repo + core pinado + reaplica pt-BR
@@ -38,7 +38,10 @@ switch ($Action) {
     if (-not (Test-Path $tpl)) { $tpl = Join-Path $Repo "overlay\cordis.patch.yml.tpl" }
     if (Test-Path $tpl) {
       $homeUrl = "file:///" + ($homeCfg -replace "\\", "/")   # loader ESM exige file:/// no Windows
-      (Get-Content -Raw $tpl) -replace "__DSH_HOME__", $homeUrl | Set-Content -Encoding UTF8 (Join-Path $homeCfg "cordis.patch.yml")
+      # SEM BOM: o render-cordis.ps1 (usado pelo sync-pull) grava limpo; o
+      # Set-Content -Encoding UTF8 do PS 5.1 adicionava BOM aqui.
+      $cml = (Get-Content -Raw -Encoding UTF8 $tpl) -replace "__DSH_HOME__", $homeUrl
+      [System.IO.File]::WriteAllText((Join-Path $homeCfg "cordis.patch.yml"), $cml, (New-Object System.Text.UTF8Encoding($false)))
     }
     Write-Host "[OK] overlay sincronizado em $homeCfg (cordis.patch.yml gerado)"
   }
@@ -57,7 +60,7 @@ switch ($Action) {
     } else {
       Write-Host "core ja esta na versao pinada ($pinned)"
     }
-    & (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") --force
+    & (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") -Cmd --force
     # Reaplica o provider "meta" no catalogo do core (pi-ai) apos update
     try {
       & (Join-Path $Repo "tools\piai-meta-patch.ps1")
@@ -82,7 +85,7 @@ switch ($Action) {
     Write-Host "git:    $(& git --version)"
     $core = (& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
     Write-Host "core:   $core"
-    $ok = & (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") --check
+    $ok = & (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") -Cmd --check
     Write-Host "repo:   $Repo"
     $homeCfg = Join-Path $env:USERPROFILE ".dsh"
     foreach ($f in @("smart-router-plugin.js","openrouter-enhanced-plugin.js","model-visibility-plugin.js","openrouter-enhanced-data.json","cordis.patch.yml",".dsh-version.json")) {
@@ -91,14 +94,14 @@ switch ($Action) {
     }
     $cp = Join-Path $homeCfg "cordis.patch.yml"
     if (Test-Path $cp) {
-      $txt = Get-Content -Raw $cp
+      $txt = Get-Content -Raw -Encoding UTF8 $cp
       foreach ($id in @("smart-router","openrouter-enhanced","model-visibility")) {
         if ($txt -match [regex]::Escape("id: $id")) { Write-Host "[OK] cordis: $id" }
         else { Write-Host "[X] cordis sem: $id  -> rode: dsh update" }
       }
     }
     $ver = Join-Path $homeCfg ".dsh-version.json"
-    if (Test-Path $ver) { Write-Host ("badge versao: " + ((Get-Content -Raw $ver | ConvertFrom-Json).version)) }
+    if (Test-Path $ver) { Write-Host ("badge versao: " + ((Get-Content -Raw -Encoding UTF8 $ver | ConvertFrom-Json).version)) }
     else { Write-Host "[X] sem .dsh-version.json (badge mostra v?)" }
     foreach ($p in @("smart-router-plugin.js","openrouter-enhanced-plugin.js","model-visibility-plugin.js")) {
       $fp = Join-Path $homeCfg $p

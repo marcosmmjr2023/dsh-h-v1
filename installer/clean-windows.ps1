@@ -1,4 +1,4 @@
-# clean-windows.ps1  desinstala TUDO do DeepSeek Harness local (Windows)
+﻿# clean-windows.ps1  desinstala TUDO do DeepSeek Harness local (Windows)
 # Uso: powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/clean-windows.ps1 | iex"
 $ErrorActionPreference = "SilentlyContinue"
 Write-Host "== Limpeza DeepSeek Harness (Windows) =="

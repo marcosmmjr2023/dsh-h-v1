@@ -1,10 +1,12 @@
-# core-update.ps1 - atualiza/volta o CORE no WINDOWS (equivalente ao .sh do Linux).
+﻿# core-update.ps1 - atualiza/volta o CORE no WINDOWS (equivalente ao .sh do Linux).
 # Sem pm2/sudo: instala no prefixo global do usuario e reaplica pt via pt-ride.
 #   core-update.ps1 --check | --history | --install <versao> | --rollback <versao>
 param([Parameter(Position=0)][string]$Cmd="--check", [string]$Ver="")
 $Repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $ErrorActionPreference = "Stop"
-$HistFile = Join-Path $env:USERPROFILE ".dsh\core-history.json"
+# Nome alinhado ao leitor: o version-badge-plugin.js le ".dsh-core-history.json"
+# (o .sh do Linux grava esse mesmo nome; aqui estava "core-history.json").
+$HistFile = Join-Path $env:USERPROFILE ".dsh\.dsh-core-history.json"
 
 function Reapply-Pt {
   $root = (& npm.cmd root -g).Trim()
@@ -22,7 +24,7 @@ switch ($Cmd) {
     $v = (& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
     Write-Host "core instalado: $v"
   }
-  "--history" { if (Test-Path $HistFile) { Get-Content $HistFile } else { Write-Host "sem historico" } }
+  "--history" { if (Test-Path $HistFile) { Get-Content -Encoding UTF8 $HistFile } else { Write-Host "sem historico" } }
   "--install" { if (-not $Ver) { throw "--install <versao>" } }
   "--rollback" { if (-not $Ver) { throw "--rollback <versao>" } }
 }
@@ -36,6 +38,14 @@ if ($Cmd -in @("--install","--rollback")) {
   & npm.cmd install -g "@deepseek-ai/dsh@$Ver" @allowFlags
   $ok = Reapply-Pt
   $h = [ordered]@{ version=$Ver; from=$old; patchesOk=$ok; at=(Get-Date -Format o) }
-  @($h) | ConvertTo-Json | Set-Content -Encoding UTF8 $HistFile
+  # Historico: mais recente primeiro (igual ao core-update.sh) e SEM BOM.
+  # -InputObject e obrigatorio: em PS 5.1 o pipe com 1 item gera um OBJETO, e o
+  # plugin exige Array (Array.isArray) para mostrar o historico no painel.
+  $prev = @()
+  if (Test-Path $HistFile) { try { $prev = @(Get-Content -Raw -Encoding UTF8 $HistFile | ConvertFrom-Json) } catch { $prev = @() } }
+  $all = @(@($h) + $prev)
+  if ($all.Count -gt 12) { $all = $all[0..11] }
+  $hj = ConvertTo-Json -InputObject $all -Depth 6
+  [System.IO.File]::WriteAllText($HistFile, ($hj + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
   Write-Host "[OK] core $Ver aplicado (pt-ride: $ok). Abra a GUI pelo atalho (start-dsh-gui.bat)."
 }

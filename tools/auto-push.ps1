@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   auto-push.ps1 — PUBLICADOR ROTINEIRO (Windows) — via de MÃO DUPLA
 
@@ -27,6 +27,12 @@
   (padrão: $env:USERPROFILE\.dsh)
 #>
 param([switch]$DryRun)
+# Saida em UTF-8 nos dois hosts: com stdout em pipe o PowerShell escreve na codepage
+# OEM (cp850/cp1252 no 5.1) e o app le UTF-8 - sem isto o texto acentuado chega
+# corrompido no painel. Tem de ser a PRIMEIRA instrucao executavel do script.
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
+try { $OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
+. (Join-Path $PSScriptRoot "ps-text.ps1")
 $ErrorActionPreference = "Stop"
 
 $SELF    = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -189,7 +195,7 @@ if (-not (Test-Path $CHLOG)) {
         "Gerado e versionado automaticamente pelo auto-push (bash/ps1).",
         "Ordem cronológica — a versão mais recente fica no FIM do arquivo.",
         ""
-    ) | Set-Content -Path $CHLOG -Encoding UTF8
+    ) | Out-Utf8NoBom -Path $CHLOG
 }
 $entry = @(
     "",
@@ -204,7 +210,7 @@ if ($pending.Count -gt 0) {
     $entry += "- Commits locais incorporados:"
     $entry += $pending | ForEach-Object { "  - $_" }
 }
-Add-Content -Path $CHLOG -Value $entry -Encoding UTF8
+$entry | Out-Utf8NoBom -Path $CHLOG -Append
 git -C $CLONE add $CHLOG
 
 # Guard novamente (agora inclui CHANGELOG.md)

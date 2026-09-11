@@ -1,4 +1,4 @@
-# dsh-setup.ps1 - Instalador COMPLETO e INTERATIVO do DeepSeek Harness (Windows)
+﻿# dsh-setup.ps1 - Instalador COMPLETO e INTERATIVO do DeepSeek Harness (Windows)
 # Detecta o que existe, mostra o estado e pergunta antes de instalar/limpar.
 #
 # 1 linha (se o PowerShell bloquear scripts, use o Bypass):
@@ -28,9 +28,9 @@ function Detect {
   try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 -Uri "http://127.0.0.1:3002/" | Out-Null; $r.flmUp = $true } catch { $r.flmUp = $false }
   $r.instances = @()
   if (Test-Path $RegFile) {
-    try { $r.instances = @((Get-Content -Raw $RegFile | ConvertFrom-Json)) } catch { }
+    try { $r.instances = @((Get-Content -Raw -Encoding UTF8 $RegFile | ConvertFrom-Json)) } catch { }
   }
-  $alias = if (Test-Path $PROFILE) { (Get-Content $PROFILE -Raw -ErrorAction SilentlyContinue) -match "function dsh" } else { $false }
+  $alias = if (Test-Path $PROFILE) { (Get-Content -Encoding UTF8 $PROFILE -Raw -ErrorAction SilentlyContinue) -match "function dsh" } else { $false }
   $r.dshAlias = $alias
   return $r
 }

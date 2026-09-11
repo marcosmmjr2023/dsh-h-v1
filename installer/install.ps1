@@ -1,4 +1,4 @@
-# dsh-h-v1 - Instalador Windows (PowerShell)
+﻿# dsh-h-v1 - Instalador Windows (PowerShell)
 # Instala o core (@deepseek-ai/dsh via npm) e aplica o overlay em
 # %USERPROFILE%\.dsh via sync-pull.ps1. Cria atalho na Area de Trabalho.
 # Requisitos: PowerShell 5.1+, Node.js 20+, Git
@@ -49,9 +49,13 @@ if (-not $SkipCoreInstall) {
 # 4. Overlay (L2) + atalho
 Write-Host "[4/4] Aplicando overlay em %USERPROFILE%\.dsh..." -ForegroundColor Yellow
 $repoRoot = Split-Path -Parent $PSScriptRoot   # installer/ -> raiz do clone
+$psHostHelper = Join-Path $repoRoot "tools\ps-host.ps1"
+if (Test-Path $psHostHelper) { . $psHostHelper }
+$psExe = if (Get-Command Get-PsHostPath -ErrorAction SilentlyContinue) { Get-PsHostPath } else { $null }
+if (-not $psExe) { $psExe = "powershell.exe" }   # ultimo recurso (Windows sempre tem 5.1)
 $syncPull  = Join-Path $repoRoot "tools\sync-pull.ps1"
 if (Test-Path $syncPull) {
-    & powershell -ExecutionPolicy Bypass -File $syncPull
+    & $psExe -NoProfile -ExecutionPolicy Bypass -File $syncPull
 } else {
     Write-Host "[!] tools\sync-pull.ps1 nao encontrado em $repoRoot" -ForegroundColor Yellow
 }
