@@ -463,3 +463,7 @@ Release manual/estrutural — 2 commit(s) desde v0.2.107.
 ## [v0.2.109] — 2026-09-11 00:23 (máquina DESKTOP-3DND3TP)
 Release manual/estrutural — 1 commit(s) desde v0.2.108.
   - a76276c fix(instancia nova): criacao robusta + autenticacao do core 0.1.5 (fim do 401)
+
+## [v0.2.110] — 2026-09-11 00:37 (máquina DESKTOP-3DND3TP)
+Release manual/estrutural — 1 commit(s) desde v0.2.109.
+  - 58f7d67 fix(pt-BR): gerador cobre as 3 telas que ficavam em ingles no core 0.1.5
