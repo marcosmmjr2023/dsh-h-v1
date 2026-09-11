@@ -53,7 +53,21 @@ function Show-State($s) {
   Say "====================================================="
 }
 function Run-Remote($script) {
-  iex (irm ($GH + "/" + $script) )
+  # Baixa p/ arquivo + valida + repete (3x): irm direto no iex quebrava
+  # quando a resposta vinha vazia (iex nao aceita string vazia).
+  $tmp = Join-Path $env:TEMP ("dsh-remote-" + ($script -replace "\\","-"))
+  $url = ($GH + "/" + $script)
+  $ok = $false
+  for ($i = 1; $i -le 3 -and -not $ok; $i++) {
+    try {
+      if (Test-Path $tmp) { Remove-Item -Force $tmp }
+      irm $url -OutFile $tmp
+      if ((Test-Path $tmp) -and ((Get-Item $tmp).Length -gt 0)) { $ok = $true }
+      else { Write-Host "[i] download vazio ($i/3): $script"; Start-Sleep -Seconds 2 }
+    } catch { Write-Host ("[i] falha no download ($i/3): " + $_.Exception.Message); Start-Sleep -Seconds 2 }
+  }
+  if (-not $ok) { throw "nao baixei $url apos 3 tentativas - verifique rede/proxy/antivirus e rode de novo" }
+  & $tmp
 }
 function Do-CleanInstall {
   Say ""
