@@ -471,3 +471,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.109.
 ## [v0.2.111] — 2026-09-11 00:47 (máquina DESKTOP-3DND3TP)
 Release manual/estrutural — 1 commit(s) desde v0.2.110.
   - f0ddefa feat(pt-BR): traduz TODO o restante do core 0.1.5 (121 frases novas)
+
+## [v0.2.112] — 2026-09-11 11:45 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.111.
+  - c4520fc fix(win): one-liner baixa p/ arquivo em vez de iex direto
