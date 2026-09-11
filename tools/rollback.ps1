@@ -67,7 +67,15 @@ switch ($Cmd) {
         if (-not $Arg) { Write-Host "ERRO: informe a versão (ex.: --core 0.1.1-rc.2)" -ForegroundColor Red; exit 2 }
         Write-Host "▶ Reinstalando core @deepseek-ai/dsh@$Arg"
         npm.cmd install -g "@deepseek-ai/dsh@$Arg"
-        Write-Host "✔ Core $Arg instalado. Teste os plugins."
+        if ($LASTEXITCODE -ne 0) { Write-Host "ERRO: npm install falhou (exit $LASTEXITCODE)." -ForegroundColor Red; exit 1 }
+        # reinstalar o pacote APAGA a traducao pt-BR (os arquivos vem do npm):
+        # reaplica em seguida, como fazem core-update.ps1/dsh-cli.ps1 update.
+        $applyPt = Join-Path $SELF "..\core-i18n-pt\tools\apply-pt-core.ps1"
+        if (Test-Path $applyPt) {
+            & $applyPt -Cmd --force
+            if ($LASTEXITCODE -ne 0) { Write-Host "[AVISO] pt-BR nao reaplicado - rode depois: dsh pt" -ForegroundColor Yellow }
+        }
+        Write-Host "✔ Core $Arg instalado (pt-BR reaplicado). Teste os plugins."
     }
     default {
         # <tag|commit>

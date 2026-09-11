@@ -75,7 +75,8 @@ switch ($Action) {
     if (-not (Test-Path $applyPt)) { Write-Host "[X] apply-pt-core.ps1 nao encontrado"; exit 1 }
     $modo = if ($Rest.Count -gt 0 -and $Rest[0] -eq "check") { "--check" } else { "--force" }
     & $applyPt -Cmd $modo
-    $code = $LASTEXITCODE
+    # propaga o codigo: 'dsh pt check' tem de falhar quando o pt-BR esta ausente
+    exit $LASTEXITCODE
   }
   "env" {
     if ($Rest.Count -eq 0) { $Rest = @("ports") }

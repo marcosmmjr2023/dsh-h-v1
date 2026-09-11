@@ -67,8 +67,17 @@ if ($Cmd -eq "--revert") {
         try { Copy-Item $_.FullName $orig -Force; Remove-Item $_.FullName -Force; $n++ } catch { }
     }
     if (Test-Path $Marker) { Remove-Item $Marker -Force -ErrorAction SilentlyContinue }
+    # Sobra traducao? (nucleo traduzido por uma versao anterior da ferramenta, sem backup)
+    $restantes = 0
+    Get-ChildItem -Path $deps -Recurse -File -Filter "client.js" -ErrorAction SilentlyContinue | ForEach-Object {
+        try { if ([System.IO.File]::ReadAllText($_.FullName, [System.Text.Encoding]::UTF8) -match 'const pt(?:\$\d+)?\s*=\s*\{') { $restantes++ } } catch { }
+    }
     if ($n -gt 0) { Write-Host "[OK] pt-BR revertido ($n arquivo(s) restaurados de *.dshbak). Reinicie a GUI." }
-    else { Write-Host "[i] nada para reverter (sem backups *.dshbak). Para voltar ao original: npm install -g @deepseek-ai/dsh@<versao>" }
+    else { Write-Host "[i] nada para reverter (sem backups *.dshbak)." }
+    if ($restantes -gt 0) {
+        Write-Host "[i] $restantes arquivo(s) ainda com dicionario pt (aplicados por uma versao anterior, sem backup)."
+        Write-Host "    Para voltar tudo ao original: npm.cmd install -g @deepseek-ai/dsh@<versao> --force"
+    }
     exit 0
 }
 

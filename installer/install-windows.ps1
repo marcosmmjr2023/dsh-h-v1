@@ -99,6 +99,10 @@ else {
 
 # 4) pt-BR (pt-ride)
 & (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") -Cmd --force
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "[AVISO] pt-BR nao foi aplicado agora - o sistema funciona em ingles." -ForegroundColor Yellow
+  Write-Host "        Reaplique depois com: dsh pt   (ou core-i18n-pt\tools\apply-pt-core.ps1 -Cmd --force)"
+}
 
 # 5) Comando 'dsh' no perfil do PowerShell (se permitido)
 if (-not $NoDshAlias) {

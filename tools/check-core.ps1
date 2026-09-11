@@ -30,5 +30,6 @@ Write-Host "  latest no npm           : $LATEST"
 Write-Host "──────────────────────────────────────────────────────────"
 if ($LATEST -ne "indisponível (sem rede?)" -and $INSTALLED -ne $LATEST) {
     Write-Host "➜ Há versão NOVA do core ($LATEST). Política: notificar e aplicar manualmente."
-    Write-Host "  Para atualizar (teste antes!):  npm.cmd update -g @deepseek-ai/dsh"
+    Write-Host "  Para atualizar (teste antes!):  dsh update"
+    Write-Host "  (o 'dsh update' reaplica o pt-BR; 'npm update -g' sozinho APAGA a traducao)"
 }
