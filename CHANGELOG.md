@@ -438,3 +438,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.101.
 ## [v0.2.103] — 2026-09-10 12:48 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.102.
   - e3d03d7 fix(win): oferece RemoteSigned + reinstala core com koffi duplicado
+
+## [v0.2.104] — 2026-09-11 03:41 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.103.
+  - fcb22ef fix(win): allow-scripts do npm 11 + validacao funcional do koffi
