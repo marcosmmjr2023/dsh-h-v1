@@ -1,4 +1,4 @@
-﻿# run-gui.ps1 - sobe a GUI principal do DeepSeek Harness no Windows (porta 3081)
+# run-gui.ps1 - sobe a GUI principal do DeepSeek Harness no Windows (porta 3081)
 # Se o servidor ja estiver no ar, so abre o navegador. Usa HOME=%USERPROFILE%\.dsh
 param([int]$Port = 3081)
 # Saida em UTF-8 nos dois hosts: com stdout em pipe o PowerShell escreve na codepage
@@ -88,7 +88,13 @@ if (Test-Path $tpl) {
   [System.IO.File]::WriteAllText((Join-Path $homeCfg "cordis.patch.yml"), $cml, (New-Object System.Text.UTF8Encoding($false)))
   Write-Host "[OK] cordis.patch.yml gerado em $homeCfg"
 }
-$tag = (git -C $Repo describe --tags 2>$null | Select-Object -First 1)
+# --abbrev=0 (igual ao stamp-version.ps1): SEM isso, quando o HEAD esta a frente
+# da ultima tag o describe devolve "vX.Y.Z-N-gSHA" em vez de "vX.Y.Z". O badge de
+# versao (flutuante, canto inferior direito) ficava ~11 caracteres mais largo e o
+# LayoutPanel so o adota se ele couber na coluna (largura <= ~324px): passando
+# disso o badge NAO era movido para o painel e ficava ATRAS da coluna direita,
+# ou seja, sumia da tela. Caso real: v0.2.115 -> v0.2.116-1-ge651022 (333px).
+$tag = (git -C $Repo describe --tags --abbrev=0 2>$null | Select-Object -First 1)
 if ($tag) {
   # SEM BOM: o badge de versao faz JSON.parse deste arquivo — com BOM a leitura
   # falhava e o badge mostrava "local" em vez da versao real (bug do Windows).

@@ -492,7 +492,18 @@ const PANEL_JS = `(function () {
     else frame.style.paddingRight = ${PANEL_WIDTH} + "px";
   }
 
-  /** Move badges flutuantes do canto inferior direito para a coluna. */
+  /**
+   * Move badges flutuantes do canto inferior direito para a coluna.
+   *
+   * BADGES_CONHECIDOS: badge NOSSO e adotado por ID, sem passar pelo filtro
+   * geometrico. Esse filtro existe para nao arrastar elementos alheios, mas
+   * deixava o badge para tras quando ele ficava mais largo que ~324px — e um
+   * badge nao adotado fica ATRAS desta coluna (mesmo z-index, e o painel vem
+   * depois no DOM), ou seja, some da tela. Caso real: a versao virou
+   * "v0.2.116-1-ge651022", o badge de versao foi de ~265px para 333px e nunca
+   * mais foi adotado (invisivel atras da coluna).
+   */
+  var BADGES_CONHECIDOS = ["dsh-version-badge", "dsh-core-badge", "freellmapi-badge"];
   function collectBadges() {
     var host = document.getElementById("dlp-badges");
     if (!panel || !host) return;
@@ -507,14 +518,20 @@ const PANEL_JS = `(function () {
       try { cs = window.getComputedStyle(el); } catch (e) { continue; }
       if (cs.position !== "fixed") continue;
       if (cs.display === "none" || cs.visibility === "hidden") continue;
+      var conhecido = !!(el.id && BADGES_CONHECIDOS.indexOf(el.id) !== -1) ||
+        !!(el.classList && el.classList.contains("freellmapi-badge"));
       var r = el.getBoundingClientRect();
-      if (r.width < 20 || r.width > 420 || r.height < 16 || r.height > 120) continue;
-      // badges do canto direito: mesmo que o freellmapi-shortcut os tenha
-      // empurrado para fora da viewport (top negativo), ainda captura se a
-      // borda direita estiver na faixa do canto.
-      if (r.right < window.innerWidth - 260) continue;
-      if (r.left < window.innerWidth - 340) continue;
-      if (r.top > window.innerHeight - 40 && r.bottom > window.innerHeight) continue;
+      if (conhecido) {
+        if (r.width < 1 || r.height < 1) continue;   // nao adota elemento vazio
+      } else {
+        if (r.width < 20 || r.width > 420 || r.height < 16 || r.height > 120) continue;
+        // badges do canto direito: mesmo que o freellmapi-shortcut os tenha
+        // empurrado para fora da viewport (top negativo), ainda captura se a
+        // borda direita estiver na faixa do canto.
+        if (r.right < window.innerWidth - 260) continue;
+        if (r.left < window.innerWidth - 340) continue;
+        if (r.top > window.innerHeight - 40 && r.bottom > window.innerHeight) continue;
+      }
       // Badge do FreeLLMAPI sempre no TOPO da lista de atalhos.
       if (el.classList && el.classList.contains("freellmapi-badge")) {
         host.insertBefore(el, host.firstChild);
