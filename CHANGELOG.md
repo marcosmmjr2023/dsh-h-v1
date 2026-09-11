@@ -487,3 +487,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.113.
 ## [v0.2.115] — 2026-09-11 11:58 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.114.
   - f85e934 fix(win): fura cache do CDN em todos os downloads remotos
+
+## [v0.2.116] — 2026-09-11 07:54 (máquina BOOK-FRSV64J9S3)
+Release manual/estrutural — 1 commit(s) desde v0.2.115.
+  - 1a97f84 fix(win): core-env reserva a porta + falha alta; pt-ride ~30x mais rapido
