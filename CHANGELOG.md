@@ -454,3 +454,8 @@ Release manual/estrutural — 1 commit(s) desde v0.2.105.
 ## [v0.2.107] — 2026-09-10 23:55 (máquina DESKTOP-3DND3TP)
 Release manual/estrutural — 1 commit(s) desde v0.2.106.
   - ecd888d feat(pt-BR): instalacao limpa no Windows ja vem em portugues (e destravado o rotulo do idioma)
+
+## [v0.2.108] — 2026-09-10 23:57 (máquina DESKTOP-3DND3TP)
+Release manual/estrutural — 2 commit(s) desde v0.2.107.
+  - e9ed139 feat(pt-BR): traduz tambem o pacote da conversa (paridade com o Linux)
+  - d1789a3 fix(pt-BR): endurecimento pos-auditoria (rollback --core, dsh pt check, revert incompleto, avisos)
