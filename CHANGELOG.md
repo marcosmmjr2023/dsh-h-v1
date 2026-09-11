@@ -467,3 +467,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.108.
 ## [v0.2.110] — 2026-09-11 00:37 (máquina DESKTOP-3DND3TP)
 Release manual/estrutural — 1 commit(s) desde v0.2.109.
   - 58f7d67 fix(pt-BR): gerador cobre as 3 telas que ficavam em ingles no core 0.1.5
+
+## [v0.2.111] — 2026-09-11 00:47 (máquina DESKTOP-3DND3TP)
+Release manual/estrutural — 1 commit(s) desde v0.2.110.
+  - f0ddefa feat(pt-BR): traduz TODO o restante do core 0.1.5 (121 frases novas)
