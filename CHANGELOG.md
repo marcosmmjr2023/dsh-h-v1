@@ -491,3 +491,8 @@ Release manual/estrutural — 1 commit(s) desde v0.2.114.
 ## [v0.2.116] — 2026-09-11 07:54 (máquina BOOK-FRSV64J9S3)
 Release manual/estrutural — 1 commit(s) desde v0.2.115.
   - 1a97f84 fix(win): core-env reserva a porta + falha alta; pt-ride ~30x mais rapido
+
+## [v0.2.117] — 2026-09-11 08:04 (máquina BOOK-FRSV64J9S3)
+Release manual/estrutural — 2 commit(s) desde v0.2.116.
+  - 3a5e39d fix(badge): versao curta no run-gui + LayoutPanel adota badge por ID
+  - e651022 fix(ci): piai-meta-patch sem SC2066 (CI estava vermelho desde 569ec3b)
