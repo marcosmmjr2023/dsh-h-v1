@@ -75,6 +75,32 @@ function quoteKeys(src) {
 
 
 let problems = 0;
+
+/** O nome já é declarado no arquivo? (const/let/var/function/class) */
+function isDeclared(src, name) {
+  const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:const|let|var|function|class)\\s+${esc}\\b`).test(src);
+}
+
+/**
+ * Escolhe um nome LIVRE para o dicionário pt. O bundle compilado usa nomes
+ * minificados e pode já ter `function pt(...)`/`function pt$1(...)` (caso do
+ * dsh-client-ui-conversation no core 0.1.5): inserir `const pt` no mesmo escopo
+ * dá "Identifier 'pt' has already been declared" e invalidava o arquivo.
+ * Ordem: pt, pt$1, pt$2, … (evitando também os nomes já planejados nesta rodada).
+ */
+function freeDictName(src, base, planned) {
+  const taken = (n) => planned.has(n) || isDeclared(src, n);
+  if (!taken(base)) { planned.add(base); return base; }
+  for (let i = 1; i < 999; i++) {
+    const cand = `${base}$${i}`;
+    if (!taken(cand)) { planned.add(cand); return cand; }
+  }
+  const cand = base + "$x" + Date.now().toString(36);
+  planned.add(cand);
+  return cand;
+}
+
 for (const file of files) {
   if (!fs.existsSync(file)) { console.error("✗ arquivo não existe:", file); problems++; continue; }
   const base = fs.readFileSync(file, "utf8");
@@ -96,6 +122,7 @@ for (const file of files) {
 
   const enDicts = dicts.filter((d) => d.lang === "en");
   const edits = [];
+  const plannedNames = new Set();
 
   for (const en of enDicts) {
     if (en.map === null) { console.error(`  ✗ ${file}: dicionário ${en.name} não é JSON puro — pulado.`); problems++; continue; }
@@ -116,8 +143,11 @@ for (const file of files) {
       if (typeof pt === "string" && pt.length) { entries.push(`${en.indent}\t"${k}": ${JSON.stringify(pt)},`); covered++; }
     }
     if (!entries.length) { console.log(`  ℹ ${en.name}: sem tradução no en-phrases.json (${enKeys.length} chaves) — sem pt por enquanto.`); continue; }
-    const ptName = "pt" + en.name.slice(2);
-    if (new RegExp(`const ${ptName}\\s*=`).test(text)) { console.log(`  ℐ ${ptName} já existe — pulado (idempotente).`); continue; }
+    const naturalName = "pt" + en.name.slice(2);
+    if (new RegExp(`const ${naturalName}\\s*=`).test(text)) { console.log(`  ℐ ${naturalName} já existe — pulado (idempotente).`); continue; }
+    // nome LIVRE: o bundle minificado pode já usar `pt`/`pt$1` para outra coisa
+    const ptName = freeDictName(text, naturalName, plannedNames);
+    if (ptName !== naturalName) console.log(`  ℹ ${naturalName} já é usado no arquivo (bundle minificado) → usando ${ptName}`);
     const semi = text.indexOf(";", en.end);
     const ptBlock = `\n${en.indent}const ${ptName} = {\n` + entries.join("\n") + `\n${en.indent}};\n`;
     edits.push({ start: en.end, end: semi + 1, text: text.slice(en.end, semi + 1) + ptBlock });
@@ -153,7 +183,9 @@ for (const file of files) {
         continue;
       }
       if (en.name === "en") {
-        // estilo abreviado: linha só com `en` (propriedade = variável en) dentro do register
+        // estilo abreviado: linha só com `en` (propriedade = variável en) dentro do register.
+        // O pt entra EXPLÍCITO (pt: <nome>) porque o nome do dicionário pode nao ser
+        // literalmente "pt" (evitamos colidir com nomes do bundle minificado).
         const lnRe = /\n([ \t]*)en([ \t]*)(\n)/g;
         const lm = lnRe.exec(inner);
         if (lm) {
@@ -163,7 +195,7 @@ for (const file of files) {
           edits.push({
             start: abs,
             end: abs + ind.length + 2 + trail.length + 1, // cobre indent + 'en' + trail + \n
-            text: `${ind}pt,\n${ind}en${trail}\n`,
+            text: `${ind}pt: ${en.ptName},\n${ind}en${trail}\n`,
           });
         }
       }

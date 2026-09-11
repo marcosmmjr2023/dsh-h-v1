@@ -141,13 +141,87 @@ export function resolveIdentifiers(body, defs) {
 function dropTrailingCommas(s) {
   return s.replace(/,(\s*[}\]])/g, "$1");
 }
-/** Lê um dicionário (objeto literal) e devolve {map, end} (map=null se falhar). */
+
+/**
+ * Converte o corpo de um dicionario compilado em JSON, numa unica passada e
+ * ciente de literais — corrige tres casos reais que faziam o gerador pular
+ * pacotes inteiros no core 0.1.5:
+ *   • strings com template literal (`` ` ``) — inclusive com `https://` dentro:
+ *     o stripComments antigo via `//` da URL como comentario e cortava a string
+ *     ("Bad control character in string literal");
+ *   • chaves sem aspas (nav: "Models") — viram "nav": "Models";
+ *   • comentarios // e /* *\/ fora de strings.
+ * Valores com `${...}` sao preservados como texto (nao casam na tabela de
+ * frases, mas mantem o JSON valido em vez de derrubar o dicionario todo).
+ */
+export function dictBodyToJson(body) {
+  let out = "";
+  let i = 0;
+  while (i < body.length) {
+    const c = body[i];
+    if (c === '"') {
+      let j = i + 1;
+      while (j < body.length) {
+        if (body[j] === "\\") { j += 2; continue; }
+        if (body[j] === '"') { j++; break; }
+        j++;
+      }
+      out += body.slice(i, j);
+      i = j;
+      continue;
+    }
+    if (c === "`") {
+      let j = i + 1, txt = "";
+      while (j < body.length) {
+        if (body[j] === "\\") { txt += body[j] + (body[j + 1] ?? ""); j += 2; continue; }
+        if (body[j] === "`") { j++; break; }
+        txt += body[j];
+        j++;
+      }
+      const unesc = txt
+        .replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t")
+        .replace(/\\`/g, "`").replace(/\\\$/g, "$").replace(/\\\\/g, "\\");
+      out += JSON.stringify(unesc);
+      i = j;
+      continue;
+    }
+    if (c === "/" && body[i + 1] === "/") { while (i < body.length && body[i] !== "\n") i++; continue; }
+    if (c === "/" && body[i + 1] === "*") { const e = body.indexOf("*/", i + 2); i = e === -1 ? body.length : e + 2; continue; }
+    if (/[A-Za-z_$]/.test(c) && !/[\w$]/.test(i === 0 ? "" : body[i - 1])) {
+      const mm = /^[A-Za-z_$][\w$]*\s*:/.exec(body.slice(i));
+      if (mm) { out += JSON.stringify(mm[0].replace(/\s*:$/, "")) + ":"; i += mm[0].length; continue; }
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+/**
+ * Expande spreads de constantes do proprio arquivo: `...PRODUCT_NAMES` vira os
+ * pares chave/valor da constante (achada por collectConsts). Spread que nao
+ * resolve (import, const fora do arquivo) e removido — assim o dicionario
+ * continua JSON valido e as chaves explicitas ainda sao traduzidas.
+ * Caso real: dsh-client-ui-open-in-app.
+ */
+export function expandSpreads(src, defs) {
+  return src.replace(/\.\.\.\s*([A-Za-z_$][\w$]*)\s*,?/g, (m, name) => {
+    const v = defs[name];
+    if (v === null || typeof v !== "object" || Array.isArray(v)) return "";
+    const pairs = Object.entries(v)
+      .filter(([, val]) => typeof val === "string")
+      .map(([k, val]) => `${JSON.stringify(k)}: ${JSON.stringify(val)}`);
+    return pairs.length ? pairs.join(", ") + "," : "";
+  });
+}
+
+/** Le um dicionario (objeto literal) e devolve {map, end} (map=null se falhar). */
 export function parseDict(text, openIdx) {
   try {
     const { end } = findObject(text, openIdx);
     const body = text.slice(openIdx + 1, end - 1);
     const defs = collectConsts(text);
-    const cleaned = resolveIdentifiers(quoteKeys(stripComments(body)), defs);
+    const cleaned = resolveIdentifiers(expandSpreads(dictBodyToJson(body), defs), defs);
     const full = dropTrailingCommas("{" + cleaned + "}");
     return { map: JSON.parse(full), end };
   } catch {
