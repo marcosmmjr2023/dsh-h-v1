@@ -69,8 +69,12 @@ switch ($Command) {
       if ($_.Name -in @("sessions","storages","node_modules",".git")) { return }
       Copy-Item -Recurse -Force $_.FullName $homeDir
     }
-    # 2) core isolado
-    & npm.cmd install -g --prefix $coreDir "@deepseek-ai/dsh@$Core" 2>&1 | Write-Host
+    # 2) core isolado (npm 11+: flag allow-scripts p/ koffi/node-pty)
+    $npmMajor = 0
+    try { $npmMajor = [int]((& npm.cmd -v 2>$null).Trim().Split(".")[0]) } catch { }
+    $allowFlags = @()
+    if ($npmMajor -ge 11) { $allowFlags = @("--allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs") }
+    & npm.cmd install -g --prefix $coreDir "@deepseek-ai/dsh@$Core" @allowFlags 2>&1 | Write-Host
     $coreRoot = (& npm.cmd root -g --prefix $coreDir).Trim()
     # 3) pt-BR via pt-ride (node, multiplataforma)
     $deps = Join-Path $coreRoot "@deepseek-ai\dsh\node_modules\@deepseek-ai"

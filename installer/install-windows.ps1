@@ -55,22 +55,45 @@ Set-Location $Repo
 # 3) Core global na versao pinada (se ainda nao estiver)
 $pinned = (Get-Content manifest.json -Raw | ConvertFrom-Json).core.pinned
 $inst = (& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
+# npm 11+ bloqueia install scripts por padrao: sem eles, koffi/node-pty nao
+# instalam o binario nativo e o boot morre (Mismatched native Koffi modules).
+$allowList = "@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs"
+$npmMajor = 0
+try { $npmMajor = [int]((& npm.cmd -v 2>$null).Trim().Split(".")[0]) } catch { }
+$allowFlags = @()
+if ($npmMajor -ge 11) {
+  $allowFlags = @("--allow-scripts=$allowList")
+  try {
+    $cur = (& npm.cmd config get allow-scripts --location=user 2>$null).Trim()
+    if ($cur -notmatch "koffi") {
+      & npm.cmd config set allow-scripts=$allowList --location=user | Out-Null
+      Write-Host "[OK] npm allow-scripts configurado (koffi/node-pty)"
+    }
+  } catch { }
+}
 if ($inst -notmatch [regex]::Escape($pinned)) {
   Write-Host "Instalando core pinado: $pinned"
-  & npm.cmd install -g "@deepseek-ai/dsh@$pinned"
+  & npm.cmd install -g "@deepseek-ai/dsh@$pinned" @allowFlags
 } else {
   Write-Host "core ja instalado: $pinned"
 }
-# 3b) koffi duplicado no npm global quebra o boot (Mismatched native Koffi
-# modules -> servidor nunca escuta -> ERR_CONNECTION_REFUSED). Detecta e
-# reinstala o core limpo.
-$koffiRefs = (& npm.cmd ls koffi -g --depth=10 2>$null) -join "`n"
-$koffiCount = ([regex]::Matches($koffiRefs, "koffi@")).Count
-if ($koffiCount -gt 1) {
-  Write-Host "[X] koffi duplicado no npm global ($koffiCount copias) - reinstalando o core limpo..."
-  & npm.cmd uninstall -g "@deepseek-ai/dsh" 2>$null | Out-Null
-  & npm.cmd install -g "@deepseek-ai/dsh@$pinned"
-  Write-Host "[OK] core reinstalado limpo"
+# 3b) Valida o koffi de verdade (carrega o binding nativo). Se falhar,
+# reinstala com --force para rodar os install scripts que foram bloqueados.
+function Test-Koffi([string]$npmRoot) {
+  $koffi = Join-Path $npmRoot "@deepseek-ai\dsh\node_modules\koffi"
+  if (-not (Test-Path (Join-Path $koffi "package.json"))) { $koffi = Join-Path $npmRoot "koffi" }
+  if (-not (Test-Path (Join-Path $koffi "package.json"))) { return $false }
+  $env:NODE_PATH = (Join-Path $npmRoot "@deepseek-ai\dsh\node_modules")
+  & node -e "require('koffi')" 2>$null
+  return ($LASTEXITCODE -eq 0)
+}
+$npmRoot = (& npm.cmd root -g).Trim()
+if (Test-Koffi $npmRoot) { Write-Host "[OK] koffi validado (nativo carrega)" }
+else {
+  Write-Host "[X] koffi quebrado - reinstalando o core com --force..."
+  & npm.cmd install -g --force "@deepseek-ai/dsh@$pinned" @allowFlags
+  if (Test-Koffi $npmRoot) { Write-Host "[OK] core reinstalado, koffi validado" }
+  else { Write-Host "[X] koffi ainda falha - confira o Node (22 LTS recomendado) e o antivirus" }
 }
 
 # 4) pt-BR (pt-ride)

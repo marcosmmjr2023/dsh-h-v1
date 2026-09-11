@@ -28,7 +28,12 @@ switch ($Cmd) {
 }
 if ($Cmd -in @("--install","--rollback")) {
   $old = ((& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join "" )
-  & npm.cmd install -g "@deepseek-ai/dsh@$Ver"
+  # npm 11+ bloqueia install scripts (koffi/node-pty); sem o flag o core quebra no boot
+  $npmMajor = 0
+  try { $npmMajor = [int]((& npm.cmd -v 2>$null).Trim().Split(".")[0]) } catch { }
+  $allowFlags = @()
+  if ($npmMajor -ge 11) { $allowFlags = @("--allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs") }
+  & npm.cmd install -g "@deepseek-ai/dsh@$Ver" @allowFlags
   $ok = Reapply-Pt
   $h = [ordered]@{ version=$Ver; from=$old; patchesOk=$ok; at=(Get-Date -Format o) }
   @($h) | ConvertTo-Json | Set-Content -Encoding UTF8 $HistFile

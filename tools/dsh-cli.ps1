@@ -47,8 +47,13 @@ switch ($Action) {
     & (Join-Path $Repo "tools\dsh-cli.ps1") "sync-overlay"
     $pinned = (Get-Content (Join-Path $Repo "manifest.json") -Raw | ConvertFrom-Json).core.pinned
     $inst = (& npm.cmd ls -g "@deepseek-ai/dsh" --depth=0 2>$null) -join ""
+    # npm 11+ bloqueia install scripts (koffi/node-pty); sem o flag o core quebra no boot
+    $npmMajor = 0
+    try { $npmMajor = [int]((& npm.cmd -v 2>$null).Trim().Split(".")[0]) } catch { }
+    $allowFlags = @()
+    if ($npmMajor -ge 11) { $allowFlags = @("--allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs") }
     if ($inst -notmatch [regex]::Escape($pinned)) {
-      & npm.cmd install -g "@deepseek-ai/dsh@$pinned"
+      & npm.cmd install -g "@deepseek-ai/dsh@$pinned" @allowFlags
     } else {
       Write-Host "core ja esta na versao pinada ($pinned)"
     }
