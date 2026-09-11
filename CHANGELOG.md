@@ -450,3 +450,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.104.
 ## [v0.2.106] — 2026-09-10 23:44 (máquina DESKTOP-3DND3TP)
 Release manual/estrutural — 1 commit(s) desde v0.2.105.
   - f702180 fix(win): badge de versao/core corretos + compatibilidade real entre PowerShell 5.1 e 7.x
+
+## [v0.2.107] — 2026-09-10 23:55 (máquina DESKTOP-3DND3TP)
+Release manual/estrutural — 1 commit(s) desde v0.2.106.
+  - ecd888d feat(pt-BR): instalacao limpa no Windows ja vem em portugues (e destravado o rotulo do idioma)
