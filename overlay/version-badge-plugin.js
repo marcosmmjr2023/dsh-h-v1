@@ -481,7 +481,9 @@ function coreEnvCreate(version, cb) {
   const base = String(version).replace(/[^A-Za-z0-9]+/g, "").slice(0, 14) || "nova";
   let name = "nova-" + base;
   let i = 2;
-  while (fs.existsSync(path.join(HOME, ".dsh-envs", name, "meta.json"))) name = "nova-" + base + "-" + (i++);
+  // Checa o DIRETORIO (nao o meta.json): um diretorio parcial de uma tentativa
+  // que falhou tambem bloqueia o create ("instancia ja existe").
+  while (fs.existsSync(path.join(HOME, ".dsh-envs", name))) name = "nova-" + base + "-" + (i++);
   const store = { running: true, done: false, ok: false, error: "", lines: [], output: "", url: "", envName: name };
   CREATE_PROGRESS.set(name, store);
   const child = spawnTool("core-env", ["create", name, "--core", version], { env: Object.assign({}, process.env, { HOME }) });
@@ -495,7 +497,15 @@ function coreEnvCreate(version, cb) {
     store.output = acc;
     const url = (acc.match(/http:\/\/127\.0\.0\.1:\d+[^\s]*/) || [])[0] || "";
     store.url = url;
-    if (!store.ok) store.error = "falha ao criar a instância (exit " + code + ")";
+    // O script pode sair 0 sem ter concluido (ex.: criacao abortada no meio):
+    // so existe sucesso quando o meta.json da instancia foi gravado.
+    let temMeta = false;
+    try { temMeta = fs.existsSync(path.join(HOME, ".dsh-envs", name, "meta.json")); } catch { /* ok */ }
+    if (store.ok && !temMeta) {
+      store.ok = false;
+      store.error = "a criação não concluiu (meta.json da instância não foi gravado)";
+    }
+    if (!store.ok && !store.error) store.error = "falha ao criar a instância (exit " + code + ")";
   });
   cb({ ok: true, started: true, name });
 }

@@ -60,8 +60,61 @@ function Entry([string]$n) {
   return $null
 }
 
+# Sobe uma instancia e devolve a URL AUTENTICADA.
+# O core 0.1.5+ imprime no boot:  dsh web: http://127.0.0.1:<porta>/?token=<token>
+# Sem esse token a GUI responde 401 ("reopen the URL printed by dsh web"). Cores
+# antigos imprimem a linha sem token: nesse caso a URL vale como esta.
+# Le um arquivo que outro processo mantem ABERTO (o web.log da instancia em
+# execucao): abre com FileShare.ReadWrite. ReadAllText usa FileShare.Read e
+# falha com "being used by another process" - era o que impedia capturar a URL
+# com token e fazia a GUI responder 401.
+function Read-LogShared([string]$Path) {
+    try {
+        $fs = [System.IO.File]::Open($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+    } catch { return "" }
+    try {
+        $sr = New-Object System.IO.StreamReader($fs, [System.Text.Encoding]::UTF8)
+        return $sr.ReadToEnd()
+    } catch { return "" }
+    finally { try { $fs.Dispose() } catch { } }
+}
+function Start-CoreInstance {
+    param([string]$Name, [string]$EnvDir, [string]$HomeDir, [string]$Bin, [int]$Port, [string]$Core)
+    $log = Join-Path $EnvDir "web.log"
+    $err = Join-Path $EnvDir "web.log.err"
+    Remove-Item $log,$err -Force -ErrorAction SilentlyContinue
+    $env:DSH_HOME=$HomeDir; $env:DSH_WEB_URL="http://127.0.0.1:$Port"; $env:DSH_ENV_NAME=$Name
+    $env:DSH_CORE_VERSION=$Core; $env:HOME=$env:USERPROFILE
+    $proc = Start-Process -FilePath "node" -ArgumentList @("$Bin","--profile","web","--no-open","--port","$Port","--host","127.0.0.1") `
+      -WorkingDirectory $env:USERPROFILE -WindowStyle Hidden -PassThru `
+      -RedirectStandardOutput $log -RedirectStandardError $err
+    $url = ""
+    for ($i = 0; $i -lt 60; $i++) {
+        Start-Sleep -Milliseconds 700
+        if (Test-Path $log) {
+            $txt = ""
+            $txt = Read-LogShared $log
+            $mm = [regex]::Match($txt, "dsh web:\s*(http://[^\s]+)")
+            if ($mm.Success) { $url = $mm.Groups[1].Value; break }
+        }
+        if ($proc.HasExited) { break }
+    }
+    if (-not $url) { $url = "http://127.0.0.1:$Port" }
+    return [ordered]@{ Proc = $proc; Url = $url; Log = $log }
+}
 switch ($Command) {
   "create" {
+    # Em qualquer falha terminante: remove o diretorio parcial (senao um novo
+    # "create" responderia "instancia ja existe") e sai com codigo != 0 para o
+    # painel mostrar a falha em vez de anunciar sucesso.
+    trap {
+      Write-Host "[X] falha ao criar a instancia: $($_.Exception.Message)"
+      if ($envDir -and (Test-Path $envDir)) {
+        Remove-Item $envDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "     (diretorio parcial removido: $envDir)"
+      }
+      exit 1
+    }
     if (-not $Name) { throw "Informe o nome (create <nome> --core <versao>)" }
     if (-not $Core) { throw "Informe --core <versao>" }
     $envDir = Env-Home $Name
@@ -73,46 +126,97 @@ switch ($Command) {
     New-Item -ItemType Directory -Force -Path $homeDir,$coreDir | Out-Null
     $port = New-Port
     Write-Host "> criando '$Name' core c$Core porta $port (Linux path inalterado)"
-    # 1) copia config do home de origem (sem sessoes/storages/node_modules)
-    Get-ChildItem -Force $From | ForEach-Object {
-      if ($_.Name -in @("sessions","storages","node_modules",".git")) { return }
-      Copy-Item -Recurse -Force $_.FullName $homeDir
+    # 1) copia a config do home de origem, SEM o que e runtime/esta travado:
+    #    - app-profile: e o perfil do NAVEGADOR da janela do app (aberto com
+    #      --user-data-dir) -> fica em uso e fazia a copia abortar no meio;
+    #    - sessions/storages/node_modules/.git: como antes (entram depois pelo 'import');
+    #    - logs/estado de execucao: nao fazem sentido numa instancia nova.
+    # robocopy em vez de Copy-Item: continua em arquivo travado, e rapido e reporta.
+    $xd = @("app-profile", "sessions", "storages", "node_modules", ".git")
+    $xf = @("*.log", "*.log.err", "*.bak*", "state.json", ".dsh-autoupdate.off")
+    robocopy $From $homeDir /E /XD @xd /XF @xf /R:1 /W:1 /NFL /NDL /NJH /NJS | Out-Null
+    $rc = $LASTEXITCODE
+    if ($rc -ge 8) {
+      Write-Host "[AVISO] alguns arquivos do config nao puderam ser copiados (em uso) - a instancia segue sem eles."
     }
     # 2) core isolado (npm 11+: flag allow-scripts p/ koffi/node-pty)
     $npmMajor = 0
     try { $npmMajor = [int]((& npm.cmd -v 2>$null).Trim().Split(".")[0]) } catch { }
     $allowFlags = @()
     if ($npmMajor -ge 11) { $allowFlags = @("--allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs") }
-    & npm.cmd install -g --prefix $coreDir "@deepseek-ai/dsh@$Core" @allowFlags 2>&1 | Write-Host
+    # SEM '2>&1': com $ErrorActionPreference="Stop", qualquer linha de stderr
+    # (ex.: um simples 'npm warn') vira erro TERMINANTE e aborta a criacao.
+    & npm.cmd install -g --prefix $coreDir "@deepseek-ai/dsh@$Core" @allowFlags | Write-Host
+    if ($LASTEXITCODE -ne 0) { throw "npm install falhou (exit $LASTEXITCODE) para @deepseek-ai/dsh@$Core" }
     $coreRoot = (& npm.cmd root -g --prefix $coreDir).Trim()
     # 3) pt-BR via pt-ride (node, multiplataforma)
     $deps = Join-Path $coreRoot "@deepseek-ai\dsh\node_modules\@deepseek-ai"
     if (Test-Path $deps) {
       if (-not $env:DSH_PT_SKIP) { $env:DSH_PT_SKIP = "" }   # vazio = traduz tudo (inclui a conversa)
-      & node (Join-Path $Repo "core-i18n-pt\tools\pt-ride.mjs") --root $deps 2>&1 | Write-Host
+      & node (Join-Path $Repo "core-i18n-pt\tools\pt-ride.mjs") --root $deps | Write-Host
+      if ($LASTEXITCODE -ne 0) {
+        # pt-BR e opcional: avisa e segue (sem derrubar a criacao da instancia).
+        Write-Host "[AVISO] pt-BR nao aplicado nesta instancia - rode depois: apply-pt-core.ps1 -Cmd --force"
+      }
     }
     # 4) meta
     $bin = Join-Path $coreRoot "@deepseek-ai\dsh\lib\bin.js"
-    $meta = [ordered]@{ name=$Name; core=$Core; port=$port; url="http://127.0.0.1:$port";
-                       home=$homeDir; coreRoot=$coreRoot; created=(Get-Date -Format o) }
+    # 5) sobe a instancia CAPTURANDO a saida: o core novo imprime a URL com o
+    #    token de autenticacao e sem ela a GUI responde 401.
+    $started = Start-CoreInstance -Name $Name -EnvDir $envDir -HomeDir $homeDir -Bin $bin -Port $port -Core $Core
+    $meta = [ordered]@{ name=$Name; core=$Core; port=$port; url=$started.Url;
+                       home=$homeDir; coreRoot=$coreRoot; created=(Get-Date -Format o); log=$started.Log }
     # SEM BOM: este meta.json e lido por JSON.parse no layout-panel-plugin.js e
     # no freellmapi-shortcut-plugin.js — com BOM a leitura falhava em silencio
     # (o badge FreeLLMAPI caia no gateway global em vez da porta da instancia).
     $metaJson = ($meta | ConvertTo-Json -Depth 6)
     [System.IO.File]::WriteAllText((Join-Path $envDir "meta.json"), ($metaJson + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
-    # 5) inicia (Start-Process com PID no registro)
-    $env:DSH_HOME=$homeDir; $env:DSH_WEB_URL="http://127.0.0.1:$port"; $env:DSH_ENV_NAME=$Name; $env:DSH_CORE_VERSION=$Core; $env:HOME=$env:USERPROFILE
-    $proc = Start-Process -FilePath "node" -ArgumentList @("$bin","--profile","web","--no-open","--port","$port","--host","127.0.0.1") `
-      -WorkingDirectory $env:USERPROFILE -WindowStyle Hidden -PassThru
-    $reg = @(Read-Registry) + [ordered]@{ Name=$Name; Port=$port; Pid=$proc.Id; Home=$homeDir; Url=$meta.url }
+    $reg = @(Read-Registry) + [ordered]@{ Name=$Name; Port=$port; Pid=$started.Proc.Id; Home=$homeDir; Url=$started.Url }
     Write-Registry @($reg)
-    # 6) launcher .bat
+    # 6) launcher: chama "up" (sobe se preciso, captura o token e abre o navegador).
+    #    O token muda a cada boot, entao gravar a URL fixa aqui quebraria no 2o uso.
     $bat = Join-Path $envDir "abrir-$Name.bat"
-    @("@echo off", "REM Abre a instancia $Name (core c$Core) - porta $port",
-      "if not exist `"$bin`" goto :eof",
-      "start `"`" `"$bin`" --profile web --no-open --port $port --host 127.0.0.1",
-      "start http://127.0.0.1:$port") | Set-Content -Encoding ASCII $bat
-    Write-Host "[OK] instancia '$Name' criada: $($meta.url) (launcher: $bat)"
+    $me = Join-Path $PSScriptRoot "core-env.ps1"
+    @("@echo off",
+      "REM Abre a instancia $Name (core c$Core) - porta $port",
+      "REM Sobe a instancia se necessario, captura a URL autenticada e abre o navegador.",
+      "set `"PSEXE=`"",
+      "for %%P in (`"%ProgramFiles%\PowerShell\7\pwsh.exe`" `"%LOCALAPPDATA%\Microsoft\WindowsApps\pwsh.exe`" `"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe`") do if not defined PSEXE if exist `"%%~P`" set `"PSEXE=%%~P`"",
+      "if not defined PSEXE ( where pwsh >nul 2>nul && set `"PSEXE=pwsh`" )",
+      "if not defined PSEXE ( where powershell >nul 2>nul && set `"PSEXE=powershell`" )",
+      "`"%PSEXE%`" -NoProfile -ExecutionPolicy Bypass -File `"$me`" up $Name",
+      "pause") | Set-Content -Encoding ASCII $bat
+    Write-Host "[OK] instancia '$Name' criada: $($started.Url) (launcher: $bat)"
+  }
+  "up" {
+    if (-not $Name) { throw "Informe o nome (up <nome>)" }
+    $entry = Entry $Name
+    if (-not $entry) { throw "Instancia '$Name' nao existe (veja: core-env.ps1 ports)" }
+    $envDir = Env-Home $Name
+    $metaPath = Join-Path $envDir "meta.json"
+    $mi = $null
+    try { $mi = ([System.IO.File]::ReadAllText($metaPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json) } catch { }
+    if (-not $mi) { throw "meta.json da instancia '$Name' nao encontrado (recrie a instancia)" }
+    $bin = Join-Path $mi.coreRoot "@deepseek-ai\dsh\lib\bin.js"
+    if (-not (Test-Path $bin)) { throw "core da instancia nao encontrado: $bin" }
+    $vivo = $false
+    if ($entry.Pid) { try { $vivo = -not (Get-Process -Id $entry.Pid -ErrorAction Stop).HasExited } catch { $vivo = $false } }
+    # ja no ar E com token conhecido -> so abre
+    if ($vivo -and ("$($mi.url)" -match "token=")) {
+        Write-Host "[OK] instancia '$Name' ja esta no ar: $($mi.url)"
+        if (-not $env:DSH_NO_BROWSER) { Start-Process $mi.url | Out-Null }
+        break
+    }
+    # sem token (ou processo morto): reinicia capturando a URL autenticada
+    if ($vivo) { try { Stop-Process -Id $entry.Pid -Force -ErrorAction Stop } catch { } ; Start-Sleep -Milliseconds 900 }
+    $started = Start-CoreInstance -Name $Name -EnvDir $envDir -HomeDir $mi.home -Bin $bin -Port ([int]$mi.port) -Core $mi.core
+    $mi.url = $started.Url
+    [System.IO.File]::WriteAllText($metaPath, (($mi | ConvertTo-Json -Depth 6) + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
+    $reg = @(Read-Registry)
+    for ($i=0; $i -lt $reg.Count; $i++) { if ($reg[$i].Name -eq $Name) { $reg[$i].Pid=$started.Proc.Id; $reg[$i].Url=$started.Url } }
+    Write-Registry @($reg)
+    Write-Host "[OK] instancia '$Name' no ar: $($started.Url)"
+    if (-not $env:DSH_NO_BROWSER) { Start-Process $started.Url | Out-Null }
   }
   "import" {
     if (-not $Name) { throw "Informe o nome (import <nome> [--from <origem>])" }
