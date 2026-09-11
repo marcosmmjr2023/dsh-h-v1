@@ -2,7 +2,7 @@
 # Detecta o que existe, mostra o estado e pergunta antes de instalar/limpar.
 #
 # 1 linha (baixa p/ %TEMP% e executa o arquivo - evita falhas do "| iex"):
-#   powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\dsh-setup.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 -OutFile $f; & $f"
+#   powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\dsh-setup.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 -Headers @{'Cache-Control'='no-cache'} -OutFile $f; & $f"
 #
 # Modos nao-interativos: -Clean | -Update | -ListInstances | -RemoveAllInstances | -Open | -Doctor
 param([string]$Mode = "")
@@ -55,13 +55,16 @@ function Show-State($s) {
 function Run-Remote($script) {
   # Baixa p/ arquivo + valida + repete (3x): irm direto no iex quebrava
   # quando a resposta vinha vazia (iex nao aceita string vazia).
+  # No-Cache: o CDN do GitHub segura arquivos ~5min; sem isso, instalacoes
+  # seguidas pegavam versoes velhas com bugs ja corrigidos.
   $tmp = Join-Path $env:TEMP ("dsh-remote-" + ($script -replace "\\","-"))
   $url = ($GH + "/" + $script)
+  $nocache = @{"Cache-Control" = "no-cache"}
   $ok = $false
   for ($i = 1; $i -le 3 -and -not $ok; $i++) {
     try {
       if (Test-Path $tmp) { Remove-Item -Force $tmp }
-      irm $url -OutFile $tmp
+      irm $url -Headers $nocache -OutFile $tmp
       if ((Test-Path $tmp) -and ((Get-Item $tmp).Length -gt 0)) { $ok = $true }
       else { Write-Host "[i] download vazio ($i/3): $script"; Start-Sleep -Seconds 2 }
     } catch { Write-Host ("[i] falha no download ($i/3): " + $_.Exception.Message); Start-Sleep -Seconds 2 }

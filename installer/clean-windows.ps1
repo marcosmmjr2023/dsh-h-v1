@@ -1,5 +1,5 @@
 # clean-windows.ps1  desinstala TUDO do DeepSeek Harness local (Windows)
-# Uso: powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\clean-windows.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/clean-windows.ps1 -OutFile $f; & $f"
+# Uso: powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\clean-windows.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/clean-windows.ps1 -Headers @{'Cache-Control'='no-cache'} -OutFile $f; & $f"
 $ErrorActionPreference = "SilentlyContinue"
 Write-Host "== Limpeza DeepSeek Harness (Windows) =="
 # 1) para processos do core
@@ -15,4 +15,4 @@ Remove-Item -Force "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\DeepSeek 
 # 3) (opcional) core global
 & npm.cmd uninstall -g "@deepseek-ai/dsh" 2>$null
 Write-Host "[OK] limpeza concluida. Rode agora o instalador:"
-Write-Host "  powershell -ExecutionPolicy Bypass -Command `"`$f=\`"$env:TEMP\install-windows.ps1\`"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 -OutFile `$f; & `$f`""
+Write-Host "  powershell -ExecutionPolicy Bypass -Command `"`$f=\`"$env:TEMP\install-windows.ps1\`"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 -Headers @{'Cache-Control'='no-cache'} -OutFile `$f; & `$f`""
