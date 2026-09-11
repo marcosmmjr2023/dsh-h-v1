@@ -1,8 +1,8 @@
-﻿# dsh-setup.ps1 - Instalador COMPLETO e INTERATIVO do DeepSeek Harness (Windows)
+# dsh-setup.ps1 - Instalador COMPLETO e INTERATIVO do DeepSeek Harness (Windows)
 # Detecta o que existe, mostra o estado e pergunta antes de instalar/limpar.
 #
-# 1 linha (se o PowerShell bloquear scripts, use o Bypass):
-#   powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex"
+# 1 linha (baixa p/ %TEMP% e executa o arquivo - evita falhas do "| iex"):
+#   powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\dsh-setup.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 -OutFile $f; & $f"
 #
 # Modos nao-interativos: -Clean | -Update | -ListInstances | -RemoveAllInstances | -Open | -Doctor
 param([string]$Mode = "")

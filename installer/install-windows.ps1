@@ -1,6 +1,6 @@
-﻿# install-windows.ps1 - Instalador do DeepSeek Harness + sistema dsh (Windows)
+# install-windows.ps1 - Instalador do DeepSeek Harness + sistema dsh (Windows)
 # Uso (uma linha, do repositorio publico):
-#   powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 | iex"
+#   powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\install-windows.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/install-windows.ps1 -OutFile $f; & $f"
 # Opcoes: -NoDshAlias (nao instala o comando 'dsh' no perfil)
 [CmdletBinding()]
 param([switch]$NoDshAlias,[switch]$NoGui)
