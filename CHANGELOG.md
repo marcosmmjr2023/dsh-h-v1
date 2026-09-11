@@ -483,3 +483,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.112.
 ## [v0.2.114] — 2026-09-11 11:55 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.113.
   - 569ec3b fix(win): install-windows autocontido + guard anti-dependencia
+
+## [v0.2.115] — 2026-09-11 11:58 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.114.
+  - f85e934 fix(win): fura cache do CDN em todos os downloads remotos
