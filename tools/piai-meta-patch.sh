@@ -26,8 +26,13 @@ MODE="${1:-install}"
 # Localiza o arquivo REAL do catalogo (o do profile e symlink para o core)
 NPMROOT="$(npm root -g 2>/dev/null || true)"
 FILE=""
-for cand in \
-  "$NPMROOT/@deepseek-ai/dsh/node_modules/@earendil-works/pi-ai/dist/models.generated.js"; do
+# Lista em ARRAY, iterada com "${CANDS[@]}": com o glob entre aspas direto
+# no `for` o shellcheck acusa SC2066 (severidade ERROR, entao -S warning nao
+# filtra) e o CI cai. Aqui o caminho tambem NAO deve sofrer word splitting.
+CANDS=(
+  "$NPMROOT/@deepseek-ai/dsh/node_modules/@earendil-works/pi-ai/dist/models.generated.js"
+)
+for cand in "${CANDS[@]}"; do
   if [ -n "$cand" ] && [ -f "$cand" ]; then FILE="$(readlink -f "$cand")"; break; fi
 done
 if [ -z "$FILE" ]; then
