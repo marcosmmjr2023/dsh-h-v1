@@ -475,3 +475,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.110.
 ## [v0.2.112] — 2026-09-11 11:45 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.111.
   - c4520fc fix(win): one-liner baixa p/ arquivo em vez de iex direto
+
+## [v0.2.113] — 2026-09-11 11:48 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.112.
+  - d8d654b fix(win): Run-Remote baixa p/ arquivo com retry
