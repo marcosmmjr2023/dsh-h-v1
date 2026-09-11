@@ -33,7 +33,7 @@ if (-not (Test-CommandExists "git")) {
 Write-Host "[OK] Git encontrado." -ForegroundColor Green
 
 # 3. Core (L1)
-Write-Host "[3/4] Instalando core @deepseek-ai/dsh..." -ForegroundColor Yellow
+Write-Host "[3/5] Instalando core @deepseek-ai/dsh..." -ForegroundColor Yellow
 if (-not $SkipCoreInstall) {
     try {
         npm.cmd install -g @deepseek-ai/dsh
@@ -46,9 +46,18 @@ if (-not $SkipCoreInstall) {
     Write-Host "[*] Pulando instalacao do core (-SkipCoreInstall)." -ForegroundColor Yellow
 }
 
-# 4. Overlay (L2) + atalho
-Write-Host "[4/4] Aplicando overlay em %USERPROFILE%\.dsh..." -ForegroundColor Yellow
+# 4. pt-BR do nucleo (pt-ride) - o overlay cobre a GUI; o nucleo precisa disto
 $repoRoot = Split-Path -Parent $PSScriptRoot   # installer/ -> raiz do clone
+Write-Host "[4/5] Aplicando pt-BR no nucleo (pt-ride)..." -ForegroundColor Yellow
+$applyPt = Join-Path $repoRoot "core-i18n-pt\tools\apply-pt-core.ps1"
+if (Test-Path $applyPt) {
+    try { & $applyPt -Cmd --force } catch { Write-Host "[!] pt-BR nao aplicado agora: $($_.Exception.Message)" -ForegroundColor Yellow }
+} else {
+    Write-Host "[!] core-i18n-pt\tools\apply-pt-core.ps1 nao encontrado em $repoRoot" -ForegroundColor Yellow
+}
+
+# 5. Overlay (L2) + atalho
+Write-Host "[5/5] Aplicando overlay em %USERPROFILE%\.dsh..." -ForegroundColor Yellow
 $psHostHelper = Join-Path $repoRoot "tools\ps-host.ps1"
 if (Test-Path $psHostHelper) { . $psHostHelper }
 $psExe = if (Get-Command Get-PsHostPath -ErrorAction SilentlyContinue) { Get-PsHostPath } else { $null }
@@ -69,6 +78,6 @@ Write-Host ""
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  INSTALACAO CONCLUIDA!" -ForegroundColor Cyan
 Write-Host "  Inicie com:  dsh-h-v1.bat (Area de Trabalho)" -ForegroundColor White
-Write-Host "  GUI em: http://127.0.0.1:3080" -ForegroundColor White
+Write-Host "  GUI em: http://127.0.0.1:3081" -ForegroundColor White
 Write-Host "========================================================" -ForegroundColor Cyan
 Read-Host "Pressione Enter para sair..."

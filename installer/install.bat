@@ -32,7 +32,7 @@ if %errorlevel% neq 0 (
 echo [OK] Git encontrado.
 
 REM 3. Core do harness (L1) - canal oficial npm
-echo [3/4] Instalando core @deepseek-ai/dsh (npm install -g)...
+echo [3/5] Instalando core @deepseek-ai/dsh (npm install -g)...
 call npm install -g @deepseek-ai/dsh
 if %errorlevel% neq 0 (
     echo [X] Erro ao instalar o core. Verifique sua conexao/npm.
@@ -41,8 +41,6 @@ if %errorlevel% neq 0 (
 )
 echo [OK] Core instalado.
 
-REM 4. Overlay (L2) - aplica em %USERPROFILE%\.dsh e cria atalho na area de trabalho
-echo [4/4] Aplicando overlay em %%USERPROFILE%%\\.dsh e criando atalho...
 REM Host do PowerShell: usa o que existir na maquina - pwsh (7+) tem preferencia,
 REM senao o Windows PowerShell (5.1, que acompanha o Windows). Nenhuma versao e
 REM exigida: os scripts do repo rodam igual nos dois. Caminhos absolutos primeiro
@@ -60,6 +58,17 @@ if not defined PSEXE (
     pause
     exit /b 1
 )
+
+REM 4. pt-BR do nucleo (pt-ride): o overlay cobre a GUI, o nucleo precisa disto
+echo [4/5] Aplicando pt-BR no nucleo (pt-ride)...
+"%PSEXE%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\core-i18n-pt\tools\apply-pt-core.ps1" -Cmd --force
+if %errorlevel% neq 0 (
+    echo [AVISO] pt-BR nao aplicado agora - o sistema continua funcionando em ingles.
+    echo         Para tentar de novo: "%~dp0..\core-i18n-pt\tools\apply-pt-core.ps1" -Cmd --force
+)
+
+REM 5. Overlay (L2) - aplica em %USERPROFILE%\.dsh e cria atalho na area de trabalho
+echo [5/5] Aplicando overlay em %%USERPROFILE%%\\.dsh e criando atalho...
 "%PSEXE%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\tools\sync-pull.ps1"
 if %errorlevel% neq 0 (
     echo [AVISO] sync-pull retornou erro - revise acima.
@@ -79,6 +88,6 @@ echo ========================================================
 echo   INSTALACAO CONCLUIDA!
 echo   Inicie com:  Area de Trabalho\dsh-h-v1.bat
 echo   (ou rode start-dsh-gui.bat na raiz do clone)
-echo   GUI em: http://127.0.0.1:3080
+echo   GUI em: http://127.0.0.1:3081
 echo ========================================================
 pause

@@ -69,6 +69,14 @@ switch ($Action) {
     }
     Write-Host "[OK] atualizado. Rode: dsh up"
   }
+  "pt" {
+    # aplica/verifica o pt-BR do nucleo: dsh pt  |  dsh pt check
+    $applyPt = Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1"
+    if (-not (Test-Path $applyPt)) { Write-Host "[X] apply-pt-core.ps1 nao encontrado"; exit 1 }
+    $modo = if ($Rest.Count -gt 0 -and $Rest[0] -eq "check") { "--check" } else { "--force" }
+    & $applyPt -Cmd $modo
+    $code = $LASTEXITCODE
+  }
   "env" {
     if ($Rest.Count -eq 0) { $Rest = @("ports") }
     & (Join-Path $Repo "core-i18n-pt\tools\core-env.ps1") @Rest

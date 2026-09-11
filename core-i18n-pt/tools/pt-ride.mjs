@@ -40,6 +40,13 @@ const PHRASES = JSON.parse(fs.readFileSync(PHRASES_PATH, "utf8"));
 const SKIP = (process.env.DSH_PT_SKIP || "").split(",").map((x) => x.trim()).filter(Boolean);
 const skipped = (f) => SKIP.some((k) => f.includes(k));
 const report = (s) => console.log("  " + s);
+// Backup do original antes da primeira alteracao: e o que permite o
+// "apply-pt-core.ps1 -Cmd --revert" devolver o core ao estado de fabrica.
+function backupOnce(f) {
+  const bak = f + ".dshbak";
+  try { if (!fs.existsSync(bak)) fs.copyFileSync(f, bak); } catch { }
+}
+function writePatched(f, content) { backupOnce(f); fs.writeFileSync(f, content); }
 function jsOk(f) {
   const r = spawnSync(process.execPath, ["--check", f], { encoding: "utf8" });
   return r.status === 0;
@@ -70,6 +77,7 @@ const pkgs = [];
 for (const f of pkgs) {
   if (skipped(f)) { report(`ℹ pulado por DSH_PT_SKIP: ${path.relative(root, f)}`); continue; }
   const orig = fs.readFileSync(f, "utf8");
+  backupOnce(f);
   const r = spawnSync(process.execPath, [GEN, "--file", f], { encoding: "utf8" });
   if (r.status !== 0 || !jsOk(f)) {
     fs.writeFileSync(f, orig); // guarda: nunca entrega JS inválido
@@ -95,17 +103,42 @@ for (const f of ["index.js", "client.js"]) {
   s = s.replace(/(LOCALE_IDS\s*=\s*\[)(\s*"zh"\s*,\s*"en"\s*)(\])/g, '$1"zh", "en", "pt"$3');
   // z.union([..., "en" ...]) → adiciona "pt"
   s = s.replace(/(z\.union\(\[)([^\]]*"en"[^\]]*)(\])/g, (m, a, b, c) => (b.includes('"pt"') ? m : a + b + (b.trim().endsWith(",") ? "" : ", ") + '"pt"' + c));
-  if (s !== before) { fs.writeFileSync(fp, s); steps++; report(`✔ LOCALE_IDS/union com "pt" em ${f}`); }
+  if (s !== before) {
+    writePatched(fp, s);
+    if (!jsOk(fp)) {
+      const bak = fp + ".dshbak";
+      if (fs.existsSync(bak)) fs.copyFileSync(bak, fp);
+      report(`⚠ LOCALE_IDS revertido (sintaxe invalida) em ${f}`);
+    } else { steps++; report(`✔ LOCALE_IDS/union com "pt" em ${f}`); }
+  }
 }
 // client.js — metadado de idioma (rótulo), html lang pt-BR e registros
 {
   const fp = path.join(loc, "client.js");
   let s = fs.readFileSync(fp, "utf8");
   const before = s;
-  // metadado: en: { label: "English" } → adiciona pt (se ainda não)
+  // (a) formato ANTIGO: metadado en: { label: "English" } → adiciona pt
   if (!s.includes("Português")) {
     s = s.replace(/en:\s*\{\s*label:\s*"English"\s*\}/g, 'en: { label: "English" }, pt: { label: "Português", fallback: "en" }');
   }
+  // (b) formato ATUAL (core 0.1.x): a lista de idiomas e' o array
+  // LOCALES = Object.freeze([{ id: "zh", label: "中文" }, { id: "en", label: "English" }])
+  // e' ELE que a tela Settings -> Language mostra; sem a entrada pt o idioma
+  // nunca aparece (era o motivo do pt-BR "nao funcionar" mesmo com tudo aplicado).
+  if (!s.includes("Português")) {
+    s = s.replace(/(\bLOCALES\s*=\s*Object\.freeze\(\[)([\s\S]*?)(\]\))/, (m, a, b, c) => {
+      if (b.includes('id: "pt"') || b.includes("Português")) return m;
+      return a + b.replace(/\s*$/, "") + ', { id: "pt", label: "Português" }' + c;
+    });
+    // lista simples de ids (versoes intermediarias)
+    s = s.replace(/(\bconst LOCALES\s*=\s*\[)([^\]]*)(\])/, (m, a, b, c) => {
+      if (b.includes('"pt"') || b.includes("Português")) return m;
+      return a + b.replace(/\s*$/, "") + (b.trim().endsWith(",") ? "" : ", ") + '"pt"' + c;
+    });
+  }
+  // <html lang> → pt-BR: formato novo (mapa DOCUMENT_LANGUAGE) e antigo (ternario)
+  s = s.replace(/(\bDOCUMENT_LANGUAGE\s*=\s*\{)([\s\S]*?)(\};)/, (m, a, b, c) =>
+    /(^|[\s{,])pt\s*:/.test(b) ? m : a + b.replace(/\s*$/, "") + ', pt: "pt-BR"' + c);
   // html lang → pt-BR
   s = s.replace(/document\.documentElement\.lang\s*=\s*snapshot\.active\s*===\s*"zh"\s*\?\s*"zh-CN"\s*:\s*snapshot\.active/g,
     'document.documentElement.lang = snapshot.active === "zh" ? "zh-CN" : snapshot.active === "pt" ? "pt-BR" : snapshot.active');
@@ -115,7 +148,14 @@ for (const f of ["index.js", "client.js"]) {
     const lastEn = b.lastIndexOf("en");
     return a + b.slice(0, lastEn + 2) + ", pt" + b.slice(lastEn + 2) + c;
   });
-  if (s !== before) { fs.writeFileSync(fp, s); steps++; report("✔ rótulo Português/lang pt-BR/registros ajustados em client.js"); }
+  if (s !== before) {
+    writePatched(fp, s);
+    if (!jsOk(fp)) {
+      const bak = fp + ".dshbak";
+      if (fs.existsSync(bak)) fs.copyFileSync(bak, fp);
+      report("⚠ encanamento do locale revertido (sintaxe invalida) em client.js");
+    } else { steps++; report("✔ rótulo Português/lang pt-BR/registros ajustados em client.js"); }
+  }
 }
 report(`etapas de encanamento: ${steps}`);
 
@@ -133,7 +173,7 @@ report(`etapas de encanamento: ${steps}`);
       const re = /for \(const \[locale\] of pairs\) if \(locales\.has\(locale\)\) throw new Error\([^;]+\);/;
       if (re.test(t)) t = t.replace(re, 'for (const [locale] of pairs) if (locales.has(locale)) continue; // dup-safe: mantém o primeiro');
     }
-    if (t !== before) { fs.writeFileSync(f, t); report("✔ dup-guard aplicado (locale.register tolera duplicata)"); }
+    if (t !== before) { writePatched(f, t); report("✔ dup-guard aplicado (locale.register tolera duplicata)"); }
     else report("ℹ dup-guard: padrão não encontrado (versão nova do locale?)");
   }
 }
@@ -185,11 +225,24 @@ let fixed = 0;
       changed = true;
     }
     if (changed) {
-      fs.writeFileSync(f, t);
+      writePatched(f, t);
       if (!jsOk(f)) { fs.writeFileSync(f, t0); report(`⚠ reparo revertido (sintaxe) em ${path.relative(root, f)}`); }
     }
   }
 })(root);
 report(`chaves reparadas: ${fixed}`);
 
+// Verificacao final: o rotulo "Português" TEM de estar no client.js do locale,
+// senao a UI nunca oferece o idioma (fail loud em vez de sucesso silencioso).
+{
+  let temRotulo = false;
+  try { temRotulo = fs.readFileSync(path.join(loc, "client.js"), "utf8").includes("Português"); } catch { }
+  if (!temRotulo) {
+    console.error("⚠ pt-ride: idioma pt-BR NAO registrado (rotulo 'Português' ausente).");
+    console.error("  O formato do locale deste core pode ter mudado — ajuste os padroes em pt-ride.mjs.");
+    process.exitCode = 1;
+  } else {
+    report("✔ idioma pt-BR registrado (rotulo 'Português' presente)");
+  }
+}
 console.log("✔ pt-ride concluído.");

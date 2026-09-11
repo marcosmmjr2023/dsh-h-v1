@@ -98,7 +98,7 @@ else {
 }
 
 # 4) pt-BR (pt-ride)
-& .\core-i18n-pt\tools\apply-pt-core.ps1 -Cmd --force
+& (Join-Path $Repo "core-i18n-pt\tools\apply-pt-core.ps1") -Cmd --force
 
 # 5) Comando 'dsh' no perfil do PowerShell (se permitido)
 if (-not $NoDshAlias) {
