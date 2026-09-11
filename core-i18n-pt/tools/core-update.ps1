@@ -12,7 +12,7 @@ function Reapply-Pt {
   $root = (& npm.cmd root -g).Trim()
   $deps = Join-Path $root "@deepseek-ai\dsh\node_modules\@deepseek-ai"
   if (Test-Path $deps) {
-    $env:DSH_PT_SKIP = "dsh-client-ui-conversation"
+    if (-not $env:DSH_PT_SKIP) { $env:DSH_PT_SKIP = "" }   # vazio = traduz tudo (inclui a conversa)
     & node (Join-Path $Repo "core-i18n-pt\tools\pt-ride.mjs") --root $deps
     return $true
   }

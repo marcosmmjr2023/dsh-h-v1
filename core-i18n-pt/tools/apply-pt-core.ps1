@@ -82,7 +82,10 @@ if ($Cmd -eq "--revert") {
 }
 
 if ($Cmd -eq "--force") {
-    $env:DSH_PT_SKIP = "dsh-client-ui-conversation"
+    if (-not $env:DSH_PT_SKIP) { $env:DSH_PT_SKIP = "" }   # vazio = traduz tudo
+# O pacote da conversa TAMBEM e traduzido (paridade com o Linux, que aplica o patch
+# 19-...conversation-pt-dicts.patch): antes ele era pulado e a tela de chat ficava em ingles.
+# Quem precisar pular algum pacote define $env:DSH_PT_SKIP="nome-do-pacote" antes de rodar.
     & node (Join-Path $Repo "core-i18n-pt\tools\pt-ride.mjs") --root $deps
     if ($LASTEXITCODE -ne 0) { Write-Host "[X] pt-ride falhou (veja acima)"; exit 1 }
     $ver = "?"

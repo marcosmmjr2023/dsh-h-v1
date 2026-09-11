@@ -88,7 +88,7 @@ switch ($Command) {
     # 3) pt-BR via pt-ride (node, multiplataforma)
     $deps = Join-Path $coreRoot "@deepseek-ai\dsh\node_modules\@deepseek-ai"
     if (Test-Path $deps) {
-      $env:DSH_PT_SKIP = "dsh-client-ui-conversation"
+      if (-not $env:DSH_PT_SKIP) { $env:DSH_PT_SKIP = "" }   # vazio = traduz tudo (inclui a conversa)
       & node (Join-Path $Repo "core-i18n-pt\tools\pt-ride.mjs") --root $deps 2>&1 | Write-Host
     }
     # 4) meta
