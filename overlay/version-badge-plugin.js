@@ -478,6 +478,19 @@ function coreEnvCreate(version, cb) {
   const tool = toolFull("core-env");
   if (!fs.existsSync(tool)) { cb({ ok: false, error: "ferramenta de ambiente não encontrada" }); return; }
   if (!/^[0-9A-Za-z._-]+$/.test(String(version || ""))) { cb({ ok: false, error: "versão inválida" }); return; }
+  // GUARDA DE REENTRANCIA: uma criacao leva minutos (npm install + pt-BR). Um
+  // SEGUNDO clique no badge nesse periodo criava uma instancia extra que, como
+  // a porta da primeira ainda nao estava reservada nem registrada, escolhia a
+  // MESMA porta: a nova morria com "listen EADDRINUSE", o log nao trazia a URL
+  // com token e o painel acabava abrindo http://127.0.0.1:<porta> sem token —
+  // que responde 401 ("dsh web authentication required") para sempre. Uma
+  // criacao por vez resolve na raiz.
+  for (const [emAndamento, s] of CREATE_PROGRESS) {
+    if (s && s.running) {
+      cb({ ok: false, error: "já existe uma criação em andamento (" + emAndamento + ") — aguarde terminar e clique em “Abrir instância nova”. Uma instância leva alguns minutos (npm install + pt-BR)." });
+      return;
+    }
+  }
   const base = String(version).replace(/[^A-Za-z0-9]+/g, "").slice(0, 14) || "nova";
   let name = "nova-" + base;
   let i = 2;
@@ -496,7 +509,10 @@ function coreEnvCreate(version, cb) {
     store.running = false; store.done = true; store.ok = code === 0;
     store.output = acc;
     const url = (acc.match(/http:\/\/127\.0\.0\.1:\d+[^\s]*/) || [])[0] || "";
-    store.url = url;
+    // So aceita como URL de abertura a que traz o token: sem token a GUI do
+    // core 0.1.5+ responde 401, entao e melhor nao oferecer "abrir" do que
+    // mandar o usuario para uma tela de erro.
+    store.url = /[?&]token=/.test(url) ? url : "";
     // O script pode sair 0 sem ter concluido (ex.: criacao abortada no meio):
     // so existe sucesso quando o meta.json da instancia foi gravado.
     let temMeta = false;
@@ -635,14 +651,22 @@ const CORE_UI_JS = [
   "      panel.dataset.status = JSON.stringify(d);",
   "    }).catch(function () {});",
   "  };",
+  "  var creating = false;",
   "  var act = function (action, version, label) {",
   "    if (action === 'import') { actImport(); return; }",
+  "    if (action === 'update' && creating) {",
+  "      panel.style.display = 'block';",
+  "      panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">Ja existe uma criacao em andamento — aguarde terminar. O botao \"Abrir instancia nova\" aparece no fim.</div>';",
+  "      return;",
+  "    }",
   "    var cmsg = (action === 'update' ? 'Criar instancia isolada com o core ' + label + '? O sistema atual nao e tocado: sera criada uma 2a versao funcional (pt-BR e FreeLLMAPI).' : 'Reverter o core instalado para ' + label + '? Estado atual e salvo; depois clique em Reiniciar agora para aplicar.');",
   "    if (!window.confirm(cmsg)) return;",
+  "    if (action === 'update') creating = true;",
   "    panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">' + (action === 'update' ? 'Iniciando a criacao da instancia...' : 'Revertendo o core...') + '</div>';",
   "    fetch('/api/dsh-core', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: action, version: version }) })",
   "      .then(function (r) { return r.json(); }).then(function (res) {",
   "        if (!res.ok) {",
+  "          if (action === 'update') creating = false;",
   "          panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-warn\">' + esc(res.error || 'falhou') + '</div><div class=\"cb-note\">' + esc(res.output || (res.needSudo ? 'Rode no terminal: sudo core-i18n-pt/tools/core-update.sh' : '')) + '</div>';",
   "          return;",
   "        }",
@@ -663,13 +687,15 @@ const CORE_UI_JS = [
   "      });",
   "  };",
   "  var showCreated = function (nm, url, outp) {",
-  "    panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">✔ Instancia <b>' + esc(nm) + '</b> criada — o sistema atual nao foi tocado. Abra o novo atalho no menu para testar o core novo.</div>' + (url ? '<div><button id=\"cb-open\">Abrir instancia nova</button></div>' : '') + '<div class=\"cb-note\">' + esc((outp || '').slice(-500)) + '</div>';",
+  "    creating = false;",
+  "    var temToken = /[?&]token=/.test(url || '');",
+  "    panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">✔ Instancia <b>' + esc(nm) + '</b> criada — o sistema atual nao foi tocado.</div>' + (temToken ? '<div><button id=\"cb-open\">Abrir instancia nova</button></div>' : '<div class=\"cb-warn\">A instancia nao devolveu a URL com token: abra pelo atalho do menu. O endereco puro (sem ?token=) responde 401.</div>') + '<div class=\"cb-note\">' + esc((outp || '').slice(-500)) + '</div>';",
   "    var ob = document.getElementById('cb-open');",
   "    if (ob) ob.addEventListener('click', function () { window.open(url, '_blank'); });",
   "    refresh();",
   "  };",
   "  var pollCreate = function (nm, tick) {",
-  "    if (tick > 700) { panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-warn\">Tempo esgotado ao consultar o progresso — recarregue (F5) e confira o chip.</div>'; return; }",
+  "    if (tick > 700) { creating = false; panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-warn\">Tempo esgotado ao consultar o progresso — recarregue (F5) e confira o chip.</div>'; return; }",
   "    fetch('/api/dsh-core?progress=1&name=' + encodeURIComponent(nm))",
   "      .then(function (r) { return r.json(); }).then(function (p) {",
   "        var linesA = (p && p.lines) || [];",
@@ -677,6 +703,7 @@ const CORE_UI_JS = [
   "        var spin = ['|', '/', '-', '\\\\'][tick % 4];",
   "        panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-note\">' + spin + ' Instalando o core e criando a instancia <b>' + esc(nm) + '</b>... aguarde, pode levar alguns minutos.</div><div style=\"max-height:220px;overflow:auto;white-space:pre-wrap;font-size:10px;color:#8b949e;\">' + esc(tail) + '</div>';",
   "        if (p && p.done) {",
+  "          creating = false;",
   "          if (p.ok && p.envName) { showCreated(p.envName, p.url, p.output); return; }",
   "          panel.innerHTML = '<h4>Nucleo</h4><div class=\"cb-warn\">Falha ao criar a instancia</div><div class=\"cb-note\">' + esc(p.error || '') + '</div><div class=\"cb-note\">' + esc((p.output || '').slice(-900)) + '</div>';",
   "          return;",

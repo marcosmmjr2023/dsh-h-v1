@@ -81,8 +81,23 @@ export function collectStringConsts(text) {
 /**
  * Constantes de string OU objeto (const NOME = { … }) do arquivo, para
  * resolver valores como WELCOME_NOTICE_COPY.en.title.
+ *
+ * MEMO por identidade do texto: parseDict() chama esta funcao UMA VEZ POR
+ * DICIONARIO, e cada chamada varria o arquivo compilado inteiro re-parseando
+ * TODOS os `const X = { … }`. Num bundle grande isso domina o custo: no
+ * dsh-client-ui-sidebar-documentpreview/lib/client.js (6,6 MB, 142 objetos,
+ * por causa do pdf.js embutido) uma unica chamada custa ~6,6 s, e o pt-ride
+ * chamava isso 12x na etapa 1 e n_en x n_pt vezes na etapa 3 — ~11 minutos
+ * gastos em UM arquivo cujos dicionarios tem poucos KB.
+ *
+ * Como todas as chamadas do mesmo arquivo passam o MESMO objeto string,
+ * comparar por identidade (===) resolve em O(1) e o resultado e reaproveitado.
+ * Sem o memo, nao ha mudanca de semantica: a funcao e pura em relacao a `text`.
  */
+let constsMemoText = null;
+let constsMemoDefs = null;
 export function collectConsts(text) {
+  if (constsMemoText === text && constsMemoDefs !== null) return constsMemoDefs;
   const defs = collectStringConsts(text);
   const re = /const\s+([A-Za-z_$][\w$]*)\s*=\s*\{/g;
   let m;
@@ -95,6 +110,8 @@ export function collectConsts(text) {
       defs[m[1]] = obj;
     } catch { /* ignora */ }
   }
+  constsMemoText = text;
+  constsMemoDefs = defs;
   return defs;
 }
 

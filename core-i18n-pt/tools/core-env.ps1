@@ -31,22 +31,80 @@ $RegistryFile = Join-Path $Base ".registry.json"
 if (-not (Test-Path $Base)) { New-Item -ItemType Directory -Force -Path $Base | Out-Null }
 function Read-Registry {
   if (Test-Path $RegistryFile) {
-    try { return (Get-Content -Raw -Encoding UTF8 $RegistryFile | ConvertFrom-Json) } catch { }
+    try {
+      $r = (Get-Content -Raw -Encoding UTF8 $RegistryFile | ConvertFrom-Json)
+      if ($null -eq $r) { return @() }
+      # registro com UMA entrada e gravado como objeto (nao lista) pelo
+      # ConvertTo-Json do pipeline: normaliza para array para o resto do script
+      # poder sempre iterar/contar do mesmo jeito.
+      if ($r -isnot [array]) { return @($r) }
+      return $r
+    } catch { }
   }
   return @()
 }
 function Write-Registry([array]$List) {
-  # SEM BOM: Set-Content -Encoding UTF8 no PS 5.1 grava BOM e quebra JSON.parse
-  $rj = ($List | ConvertTo-Json -Depth 6)
+  # SEM BOM: Set-Content -Encoding UTF8 no PS 5.1 grava BOM e quebra JSON.parse.
+  # -InputObject: no pipeline um array de 1 elemento vira escalar (o arquivo
+  # deixaria de ser uma lista). $null e filtrado para nunca gravar [null].
+  $clean = @($List | Where-Object { $null -ne $_ })
+  $rj = ConvertTo-Json -InputObject $clean -Depth 6
+  if (-not $rj) { $rj = "[]" }
   [System.IO.File]::WriteAllText($RegistryFile, ($rj + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
 }
+function Remove-RegistryEntry([string]$n) {
+  $rest = @(Read-Registry) | Where-Object { $_.Name -ne $n }
+  Write-Registry @($rest)
+}
+# Lock do registro: serializa "ler registro -> escolher porta -> gravar reserva"
+# entre criacoes concorrentes (dois cliques no badge, badge + atalho, etc.).
+# O lock e um arquivo criado com FileMode::CreateNew; se o dono morrer no meio,
+# o arquivo fica orfao e e derrubado por idade.
+function Lock-Registry([int]$TimeoutMs = 20000) {
+  $lock = Join-Path $Base ".registry.lock"
+  $deadline = (Get-Date).AddMilliseconds($TimeoutMs)
+  while ($true) {
+    try {
+      return [System.IO.File]::Open($lock, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+    } catch {
+      try {
+        if ((Get-Item $lock -ErrorAction Stop).LastWriteTime -lt (Get-Date).AddMinutes(-15)) {
+          Remove-Item $lock -Force -ErrorAction SilentlyContinue
+          continue
+        }
+      } catch { }
+      if ((Get-Date) -gt $deadline) { throw "nao consegui o lock do registro ($lock) - outra criacao em andamento?" }
+      Start-Sleep -Milliseconds 250
+    }
+  }
+}
+function Unlock-Registry($handle) {
+  if ($handle) { try { $handle.Dispose() } catch { } }
+  Remove-Item (Join-Path $Base ".registry.lock") -Force -ErrorAction SilentlyContinue
+}
 
+# ── Reserva de porta ────────────────────────────────────────────────────────
+# Uma criacao passa por robocopy + npm install + pt-ride ANTES de subir e
+# registrar a instancia: nessa janela (minutos!) a porta escolhida nao aparece
+# em Get-NetTCPConnection nem no registro, e uma segunda criacao escolhia A
+# MESMA porta. A instancia nova morria com "listen EADDRINUSE"; sem a linha
+# "dsh web: …?token=" o meta.json saia com uma URL SEM token e a GUI respondia
+# 401 ("dsh web authentication required; reopen the URL printed by dsh web").
+# Agora a porta e RESERVADA no registro logo apos a escolha (dentro do lock).
+$ReservationTtlHours = 3
+function Reservation-Alive($r) {
+  if (-not $r.Reserved) { return $false }
+  try { return ([datetime]$r.Created) -ge (Get-Date).AddHours(-$ReservationTtlHours) } catch { return $true }
+}
 function New-Port([int]$Start = 3110, [int]$End = 3900) {
   $used = @()
   Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $used += $_.LocalPort }
   $reg = Read-Registry
-  foreach ($r in $reg) { if ($r.Port)   { $used += [int]$r.Port }
-                         if ($r.FlmPort){ $used += [int]$r.FlmPort } }
+  foreach ($r in $reg) {
+    # reserva expirada (criacao que morreu) nao segura a porta para sempre
+    if ($r.Port -and (-not $r.Reserved -or (Reservation-Alive $r))) { $used += [int]$r.Port }
+    if ($r.FlmPort) { $used += [int]$r.FlmPort }
+  }
   for ($p = $Start; $p -le $End; $p++) {
     if (($used -notcontains $p) -and @(3000,3001,3002,3003,3080,3081,8125) -notcontains $p) { return $p }
   }
@@ -80,6 +138,13 @@ function Read-LogShared([string]$Path) {
 }
 function Start-CoreInstance {
     param([string]$Name, [string]$EnvDir, [string]$HomeDir, [string]$Bin, [int]$Port, [string]$Core)
+    # Pre-checagem: se a porta ja esta escutando, o node novo morreria com
+    # EADDRINUSE e a mensagem so apareceria no web.log.err. Melhor dizer na hora.
+    $ocupada = @(Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue)
+    if ($ocupada.Count -gt 0) {
+        $pids = (($ocupada | ForEach-Object { $_.OwningProcess } | Sort-Object -Unique) -join ", ")
+        throw "a porta $Port ja esta em uso (PID $pids) - outra instancia subiu nela"
+    }
     $log = Join-Path $EnvDir "web.log"
     $err = Join-Path $EnvDir "web.log.err"
     Remove-Item $log,$err -Force -ErrorAction SilentlyContinue
@@ -99,7 +164,22 @@ function Start-CoreInstance {
         }
         if ($proc.HasExited) { break }
     }
-    if (-not $url) { $url = "http://127.0.0.1:$Port" }
+    if (-not $url) {
+        # Sem a linha "dsh web: http://…?token=…" NAO ha como autenticar: o core
+        # 0.1.5+ responde 401 ("dsh web authentication required; reopen the URL
+        # printed by dsh web") a qualquer acesso sem token. Antes isto virava
+        # silenciosamente "http://127.0.0.1:<porta>" e a criacao era anunciada
+        # como SUCESSO — foi assim que uma instancia morta por EADDRINUSE
+        # entregou uma URL que dava 401 para sempre.
+        $tail = ""
+        foreach ($cand in @($err, $log)) {
+            if ($tail) { break }
+            try { if (Test-Path $cand) { $tail = Read-LogShared $cand } } catch { }
+        }
+        $tail = (($tail -split "`r?`n") | Where-Object { $_ -ne "" } | Select-Object -Last 12) -join "`n"
+        $motivo = if ($proc -and $proc.HasExited) { "o processo terminou (exit $($proc.ExitCode))" } else { "o log nao trouxe a URL com token em ~42s" }
+        throw "a instancia '$Name' nao subiu na porta $Port : $motivo`n$tail"
+    }
     return [ordered]@{ Proc = $proc; Url = $url; Log = $log }
 }
 switch ($Command) {
@@ -109,6 +189,9 @@ switch ($Command) {
     # painel mostrar a falha em vez de anunciar sucesso.
     trap {
       Write-Host "[X] falha ao criar a instancia: $($_.Exception.Message)"
+      # a RESERVA de porta tem de sair tambem: sem isto a porta fica presa no
+      # registro ate o TTL (3 h) e o nome bloqueia uma nova tentativa
+      if ($Name) { try { Remove-RegistryEntry $Name } catch { } }
       if ($envDir -and (Test-Path $envDir)) {
         Remove-Item $envDir -Recurse -Force -ErrorAction SilentlyContinue
         Write-Host "     (diretorio parcial removido: $envDir)"
@@ -124,8 +207,16 @@ switch ($Command) {
     $homeDir = Join-Path $envDir "home"
     $coreDir = Join-Path $envDir "core"
     New-Item -ItemType Directory -Force -Path $homeDir,$coreDir | Out-Null
-    $port = New-Port
-    Write-Host "> criando '$Name' core c$Core porta $port (Linux path inalterado)"
+    # RESERVA da porta ANTES do trabalho longo (robocopy + npm install + pt-ride
+    # levam minutos). Dentro do lock para que duas criacoes concorrentes nao
+    # escolham a mesma porta; a entrada e substituida no fim (mesmo Name).
+    $lock = Lock-Registry
+    try {
+      $port = New-Port
+      $reg = @(Read-Registry) + [ordered]@{ Name=$Name; Port=$port; Pid=0; Home=$homeDir; Url=""; Reserved=$true; Created=(Get-Date -Format o) }
+      Write-Registry @($reg)
+    } finally { Unlock-Registry $lock }
+    Write-Host "> criando '$Name' core c$Core porta $port (porta reservada)"
     # 1) copia a config do home de origem, SEM o que e runtime/esta travado:
     #    - app-profile: e o perfil do NAVEGADOR da janela do app (aberto com
     #      --user-data-dir) -> fica em uso e fazia a copia abortar no meio;
@@ -171,7 +262,10 @@ switch ($Command) {
     # (o badge FreeLLMAPI caia no gateway global em vez da porta da instancia).
     $metaJson = ($meta | ConvertTo-Json -Depth 6)
     [System.IO.File]::WriteAllText((Join-Path $envDir "meta.json"), ($metaJson + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
-    $reg = @(Read-Registry) + [ordered]@{ Name=$Name; Port=$port; Pid=$started.Proc.Id; Home=$homeDir; Url=$started.Url }
+    # substitui a RESERVA feita no inicio (mesmo Name): nao duplica a entrada,
+    # e o `Reserved` some junto (a porta passa a ser "de verdade" da instancia)
+    $reg = @(Read-Registry) | Where-Object { $_.Name -ne $Name }
+    $reg = @($reg) + [ordered]@{ Name=$Name; Port=$port; Pid=$started.Proc.Id; Home=$homeDir; Url=$started.Url }
     Write-Registry @($reg)
     # 6) launcher: chama "up" (sobe se preciso, captura o token e abre o navegador).
     #    O token muda a cada boot, entao gravar a URL fixa aqui quebraria no 2o uso.

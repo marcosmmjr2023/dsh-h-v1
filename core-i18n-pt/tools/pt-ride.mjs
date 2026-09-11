@@ -206,9 +206,17 @@ let fixed = 0;
     let t = fs.readFileSync(f, "utf8");
     const t0 = t;
     let changed = false;
-    for (const en of dictsOf(t, "en")) {
+    const enDicts = dictsOf(t, "en");
+    if (!enDicts.length) continue;
+    // dictsOf(t,"pt") era recalculado DENTRO do laco (uma vez por dicionario
+    // `en`), e cada passada re-escaneava o arquivo inteiro re-parseando todos
+    // os dicionarios: num bundle de 6,6 MB isso e n_en x n_pt x custo(arquivo).
+    // Cada `pt` so e editado pelo `en` de mesmo sufixo, entao indexar uma vez
+    // por arquivo da exatamente o mesmo resultado.
+    const ptByName = new Map(dictsOf(t, "pt").map((p) => [p.name, p]));
+    for (const en of enDicts) {
       const ptName = "pt" + en.name.slice(2);
-      const pts = dictsOf(t, "pt").filter((p) => p.name === ptName)[0];
+      const pts = ptByName.get(ptName);
       if (!pts) continue;
       const missing = Object.keys(en.map).filter((k) => pts.map[k] === undefined && PHRASES[en.map[k]] !== undefined);
       if (!missing.length) continue;
