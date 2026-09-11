@@ -446,3 +446,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.103.
 ## [v0.2.105] — 2026-09-10 23:09 (máquina DESKTOP-3DND3TP)
 Release manual/estrutural — 1 commit(s) desde v0.2.104.
   - de520e8 fix(plugins): carga assincrona do nucleo no apply() — badges Roteador/Modelos/modelo-em-uso voltam no Windows
+
+## [v0.2.106] — 2026-09-10 23:44 (máquina DESKTOP-3DND3TP)
+Release manual/estrutural — 1 commit(s) desde v0.2.105.
+  - f702180 fix(win): badge de versao/core corretos + compatibilidade real entre PowerShell 5.1 e 7.x
