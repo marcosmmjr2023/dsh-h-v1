@@ -459,3 +459,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.106.
 Release manual/estrutural — 2 commit(s) desde v0.2.107.
   - e9ed139 feat(pt-BR): traduz tambem o pacote da conversa (paridade com o Linux)
   - d1789a3 fix(pt-BR): endurecimento pos-auditoria (rollback --core, dsh pt check, revert incompleto, avisos)
+
+## [v0.2.109] — 2026-09-11 00:23 (máquina DESKTOP-3DND3TP)
+Release manual/estrutural — 1 commit(s) desde v0.2.108.
+  - a76276c fix(instancia nova): criacao robusta + autenticacao do core 0.1.5 (fim do 401)
