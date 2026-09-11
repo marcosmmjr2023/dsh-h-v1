@@ -120,6 +120,15 @@ printf 'quebrado\n' > "$LIVE/settings.yaml"
 "$REPO_DIR/tools/rollback.sh" --snapshot "$GOOD_SNAP" >/dev/null 2>&1
 grep -q 'model: v2-local' "$LIVE/settings.yaml" && ok "snapshot restaurou estado bom" || fail "snapshot restore falhou (estado: $(cat "$LIVE/settings.yaml" 2>/dev/null))"
 
+echo "── installer standalone (roda de %TEMP%, sem repo ao lado)"
+# installer/*.ps1 sao baixados avulsos pela one-liner: nao podem referenciar
+# arquivos do repo via $PSScriptRoot (ex.: tools\ps-text.ps1) — tudo embutido.
+if grep -rn 'Split-Path -Parent \$PSScriptRoot' "$REPO_DIR/installer/" 2>/dev/null | grep -q 'tools\\'; then
+  fail "installer/*.ps1 referencia tools\\ via PSScriptRoot (quebra no %TEMP%)"
+else
+  ok "installer/*.ps1 autocontidos (sem refs ao repo)"
+fi
+
 echo
 echo "════ RESUMO: $PASS OK, $FAIL falhas ════"
 if [ "$FAIL" -gt 0 ]; then

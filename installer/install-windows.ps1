@@ -4,7 +4,25 @@
 # Opcoes: -NoDshAlias (nao instala o comando 'dsh' no perfil)
 [CmdletBinding()]
 param([switch]$NoDshAlias,[switch]$NoGui)
-. (Join-Path (Split-Path -Parent $PSScriptRoot) "tools\ps-text.ps1")
+# REGRA: este instalador roda standalone de %TEMP% (baixado pela one-liner),
+# entao NAO pode dot-sourcar arquivos do repo (ex.: tools\ps-text.ps1 via
+# $PSScriptRoot) - tudo que ele usa tem que estar embutido aqui.
+# Texto sempre UTF-8 sem BOM (5.1 grava BOM no Set/Add-Content -Encoding UTF8).
+function Out-Utf8NoBom {
+    param(
+        [Parameter(Mandatory=$true)][string]$Path,
+        [Parameter(ValueFromPipeline=$true)][string[]]$Lines,
+        [switch]$Append
+    )
+    begin { $buf = New-Object System.Collections.ArrayList }
+    process { if ($null -ne $Lines) { foreach ($l in $Lines) { [void]$buf.Add([string]$l) } } }
+    end {
+        $text = (($buf | ForEach-Object { $_ }) -join "`r`n") + "`r`n"
+        $enc = New-Object System.Text.UTF8Encoding($false)
+        if ($Append) { [System.IO.File]::AppendAllText($Path, $text, $enc) }
+        else { [System.IO.File]::WriteAllText($Path, $text, $enc) }
+    }
+}
 $ErrorActionPreference = "Stop"
 
 Write-Host "== Instalador DeepSeek Harness (dsh) =="
