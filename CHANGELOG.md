@@ -442,3 +442,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.102.
 ## [v0.2.104] — 2026-09-11 03:41 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.103.
   - fcb22ef fix(win): allow-scripts do npm 11 + validacao funcional do koffi
+
+## [v0.2.105] — 2026-09-10 23:09 (máquina DESKTOP-3DND3TP)
+Release manual/estrutural — 1 commit(s) desde v0.2.104.
+  - de520e8 fix(plugins): carga assincrona do nucleo no apply() — badges Roteador/Modelos/modelo-em-uso voltam no Windows
