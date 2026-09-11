@@ -48,29 +48,25 @@ let cliLib = null;
 // Diagnostico: registra por que cada candidato falhou (vai para o web.log;
 // essencial quando um plugin nao ativa no Windows).
 const resolveDiag = [];
+// createRequire() por si so NUNCA falha: so o resolve() prova que aquele lib/
+// enxerga os pacotes do CLI. Sem essa checagem, um DSH_CLI_LIB errado (ou um
+// 'npm root -g' estranho) escolhia o primeiro candidato e o plugin morria no
+// apply() em vez de cair para o proximo. Resolver caminho nao avalia modulo
+// nenhum — seguro durante o boot.
+const NEEDED_PKGS = ["@deepseek-ai/dsh-llm-pi-ai", "@deepseek-ai/dsh-llm"];
 for (const lib of CANDIDATE_LIBS) {
   try {
-    requireCli = createRequire(path.join(lib, "index.js"));
+    const rq = createRequire(path.join(lib, "index.js"));
+    for (const name of NEEDED_PKGS) rq.resolve(name);
+    requireCli = rq;
     cliLib = lib;
     break;
   } catch (e) { resolveDiag.push(lib + " :: " + (e && e.message ? e.message : e)); }
-}
-// Fail-soft: NUNCA derruba o boot do harness por causa de resolucao.
-// Se o CLI nao for localizado (ja aconteceu no Windows), o plugin desativa
-// sozinho — sem provedores extras, mas com a GUI funcionando — e deixa o
-// motivo no log para diagnostico.
-if (!requireCli) {
-  console.error("[openrouter-enhanced] desativado: nao foi possivel localizar o CLI instalado.");
-  for (const d of resolveDiag) console.error("[openrouter-enhanced]   tentativa: " + d);
-  console.error("[openrouter-enhanced] dicas: defina DSH_CLI_LIB=<npm-root>/@deepseek-ai/dsh/lib ou NODE_PATH=<npm-root>/@deepseek-ai/dsh/node_modules");
-  module.exports = { name: "openrouter-enhanced", apply() {} };
-  return;
 }
 
 // __dirname nao existe se o loader usar ESM; cai para o cwd nesse caso.
 const HERE = (typeof __dirname !== "undefined" && __dirname) ? __dirname : process.cwd();
 const DATA_FILE = path.join(HERE, "openrouter-enhanced-data.json");
-const data = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
 
 const FREE = "openrouter-free";
 const PRO = "openrouter-pro";
@@ -86,6 +82,25 @@ const plugin = {
   inject: ["llm"],
 
   async apply(ctx) {
+    // Fail-soft: NUNCA derruba o boot do harness por causa de resolucao — se o
+    // CLI/dados nao estiverem disponiveis, o plugin desativa sozinho (sem
+    // provedores extras, mas com a GUI funcionando) e deixa o motivo no log.
+    if (!requireCli) {
+      console.error("[openrouter-enhanced] desativado: nao foi possivel localizar o CLI instalado.");
+      for (const d of resolveDiag) console.error("[openrouter-enhanced]   tentativa: " + d);
+      console.error("[openrouter-enhanced] dicas: defina DSH_CLI_LIB=<npm-root>/@deepseek-ai/dsh/lib ou NODE_PATH=<npm-root>/@deepseek-ai/dsh/node_modules");
+      return;
+    }
+    // Leitura do catalogo no apply() (nao no load do modulo): arquivo ausente
+    // ou ilegivel desativa o plugin em vez de derrubar a arvore de plugins.
+    let data;
+    try {
+      data = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+    } catch (e) {
+      console.error("[openrouter-enhanced] desativado: " + DATA_FILE + " ilegivel (" + (e && e.message ? e.message : e) + ")");
+      return;
+    }
+
     // import() dinamico e sequencial: evita a corrida entre o require sincrono
     // (CJS) e o carregamento ESM paralelo do mesmo modulo pelo boot.
     const resolvePkg = (name) => requireCli.resolve(name);

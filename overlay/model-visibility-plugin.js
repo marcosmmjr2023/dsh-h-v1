@@ -30,63 +30,118 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { createRequire } = require("node:module");
 
-// resolve schemastery + dsh-settings a partir do grafo do CLI instalado
-const CANDIDATE_LIBS = [
-  process.env.DSH_CLI_LIB,
-  (function () {
-    try {
-      var nr = (require("node:child_process").execSync("npm root -g", { encoding: "utf8", shell: true }) || "").trim();
-      if (nr) return require("node:path").join(nr, "@deepseek-ai", "dsh", "lib");
-    } catch (e) { /* sem npm */ }
-    return null;
-  })(),
-  require.main && require("node:path").dirname(require.main.filename),
-  "/opt/dsh-tui/node/lib/node_modules/@deepseek-ai/dsh/lib/",
-  "/usr/lib/node_modules/@deepseek-ai/dsh/lib/"
-].filter(Boolean);
+// ═══════════════════════════════════════════════════════════════════════════════
+// CARGA DO NUCLEO (schemastery + dsh-settings) — NUNCA no load do modulo
+// ═══════════════════════════════════════════════════════════════════════════════
+// O boot do harness monta a arvore de plugins em paralelo (o cordis usa
+// Promise.allSettled). Se este arquivo fizer require() SINCRONO de um modulo
+// ESM do core que ainda esta sendo importado por esse mesmo boot, o Node
+// aborta com:
+//   "Cannot require() ES Module ... because it is not yet fully loaded"
+// Era isso que sumia com o badge "Modelos" e o badge de modelo/consumo no
+// Windows: o plugin desativava sozinho no load e a GUI ficava sem eles
+// (silenciosamente). Por isso a resolucao roda dentro do apply() — depois que
+// o boot assentou — e, se ainda pegar a corrida, tenta de novo por alguns
+// segundos.
 
-let z = null;
-let installSettingsSection = null;
-// Diagnostico: registra por que cada candidato falhou (vai para o web.log;
-// essencial quando um plugin nao ativa no Windows).
-const resolveDiag = [];
-for (const lib of CANDIDATE_LIBS) {
-  try {
-    const requireCli = createRequire(path.join(lib, "index.js"));
-    z = requireCli("@deepseek-ai/schemastery");
-    ({ installSettingsSection } = requireCli("@deepseek-ai/dsh-settings"));
-    break;
-  } catch (e) { resolveDiag.push(lib + " :: " + (e && e.message ? e.message : e)); }
+let candidateLibsCache = null;
+/** Candidatos de lib/ do CLI instalado (lazy: 'npm root -g' custa ~1s). */
+function candidateLibs() {
+  if (candidateLibsCache) return candidateLibsCache;
+  candidateLibsCache = [
+    process.env.DSH_CLI_LIB,
+    (function () {
+      try {
+        var nr = (require("node:child_process").execSync("npm root -g", { encoding: "utf8", shell: true }) || "").trim();
+        if (nr) return path.join(nr, "@deepseek-ai", "dsh", "lib");
+      } catch (e) { /* sem npm */ }
+      return null;
+    })(),
+    require.main && path.dirname(require.main.filename),
+    "/opt/dsh-tui/node/lib/node_modules/@deepseek-ai/dsh/lib/",
+    "/usr/lib/node_modules/@deepseek-ai/dsh/lib/"
+  ].filter(Boolean);
+  return candidateLibsCache;
 }
+
+// Diagnostico: registra por que cada candidato falhou (vai para o web.log;
+// essencial quando um plugin nao ativa).
+const resolveDiag = [];
+
+/** true quando a mensagem e a corrida require(CJS) x import(ESM) do boot. */
+function isRaceMessage(msg) {
+  return /not yet fully loaded|ERR_REQUIRE_ASYNC_MODULE|ERR_REQUIRE_CYCLE_MODULE/.test(String(msg));
+}
+
+/** Uma tentativa de resolucao (sincrona). Devolve {z, installSettingsSection} ou null. */
+function tryLoadCore() {
+  for (const lib of candidateLibs()) {
+    try {
+      const requireCli = createRequire(path.join(lib, "index.js"));
+      const zz = requireCli("@deepseek-ai/schemastery");
+      const { installSettingsSection } = requireCli("@deepseek-ai/dsh-settings");
+      if (zz && installSettingsSection) return { z: zz, installSettingsSection };
+    } catch (e) { resolveDiag.push(lib + " :: " + (e && e.message ? e.message : e)); }
+  }
   // fallback: caminho absoluto dentro do grafo do core (Windows resolve por nome as vezes falha)
-  if (!z || !installSettingsSection) {
-    for (const lib of CANDIDATE_LIBS) {
-      if (!lib) continue;
-      const sc = path.resolve(lib, "..", "node_modules", "@deepseek-ai", "schemastery");
-      const ds = path.resolve(lib, "..", "node_modules", "@deepseek-ai", "dsh-settings");
-      if (fs.existsSync(sc) && fs.existsSync(ds)) {
-        try {
-          const rq = createRequire(path.join(sc, "package.json"));
-          z = rq(sc);
-          ({ installSettingsSection } = rq(ds));
-          if (z && installSettingsSection) break;
-        } catch (e) { resolveDiag.push(sc + " :: " + (e && e.message ? e.message : e)); }
-      } else {
-        resolveDiag.push(lib + " :: sem node_modules aninhado do core");
-      }
+  for (const lib of candidateLibs()) {
+    if (!lib) continue;
+    const sc = path.resolve(lib, "..", "node_modules", "@deepseek-ai", "schemastery");
+    const ds = path.resolve(lib, "..", "node_modules", "@deepseek-ai", "dsh-settings");
+    if (fs.existsSync(sc) && fs.existsSync(ds)) {
+      try {
+        const rq = createRequire(path.join(sc, "package.json"));
+        const zz = rq(sc);
+        const { installSettingsSection } = rq(ds);
+        if (zz && installSettingsSection) return { z: zz, installSettingsSection };
+      } catch (e) { resolveDiag.push(sc + " :: " + (e && e.message ? e.message : e)); }
+    } else {
+      resolveDiag.push(lib + " :: sem node_modules aninhado do core");
     }
   }
-// Fail-soft: NUNCA derruba o boot do harness por causa de resolucao.
-// Se os modulos do core nao resolverem (ja aconteceu no Windows), o plugin
-// desativa sozinho — sem badge/pagina, mas com a GUI funcionando — e deixa
-// o motivo no log para diagnostico.
-if (!z || !installSettingsSection) {
-  console.error("[model-visibility] desativado: nao foi possivel carregar schemastery/dsh-settings.");
-  for (const d of resolveDiag) console.error("[model-visibility]   tentativa: " + d);
-  console.error("[model-visibility] dicas: defina DSH_CLI_LIB=<npm-root>/@deepseek-ai/dsh/lib ou NODE_PATH=<npm-root>/@deepseek-ai/dsh/node_modules");
-  module.exports = { name: "model-visibility", apply() {} };
-  return;
+  return null;
 }
+
+/**
+ * Resolucao tolerante a corrida do boot: repete enquanto o motivo for a
+ * corrida (ate ~15s). Falha real de resolucao devolve null na hora.
+ */
+async function loadCore() {
+  const deadline = Date.now() + 15000;
+  for (;;) {
+    resolveDiag.length = 0;
+    const core = tryLoadCore();
+    if (core) return core;
+    if (!resolveDiag.some(isRaceMessage) || Date.now() > deadline) return null;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
+// Fail-soft: NUNCA derruba o boot do harness por causa de resolucao.
+// Se os modulos do core nao resolverem, o plugin desativa sozinho — sem
+// badge/pagina, mas com a GUI funcionando — e deixa o motivo no log.
+module.exports = {
+  name: "model-visibility",
+  inject: ["llm", "settings"],
+
+  async apply(ctx) {
+    const core = await loadCore();
+    if (!core) {
+      console.error("[model-visibility] desativado: nao foi possivel carregar schemastery/dsh-settings.");
+      for (const d of resolveDiag) console.error("[model-visibility]   tentativa: " + d);
+      console.error("[model-visibility] dicas: defina DSH_CLI_LIB=<npm-root>/@deepseek-ai/dsh/lib ou NODE_PATH=<npm-root>/@deepseek-ai/dsh/node_modules");
+      return;
+    }
+    await buildModelVisibility(core.z, core.installSettingsSection).apply(ctx);
+  }
+};
+module.exports.default = module.exports;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CORPO DO PLUGIN (montado somente depois que o nucleo carregou)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function buildModelVisibility(z, installSettingsSection) {
 
 const NS = "model-visibility";
 
@@ -922,5 +977,5 @@ const modelVisibilityPlugin = {
   }
 };
 
-module.exports = modelVisibilityPlugin;
-module.exports.default = modelVisibilityPlugin;
+return modelVisibilityPlugin;
+}
