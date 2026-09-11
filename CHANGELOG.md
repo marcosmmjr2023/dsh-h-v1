@@ -479,3 +479,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.111.
 ## [v0.2.113] — 2026-09-11 11:48 (máquina v2202608297065493408)
 Release manual/estrutural — 1 commit(s) desde v0.2.112.
   - d8d654b fix(win): Run-Remote baixa p/ arquivo com retry
+
+## [v0.2.114] — 2026-09-11 11:55 (máquina v2202608297065493408)
+Release manual/estrutural — 1 commit(s) desde v0.2.113.
+  - 569ec3b fix(win): install-windows autocontido + guard anti-dependencia
