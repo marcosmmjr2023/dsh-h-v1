@@ -508,3 +508,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.118.
 ## [v0.2.120] — 2026-09-11 23:24 (máquina BOOK-FRSV64J9S3)
 Release manual/estrutural — 1 commit(s) desde v0.2.119.
   - 04659f4 feat(win): atalho por instancia no Desktop + Menu Iniciar
+
+## [v0.2.121] — 2026-09-11 23:30 (máquina BOOK-FRSV64J9S3)
+Release manual/estrutural — 1 commit(s) desde v0.2.120.
+  - 8c0d489 feat(win): instancia abre como JANELA DE APP isolada (nao mais em aba)
