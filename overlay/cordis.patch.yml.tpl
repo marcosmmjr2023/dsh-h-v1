@@ -65,3 +65,44 @@
       name: '__DSH_HOME__/version-badge-plugin.js'
       config:
         enabled: true
+# 9) Catalogo do provider DeepSeek OFICIAL (plugin llm-deepseek, rota
+#    'deepseek-official'). Desde 2026-09-10 o endpoint renomeou o modelo para
+#    'deepseek-flash' = DeepSeek-V4.1-Flash, com visao nativa; 'deepseek-v4-flash'
+#    e 'deepseek-v4-flash-vision-exp' viraram ALIAS TEMPORARIOS roteados para o
+#    V4.1 (verificado: GET /models devolve so 'deepseek-flash' e 'deepseek-v4-pro').
+#
+#    O catalogo padrao do core so declara inputModalities ["text"] para o flash,
+#    entao o harness recusava imagem ANTES de chegar ao endpoint — mesmo o modelo
+#    sendo multimodal (testado: o endpoint le a imagem corretamente). Aqui o
+#    catalogo e declarado explicitamente, com 'deepseek-flash' PRIMEIRO (vira o
+#    padrao) e os alias mantidos para nao quebrar referencias existentes
+#    (smart-router/model-visibility/sessao).
+#
+#    'models' SUBSTITUI a lista inteira (nao faz merge com DEFAULT_MODELS), por
+#    isso os quatro modelos sao declarados aqui. imagePixelBudget/imageMaxBytes
+#    podem ser omitidos: o adapter aplica 640000 px / 1 MiB por padrao em quem
+#    declara "image". Modelo text-only NAO pode declarar limites de imagem.
+- id: llm-deepseek
+  config:
+    models:
+      - id: deepseek-flash
+        name: DeepSeek-Flash (V4.1)
+        contextWindow: 1000000
+        inputModalities:
+          - text
+          - image
+      - id: deepseek-v4-pro
+        name: DeepSeek-V4-Pro
+        contextWindow: 1000000
+      - id: deepseek-v4-flash
+        name: DeepSeek-V4-Flash (alias do V4.1)
+        contextWindow: 1000000
+        inputModalities:
+          - text
+          - image
+      - id: deepseek-v4-flash-vision-exp
+        name: DeepSeek-V4-Flash-Vision-Exp (alias do V4.1)
+        contextWindow: 1000000
+        inputModalities:
+          - text
+          - image

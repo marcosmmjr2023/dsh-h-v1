@@ -240,13 +240,13 @@ const DEFAULT_MODES = {
       "openrouter-free/minimax/minimax-m3:free",
       "opencode-go-free/mimo-v2.5-free",
       "opencode-go/deepseek-v4-flash",
-      "deepseek-official/deepseek-v4-flash"
+      "deepseek-official/deepseek-flash"
     ],
     go: [
       "freellmapi/auto:balanced",
       "opencode-go/deepseek-v4-flash",
       "opencode-go/mimo-v2.5",
-      "deepseek-official/deepseek-v4-flash"
+      "deepseek-official/deepseek-flash"
     ],
     plus: [
       "freellmapi/auto:smart",
@@ -261,12 +261,12 @@ const DEFAULT_MODES = {
       "openrouter-free/z-ai/glm-5.2:free",
       "opencode-go-free/mimo-v2.5-free",
       "opencode-go/deepseek-v4-flash",
-      "deepseek-official/deepseek-v4-flash"
+      "deepseek-official/deepseek-flash"
     ],
     go: [
       "opencode-go/deepseek-v4-flash",
       "opencode-go/mimo-v2.5",
-      "deepseek-official/deepseek-v4-flash"
+      "deepseek-official/deepseek-flash"
     ],
     plus: [
       "deepseek-official/deepseek-v4-pro",
@@ -278,12 +278,12 @@ const DEFAULT_MODES = {
       "freellmapi/auto:balanced",
       "opencode-go-free/mimo-v2.5-free",
       "opencode-go/deepseek-v4-flash",
-      "deepseek-official/deepseek-v4-flash"
+      "deepseek-official/deepseek-flash"
     ],
     go: [
       "opencode-go/deepseek-v4-flash",
       "opencode-go/mimo-v2.5",
-      "deepseek-official/deepseek-v4-flash"
+      "deepseek-official/deepseek-flash"
     ],
     plus: [
       "deepseek-official/deepseek-v4-pro",
@@ -294,12 +294,12 @@ const DEFAULT_MODES = {
     free: [
       "freellmapi/auto:smart",
       "opencode-go/deepseek-v4-flash",
-      "deepseek-official/deepseek-v4-flash"
+      "deepseek-official/deepseek-flash"
     ],
     go: [
       "opencode-go/mimo-v2.5",
       "opencode-go/deepseek-v4-flash",
-      "deepseek-official/deepseek-v4-flash"
+      "deepseek-official/deepseek-flash"
     ],
     plus: [
       "deepseek-official/deepseek-v4-pro"
@@ -928,7 +928,7 @@ const smartRouterPlugin = {
     const BIGCTX_PREFERRED = [
       ["opencode-go", "mimo-v2.5"],
       ["opencode-go", "mimo-v2"],
-      ["deepseek-official", "deepseek-v4-flash"],
+      ["deepseek-official", "deepseek-flash"],
       ["opencode-go", "deepseek-v4-flash"]
     ];
     /** Providers que o fallback automatico NUNCA usa (podem ser caros). */

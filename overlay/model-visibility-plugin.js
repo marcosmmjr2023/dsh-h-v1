@@ -795,6 +795,7 @@ const modelVisibilityPlugin = {
               if (cost == null) {
                 // tabela de custo aproximada (USD por 1M tokens), p/ badge
                 const FALLBACK_COST = {
+                  "deepseek-official/deepseek-flash": { input: 0.27, output: 1.10 },
                   "deepseek-official/deepseek-v4-flash": { input: 0.27, output: 1.10 },
                   "deepseek-official/deepseek-v4-pro": { input: 1.20, output: 4.00 },
                   "opencode-go/mimo-v2.5": { input: 0.0, output: 0.0 },
