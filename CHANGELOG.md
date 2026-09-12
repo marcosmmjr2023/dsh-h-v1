@@ -500,3 +500,7 @@ Release manual/estrutural — 2 commit(s) desde v0.2.116.
 ## [v0.2.118] — 2026-09-11 21:35 (máquina BOOK-FRSV64J9S3)
 Release manual/estrutural — 1 commit(s) desde v0.2.117.
   - 93319d5 feat(llm): DeepSeek V4.1-Flash canonico (deepseek-flash) com visao nativa
+
+## [v0.2.119] — 2026-09-11 23:08 (máquina BOOK-FRSV64J9S3)
+Release manual/estrutural — 1 commit(s) desde v0.2.118.
+  - 35df01b fix(win): create nao apaga mais o core instalado quando o boot demora
