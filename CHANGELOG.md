@@ -512,3 +512,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.119.
 ## [v0.2.121] — 2026-09-11 23:30 (máquina BOOK-FRSV64J9S3)
 Release manual/estrutural — 1 commit(s) desde v0.2.120.
   - 8c0d489 feat(win): instancia abre como JANELA DE APP isolada (nao mais em aba)
+
+## [v0.2.122] — 2026-09-11 23:41 (máquina BOOK-FRSV64J9S3)
+Release manual/estrutural — 1 commit(s) desde v0.2.121.
+  - 867e777 fix(freellmapi): painel abre em janela propria e status vem do servidor
