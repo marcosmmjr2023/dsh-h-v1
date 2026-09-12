@@ -134,7 +134,47 @@ function Test-PluginApi([int]$Port, [string]$log) {
     } catch { Write-Host ("[X] plugin fora do ar: " + $p[1] + " (veja $log e $log.err)") }
   }
 }
+# Servidor no ar com plugins VELHOS? Reinicia de verdade.
+#
+# O sintoma que isto resolve: o usuario fecha a JANELA do app e reabre o atalho,
+# acha que reiniciou — mas o processo `dsh web` continua o mesmo (o Test-Up acima
+# so verifica se a porta responde) e os plugins seguem os carregados no boot
+# antigo. Nenhuma correcao de plugin aparece, e parece que a correcao "nao pegou".
+# Comparar a data dos plugins da config viva com a hora de inicio do servidor
+# resolve isso de forma objetiva.
+function Get-ServerPid([int]$p) {
+  $c = Get-NetTCPConnection -State Listen -LocalPort $p -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($c) { return [int]$c.OwningProcess }
+  return 0
+}
+function Get-NewestPluginWrite([string]$cfg) {
+  $maior = [datetime]::MinValue
+  foreach ($f in (Get-ChildItem $cfg -File -Filter *.js -ErrorAction SilentlyContinue)) {
+    if ($f.LastWriteTime -gt $maior) { $maior = $f.LastWriteTime }
+  }
+  foreach ($nome in @("cordis.patch.yml", "openrouter-enhanced-data.json")) {
+    $p = Join-Path $cfg $nome
+    if ((Test-Path $p) -and ((Get-Item $p).LastWriteTime -gt $maior)) { $maior = (Get-Item $p).LastWriteTime }
+  }
+  return $maior
+}
 Test-Overlay $homeCfg | Out-Null
+if (Test-Up) {
+  $srvPid = Get-ServerPid $Port
+  $novoPlugin = Get-NewestPluginWrite $homeCfg
+  if ($srvPid -gt 0 -and $novoPlugin -gt [datetime]::MinValue) {
+    $inicio = (Get-Process -Id $srvPid -ErrorAction SilentlyContinue).StartTime
+    if ($inicio -and $novoPlugin -gt $inicio) {
+      Write-Host "[i] plugins da config viva mais novos que o servidor no ar"
+      Write-Host ("    plugin : " + $novoPlugin.ToString("dd/MM HH:mm:ss") + "   servidor: " + $inicio.ToString("dd/MM HH:mm:ss"))
+      Write-Host "[i] reiniciando o dsh web (PID $srvPid) para carregar o que mudou (fechar a janela NAO reinicia)"
+      Stop-Process -Id $srvPid -Force -ErrorAction SilentlyContinue
+      for ($i = 0; $i -lt 24; $i++) { Start-Sleep -Milliseconds 500; if (-not (Test-Up)) { break } }
+    } else {
+      Write-Host "[OK] servidor no ar e ja com os plugins atuais (nada a reiniciar)"
+    }
+  }
+}
 $started = $false
 if (-not (Test-Up)) {
   $env:DSH_HOME = $homeCfg

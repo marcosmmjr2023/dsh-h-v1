@@ -44,24 +44,53 @@ const INJECT = `(function () {
     "#freellmapi-badge .fl-dot.bad{background:#f85149;}",
     "#freellmapi-badge .fl-model{max-width:230px;overflow:hidden;text-overflow:ellipsis;color:#7ee787;font-weight:600;}",
     "#freellmapi-badge .fl-model.fail{color:#ffa657;}",
+    "#freellmapi-modal{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;}",
+    "#freellmapi-modal .fl-win{width:min(980px,92vw);height:min(720px,88vh);background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 14px 56px rgba(0,0,0,.65);}",
+    "#freellmapi-modal .fl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #30363d;font:12px/1.4 system-ui,sans-serif;color:#9ecbff;flex:none;}",
+    "#freellmapi-modal .fl-title{display:inline-flex;align-items:center;gap:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
+    "#freellmapi-modal .fl-close{background:transparent;border:0;color:#8b949e;font:15px/1 system-ui,sans-serif;cursor:pointer;padding:5px 9px;border-radius:6px;flex:none;}",
+    "#freellmapi-modal .fl-close:hover{background:#21262d;color:#fff;}",
+    "#freellmapi-modal iframe{flex:1;border:0;width:100%;height:100%;background:#fff;}"
   ].join("");
   var style = document.createElement("style");
   style.textContent = css;
   document.head.appendChild(style);
 
+  function closeModal() {
+    var m = document.getElementById("freellmapi-modal");
+    if (m) m.remove();
+    document.removeEventListener("keydown", escHandler);
+  }
+  function escHandler(e) { if (e.key === "Escape") closeModal(); }
+
   /**
-   * Abre o painel do FreeLLMAPI numa JANELA propria (navegacao direta).
+   * Abre o painel do FreeLLMAPI num MODAL DENTRO do DSH (iframe).
    *
-   * Antes isto era um modal com <iframe src=URL> — e nao funciona: o gateway
-   * usa helmet com X-Frame-Options: SAMEORIGIN e CSP frame-ancestors 'self',
-   * e a GUI vive em OUTRA porta (3081/3110/3111), ou seja, outra origem para o
-   * navegador. O frame nao carrega e o Chrome mostra "recusou a conexao" no
-   * lugar do painel (confirmado no log do Chrome: "Framing
-   * 'http://127.0.0.1:3002/' violates ... frame-ancestors 'self'"). Navegacao
-   * direta nao sofre dessa restricao — por isso janela, e nao iframe.
+   * Historico: isto quebrava com "127.0.0.1 recusou a conexao" porque o gateway
+   * mandava X-Frame-Options: SAMEORIGIN e CSP frame-ancestors 'self', e a GUI
+   * vive em OUTRA porta (3081/3110/3111) — origem diferente para o navegador.
+   * O gateway passou a aceitar enquadramento das origens de LOOPBACK
+   * (frame-ancestors 'self' http://127.0.0.1:* http://localhost:* e frameguard
+   * desligado), entao o painel abre AQUI DENTRO, sem janela externa — e continua
+   * impossivel de embutir por site externo. Ver tools/flm-allow-frame.ps1, que
+   * reaplica esse ajuste no FreeLLMAPI (ele e um clone a parte).
    */
   function openModal() {
-    window.open(URL, "_blank", "noopener");
+    if (document.getElementById("freellmapi-modal")) return;
+    var m = document.createElement("div");
+    m.id = "freellmapi-modal";
+    m.innerHTML =
+      '<div class="fl-win">' +
+        '<div class="fl-head">' +
+          '<span class="fl-title">🆓 FreeLLMAPI — gerenciar chaves dos modelos gratuitos</span>' +
+          '<button class="fl-close" title="Fechar (Esc)">✕</button>' +
+        "</div>" +
+        '<iframe src="' + URL + '" title="FreeLLMAPI"></iframe>' +
+      "</div>";
+    document.body.appendChild(m);
+    m.querySelector(".fl-close").onclick = closeModal;
+    m.addEventListener("click", function (e) { if (e.target === m) closeModal(); });
+    document.addEventListener("keydown", escHandler);
   }
 
   /**
