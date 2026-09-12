@@ -44,40 +44,24 @@ const INJECT = `(function () {
     "#freellmapi-badge .fl-dot.bad{background:#f85149;}",
     "#freellmapi-badge .fl-model{max-width:230px;overflow:hidden;text-overflow:ellipsis;color:#7ee787;font-weight:600;}",
     "#freellmapi-badge .fl-model.fail{color:#ffa657;}",
-    "#freellmapi-modal{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;}",
-    "#freellmapi-modal .fl-win{width:min(980px,92vw);height:min(720px,88vh);background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 14px 56px rgba(0,0,0,.65);}",
-    "#freellmapi-modal .fl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #30363d;font:12px/1.4 system-ui,sans-serif;color:#9ecbff;flex:none;}",
-    "#freellmapi-modal .fl-title{display:inline-flex;align-items:center;gap:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
-    "#freellmapi-modal .fl-close{background:transparent;border:0;color:#8b949e;font:15px/1 system-ui,sans-serif;cursor:pointer;padding:5px 9px;border-radius:6px;flex:none;}",
-    "#freellmapi-modal .fl-close:hover{background:#21262d;color:#fff;}",
-    "#freellmapi-modal iframe{flex:1;border:0;width:100%;height:100%;background:#fff;}"
   ].join("");
   var style = document.createElement("style");
   style.textContent = css;
   document.head.appendChild(style);
 
-  function closeModal() {
-    var m = document.getElementById("freellmapi-modal");
-    if (m) m.remove();
-    document.removeEventListener("keydown", escHandler);
-  }
-  function escHandler(e) { if (e.key === "Escape") closeModal(); }
+  /**
+   * Abre o painel do FreeLLMAPI numa JANELA propria (navegacao direta).
+   *
+   * Antes isto era um modal com <iframe src=URL> — e nao funciona: o gateway
+   * usa helmet com X-Frame-Options: SAMEORIGIN e CSP frame-ancestors 'self',
+   * e a GUI vive em OUTRA porta (3081/3110/3111), ou seja, outra origem para o
+   * navegador. O frame nao carrega e o Chrome mostra "recusou a conexao" no
+   * lugar do painel (confirmado no log do Chrome: "Framing
+   * 'http://127.0.0.1:3002/' violates ... frame-ancestors 'self'"). Navegacao
+   * direta nao sofre dessa restricao — por isso janela, e nao iframe.
+   */
   function openModal() {
-    if (document.getElementById("freellmapi-modal")) return;
-    var m = document.createElement("div");
-    m.id = "freellmapi-modal";
-    m.innerHTML =
-      '<div class="fl-win">' +
-        '<div class="fl-head">' +
-          '<span class="fl-title">🆓 FreeLLMAPI — gerenciar chaves dos modelos gratuitos</span>' +
-          '<button class="fl-close" title="Fechar (Esc)">✕</button>' +
-        "</div>" +
-        '<iframe src="' + URL + '" title="FreeLLMAPI"></iframe>' +
-      "</div>";
-    document.body.appendChild(m);
-    m.querySelector(".fl-close").onclick = closeModal;
-    m.addEventListener("click", function (e) { if (e.target === m) closeModal(); });
-    document.addEventListener("keydown", escHandler);
+    window.open(URL, "_blank", "noopener");
   }
 
   /**
@@ -92,8 +76,6 @@ const INJECT = `(function () {
       var el = nodes[i];
       if (el === exclude) continue;
       if (exclude && el.contains && el.contains(exclude)) continue;
-      if (el.id === "freellmapi-modal") continue;
-      if (el.closest && el.closest("#freellmapi-modal")) continue;
       // coluna do layout-panel não conta como badge (é um painel inteiro)
       if (el.closest && el.closest("#dsh-layout-panel")) continue;
       var cs;
@@ -132,14 +114,28 @@ const INJECT = `(function () {
   function refreshModel() {
     var badge = document.getElementById("freellmapi-badge");
     if (!badge) return;
-    fetch(URL + "/api/last-request", { method: "GET" })
+    // Sonda o NOSSO servidor (/api/flm-probe), nao o gateway direto: falar com
+    // 127.0.0.1:3002 a partir da GUI cruza origens e o navegador bloqueia por
+    // CORS sempre que a origem da GUI nao esta no DASHBOARD_ORIGINS do gateway
+    // (era o caso da instancia nova, em porta propria). O servidor tambem
+    // distingue "gateway fora do ar" de "gateway sem /api/last-request" — antes
+    // o 404 desse endpoint pintava o badge de "indisponivel" com o gateway OK.
+    fetch("/api/flm-probe", { method: "GET" })
       .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function (data) {
         var span = badge.querySelector(".fl-model");
+        var dot = badge.querySelector(".fl-dot");
         if (!span) return;
-        var lr = data && data.lastRequest;
+        if (dot) dot.className = "fl-dot " + (data && data.up ? "ok" : "bad");
+        if (!data || !data.up) {
+          span.textContent = "indisponível";
+          span.className = "fl-model fail";
+          badge.title = "Gateway FreeLLMAPI fora do ar (" + ((data && data.base) || "127.0.0.1:3002") + ")";
+          return;
+        }
+        var lr = data.lastRequest;
         if (!lr) {
-          span.textContent = "sem requisições ainda";
+          span.textContent = data.note || "sem requisições ainda";
           span.className = "fl-model";
           badge.title = "Abrir painel FreeLLMAPI (gerenciar chaves dos modelos gratuitos)";
           return;
@@ -172,12 +168,8 @@ const INJECT = `(function () {
     badge.onclick = openModal;
     document.body.appendChild(badge);
     place();
-    try {
-      fetch(URL + "/api/ping", { method: "GET" })
-        .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
-        .then(function () { var d = badge.querySelector(".fl-dot"); if (d) d.className = "fl-dot ok"; })
-        .catch(function () { var d = badge.querySelector(".fl-dot"); if (d) d.className = "fl-dot bad"; });
-    } catch (e) { /* fetch indisponivel */ }
+    // o ponto de status e o texto do modelo vem do MESMO probe (refreshModel),
+    // que ja atualiza o .fl-dot — sem uma segunda consulta so para isso
     refreshModel();
     return true;
   }
@@ -212,6 +204,56 @@ module.exports = {
         text: INJECT,
       });
     });
+    // Sonda do gateway pelo LADO DO SERVIDOR (/api/flm-probe, na NOSSA origem).
+    // O navegador nao pode consultar o gateway direto: origem diferente => CORS
+    // (e o iframe do modal era barrado pelo frame-ancestors do helmet). Aqui o
+    // Node consulta e devolve o resultado, entao funciona em QUALQUER porta de
+    // GUI/instancia, sem depender do DASHBOARD_ORIGINS do gateway.
+    const webServer = ctx.get("webServer");
+    if (webServer && typeof webServer.register === "function") {
+      const comTimeout = (p, ms) => Promise.race([
+        p,
+        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
+      ]);
+      webServer.register({
+        kind: "exact",
+        path: "/api/flm-probe",
+        handler: (req, res) => {
+          const responder = (obj) => {
+            try {
+              res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+              res.end(JSON.stringify(obj));
+            } catch { /* conexao ja fechada */ }
+          };
+          const base = FREELMAPI_DASHBOARD_URL;
+          (async () => {
+            let up = false;
+            let lastRequest = null;
+            let note = "";
+            try {
+              const rp = await comTimeout(fetch(base + "/api/ping"), 4000);
+              up = rp.ok;
+            } catch { up = false; }
+            if (up) {
+              try {
+                const rl = await comTimeout(fetch(base + "/api/last-request"), 4000);
+                if (rl.ok) {
+                  const j = await rl.json();
+                  lastRequest = (j && j.lastRequest) || null;
+                } else if (rl.status === 404) {
+                  // esta versao do gateway nao expoe o endpoint: nao e falha
+                  note = "gateway sem /api/last-request";
+                }
+              } catch { /* sem informacao */ }
+            }
+            responder({ ok: true, up, lastRequest, note, base });
+          })();
+        },
+      });
+      console.log("[FreeLLMAPI-Shortcut] rota /api/flm-probe registrada (sonda do gateway pelo servidor)");
+    } else {
+      console.log("[FreeLLMAPI-Shortcut] webServer indisponivel - badge sem sonda de status");
+    }
     console.log("[FreeLLMAPI-Shortcut] badge do FreeLLMAPI injetado no dashboard");
   },
 };
