@@ -516,3 +516,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.120.
 ## [v0.2.122] — 2026-09-11 23:41 (máquina BOOK-FRSV64J9S3)
 Release manual/estrutural — 1 commit(s) desde v0.2.121.
   - 867e777 fix(freellmapi): painel abre em janela propria e status vem do servidor
+
+## [v0.2.123] — 2026-09-12 07:40 (máquina BOOK-FRSV64J9S3)
+Release manual/estrutural — 1 commit(s) desde v0.2.122.
+  - 94122ba fix(flm): painel volta a abrir DENTRO do app + run-gui reinicia servidor velho
