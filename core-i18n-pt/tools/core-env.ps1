@@ -154,16 +154,25 @@ function Start-CoreInstance {
       -WorkingDirectory $env:USERPROFILE -WindowStyle Hidden -PassThru `
       -RedirectStandardOutput $log -RedirectStandardError $err
     $url = ""
-    for ($i = 0; $i -lt 60; $i++) {
+    # Janela GENEROSA de proposito: o boot normal leva ~20 s (medido), mas logo
+    # apos o npm install — que escreve ~210 MB — o disco fica quente e o
+    # carregamento dos modulos passa facil de 2 min. Com a janela antiga de 42 s
+    # a criacao falhava no boot e o trap apagava um core JA instalado, obrigando
+    # a repetir o npm install inteiro (~17 min). Enquanto o processo estiver VIVO
+    # continuamos esperando; se ele morrer, paramos na hora.
+    $primeiraSaidaEm = -1.0
+    $swBoot = [System.Diagnostics.Stopwatch]::StartNew()
+    for ($i = 0; $i -lt 300; $i++) {          # 300 x 700 ms = 210 s
         Start-Sleep -Milliseconds 700
         if (Test-Path $log) {
-            $txt = ""
             $txt = Read-LogShared $log
+            if ($primeiraSaidaEm -lt 0 -and $txt.Trim().Length -gt 0) { $primeiraSaidaEm = $swBoot.Elapsed.TotalSeconds }
             $mm = [regex]::Match($txt, "dsh web:\s*(http://[^\s]+)")
             if ($mm.Success) { $url = $mm.Groups[1].Value; break }
         }
         if ($proc.HasExited) { break }
     }
+    $swBoot.Stop()
     if (-not $url) {
         # Sem a linha "dsh web: http://…?token=…" NAO ha como autenticar: o core
         # 0.1.5+ responde 401 ("dsh web authentication required; reopen the URL
@@ -177,31 +186,50 @@ function Start-CoreInstance {
             try { if (Test-Path $cand) { $tail = Read-LogShared $cand } } catch { }
         }
         $tail = (($tail -split "`r?`n") | Where-Object { $_ -ne "" } | Select-Object -Last 12) -join "`n"
-        $motivo = if ($proc -and $proc.HasExited) { "o processo terminou (exit $($proc.ExitCode))" } else { "o log nao trouxe a URL com token em ~42s" }
+        $motivo = if ($proc -and $proc.HasExited) { "o processo terminou (exit $($proc.ExitCode))" } else { "o log nao trouxe a URL com token em 210s" }
+        $motivo += if ($primeiraSaidaEm -lt 0) { " - o log ficou VAZIO o tempo todo (o core nem comecou a subir)" } else { (" - a primeira linha do log saiu em {0:N1}s" -f $primeiraSaidaEm) }
         throw "a instancia '$Name' nao subiu na porta $Port : $motivo`n$tail"
     }
-    return [ordered]@{ Proc = $proc; Url = $url; Log = $log }
+    return [ordered]@{ Proc = $proc; Url = $url; Log = $log; PrimeiraSaidaEm = $primeiraSaidaEm }
 }
 switch ($Command) {
   "create" {
-    # Em qualquer falha terminante: remove o diretorio parcial (senao um novo
-    # "create" responderia "instancia ja existe") e sai com codigo != 0 para o
-    # painel mostrar a falha em vez de anunciar sucesso.
+    # Em qualquer falha terminante sai com codigo != 0 para o painel mostrar a
+    # falha em vez de anunciar sucesso. O que fazer com o diretorio depende de
+    # ONDE falhou: se o core JA foi instalado (meta.json gravado, passo 4),
+    # apagar seria criminoso — o npm install leva ~17 min (inclui os builds
+    # nativos do koffi/node-pty). Foi exatamente o que aconteceu com a
+    # 'nova-015rc1-3': o boot passou dos 42 s da janela antiga, o trap rodou e
+    # apagou 210 MB de core instalado.
     trap {
       Write-Host "[X] falha ao criar a instancia: $($_.Exception.Message)"
-      # a RESERVA de porta tem de sair tambem: sem isto a porta fica presa no
-      # registro ate o TTL (3 h) e o nome bloqueia uma nova tentativa
-      if ($Name) { try { Remove-RegistryEntry $Name } catch { } }
-      if ($envDir -and (Test-Path $envDir)) {
-        Remove-Item $envDir -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "     (diretorio parcial removido: $envDir)"
+      $temMeta = $envDir -and (Test-Path (Join-Path $envDir "meta.json"))
+      if ($temMeta) {
+        Write-Host "     O core FOI instalado e foi PRESERVADO em: $envDir"
+        Write-Host "     Retome SEM reinstalar (so sobe a instancia):"
+        Write-Host "       core-env.ps1 up $Name"
+      } else {
+        # Falhou antes do core existir: remove a reserva de porta e o parcial,
+        # senao um novo "create" responderia "instancia ja existe".
+        if ($Name) { try { Remove-RegistryEntry $Name } catch { } }
+        if ($envDir -and (Test-Path $envDir)) {
+          Remove-Item $envDir -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Host "     (diretorio parcial removido: $envDir)"
+        }
       }
       exit 1
     }
     if (-not $Name) { throw "Informe o nome (create <nome> --core <versao>)" }
     if (-not $Core) { throw "Informe --core <versao>" }
     $envDir = Env-Home $Name
-    if (Test-Path $envDir) { throw "Instancia '$Name' ja existe (remova primeiro)" }
+    if (Test-Path $envDir) {
+      # Distingue "core instalado, so faltou subir" (retomavel com 'up') de
+      # "diretorio parcial" (tem de remover antes de recriar).
+      if (Test-Path (Join-Path $envDir "meta.json")) {
+        throw "Instancia '$Name' ja existe e o core esta instalado. Para subir sem reinstalar: core-env.ps1 up $Name"
+      }
+      throw "Instancia '$Name' ja existe (diretorio parcial). Remova antes: core-env.ps1 remove $Name"
+    }
     if (-not $From) { $From = Join-Path $env:USERPROFILE ".dsh-v2" }
     if (-not (Test-Path $From)) { $From = Join-Path $env:USERPROFILE ".dsh" }
     $homeDir = Join-Path $envDir "home"
@@ -250,20 +278,28 @@ switch ($Command) {
         Write-Host "[AVISO] pt-BR nao aplicado nesta instancia - rode depois: apply-pt-core.ps1 -Cmd --force"
       }
     }
-    # 4) meta
+    # 4) meta: gravado ANTES de subir a instancia. Este arquivo e o sinal de que
+    #    "o core ja esta instalado" — o trap o consulta para NAO apagar o
+    #    resultado do npm install quando a falha for no boot. Fica com url vazia
+    #    ate o token ser capturado no passo 5.
+    #    SEM BOM: este meta.json e lido por JSON.parse no layout-panel-plugin.js e
+    #    no freellmapi-shortcut-plugin.js — com BOM a leitura falhava em silencio
+    #    (o badge FreeLLMAPI caia no gateway global em vez da porta da instancia).
     $bin = Join-Path $coreRoot "@deepseek-ai\dsh\lib\bin.js"
+    $metaPath = Join-Path $envDir "meta.json"
+    $meta = [ordered]@{ name=$Name; core=$Core; port=$port; url="";
+                       home=$homeDir; coreRoot=$coreRoot; created=(Get-Date -Format o); log=(Join-Path $envDir "web.log") }
+    [System.IO.File]::WriteAllText($metaPath, (($meta | ConvertTo-Json -Depth 6) + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
+    # substitui a RESERVA feita no inicio (mesmo Name): nao duplica a entrada.
+    # Pid=0/Url="" = "instalado, ainda nao no ar" — exatamente o que o 'up' espera.
+    $reg = @(Read-Registry) | Where-Object { $_.Name -ne $Name }
+    $reg = @($reg) + [ordered]@{ Name=$Name; Port=$port; Pid=0; Home=$homeDir; Url="" }
+    Write-Registry @($reg)
     # 5) sobe a instancia CAPTURANDO a saida: o core novo imprime a URL com o
     #    token de autenticacao e sem ela a GUI responde 401.
     $started = Start-CoreInstance -Name $Name -EnvDir $envDir -HomeDir $homeDir -Bin $bin -Port $port -Core $Core
-    $meta = [ordered]@{ name=$Name; core=$Core; port=$port; url=$started.Url;
-                       home=$homeDir; coreRoot=$coreRoot; created=(Get-Date -Format o); log=$started.Log }
-    # SEM BOM: este meta.json e lido por JSON.parse no layout-panel-plugin.js e
-    # no freellmapi-shortcut-plugin.js — com BOM a leitura falhava em silencio
-    # (o badge FreeLLMAPI caia no gateway global em vez da porta da instancia).
-    $metaJson = ($meta | ConvertTo-Json -Depth 6)
-    [System.IO.File]::WriteAllText((Join-Path $envDir "meta.json"), ($metaJson + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
-    # substitui a RESERVA feita no inicio (mesmo Name): nao duplica a entrada,
-    # e o `Reserved` some junto (a porta passa a ser "de verdade" da instancia)
+    $meta.url = $started.Url
+    [System.IO.File]::WriteAllText($metaPath, (($meta | ConvertTo-Json -Depth 6) + "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
     $reg = @(Read-Registry) | Where-Object { $_.Name -ne $Name }
     $reg = @($reg) + [ordered]@{ Name=$Name; Port=$port; Pid=$started.Proc.Id; Home=$homeDir; Url=$started.Url }
     Write-Registry @($reg)
