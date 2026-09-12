@@ -504,3 +504,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.117.
 ## [v0.2.119] — 2026-09-11 23:08 (máquina BOOK-FRSV64J9S3)
 Release manual/estrutural — 1 commit(s) desde v0.2.118.
   - 35df01b fix(win): create nao apaga mais o core instalado quando o boot demora
+
+## [v0.2.120] — 2026-09-11 23:24 (máquina BOOK-FRSV64J9S3)
+Release manual/estrutural — 1 commit(s) desde v0.2.119.
+  - 04659f4 feat(win): atalho por instancia no Desktop + Menu Iniciar
