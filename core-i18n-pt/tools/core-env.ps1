@@ -28,8 +28,14 @@ $ErrorActionPreference = "Stop"
 # Host do PowerShell (5.1 ou 7+): os atalhos precisam de um caminho ESTAVEL para
 # o pwsh.exe — o da Store (...\Microsoft.PowerShell_7.x\pwsh.exe) muda a cada
 # atualizacao e o atalho deixaria de funcionar.
-$psHostHelper = Join-Path $PSScriptRoot "ps-host.ps1"
-if (Test-Path $psHostHelper) { . $psHostHelper }
+# O helper mora em <repo>\tools\ps-host.ps1 (nao nesta pasta); procura nos dois
+# lugares para o script funcionar mesmo se for movido.
+foreach ($psHostHelper in @(
+    (Join-Path $PSScriptRoot "ps-host.ps1"),
+    (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "tools\ps-host.ps1")
+  )) {
+  if (Test-Path $psHostHelper) { . $psHostHelper; break }
+}
 
 $Repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent   # ...\dsh-h-v1
 $Base = Join-Path $env:USERPROFILE ".dsh-envs"
@@ -150,6 +156,52 @@ function Remove-InstanceShortcut([string]$n) {
     if (Test-Path $p) { Remove-Item $p -Force -ErrorAction SilentlyContinue; $feitos = $feitos + 1 }
   }
   return $feitos
+}
+
+# ── Janela de APP isolada (igual a GUI principal) ───────────────────────────
+# 'Start-Process <url>' abria uma ABA no navegador do dia a dia: a instancia
+# dividia cookies/sessao/extensoes com a navegacao normal e nao parecia um app.
+# O run-gui.ps1 ja abria a GUI principal com --app=<url> + --user-data-dir
+# proprio; aqui fazemos o mesmo por instancia, com o perfil em
+# ~/.dsh-envs\<nome>\app-profile (o create ja EXCLUIA app-profile da copia do
+# config, justamente por ser perfil de navegador — mas nada o criava).
+function Instance-Lang {
+  if ($env:DSH_LANG) { return $env:DSH_LANG }
+  $ui = [System.Globalization.CultureInfo]::CurrentUICulture.Name.ToLowerInvariant()
+  if ($ui -like "pt*") { return "pt-BR" }
+  if ($ui -like "zh*") { return "zh-CN" }
+  return "en-US"
+}
+function Open-InstanceWindow([string]$Url, [string]$ProfileDir, [string]$Lang) {
+  # devolve $true quando abriu como JANELA DE APP, $false quando caiu no navegador
+  $cands = @()
+  $pf86 = ${env:ProgramFiles(x86)}; $pf = ${env:ProgramFiles}
+  if ($pf86) { $cands += (Join-Path $pf86 "Microsoft\Edge\Application\msedge.exe"); $cands += (Join-Path $pf86 "Google\Chrome\Application\chrome.exe") }
+  if ($pf)   { $cands += (Join-Path $pf "Microsoft\Edge\Application\msedge.exe");   $cands += (Join-Path $pf "Google\Chrome\Application\chrome.exe") }
+  if ($ProfileDir) { try { New-Item -ItemType Directory -Force -Path $ProfileDir | Out-Null } catch { } }
+  foreach ($exe in $cands) {
+    if (Test-Path $exe) {
+      $a = @("--app=$Url", "--window-size=1440,900", "--lang=$Lang")
+      if ($ProfileDir) { $a += "--user-data-dir=$ProfileDir" }
+      Start-Process -FilePath $exe -ArgumentList $a | Out-Null
+      return $true
+    }
+  }
+  Start-Process $Url | Out-Null
+  return $false
+}
+function Open-Instance([string]$Url, [string]$EnvDir) {
+  # Respeita DSH_NO_BROWSER (usado pelos testes e pelo painel) e usa a URL COM
+  # TOKEN: numa janela de app com perfil novo, o token grava o cookie de sessao
+  # e o core redireciona para '/'.
+  if ($env:DSH_NO_BROWSER) { return }
+  if (-not $Url) { return }
+  $perfil = if ($EnvDir) { Join-Path $EnvDir "app-profile" } else { "" }
+  if (Open-InstanceWindow -Url $Url -ProfileDir $perfil -Lang (Instance-Lang)) {
+    Write-Host "[OK] janela do app aberta (perfil isolado: $perfil)"
+  } else {
+    Write-Host "[i] Edge/Chrome nao encontrado - abri no navegador padrao"
+  }
 }
 
 # ── Reserva de porta ────────────────────────────────────────────────────────
@@ -411,7 +463,7 @@ switch ($Command) {
     # ja no ar E com token conhecido -> so abre
     if ($vivo -and ("$($mi.url)" -match "token=")) {
         Write-Host "[OK] instancia '$Name' ja esta no ar: $($mi.url)"
-        if (-not $env:DSH_NO_BROWSER) { Start-Process $mi.url | Out-Null }
+        Open-Instance -Url $mi.url -EnvDir $envDir
         break
     }
     # sem token (ou processo morto): reinicia capturando a URL autenticada
@@ -423,7 +475,7 @@ switch ($Command) {
     for ($i=0; $i -lt $reg.Count; $i++) { if ($reg[$i].Name -eq $Name) { $reg[$i].Pid=$started.Proc.Id; $reg[$i].Url=$started.Url } }
     Write-Registry @($reg)
     Write-Host "[OK] instancia '$Name' no ar: $($started.Url)"
-    if (-not $env:DSH_NO_BROWSER) { Start-Process $started.Url | Out-Null }
+    Open-Instance -Url $started.Url -EnvDir $envDir
   }
   "import" {
     if (-not $Name) { throw "Informe o nome (import <nome> [--from <origem>])" }
