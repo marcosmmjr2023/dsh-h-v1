@@ -25,6 +25,12 @@ try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } 
 try { $OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
 $ErrorActionPreference = "Stop"
 
+# Host do PowerShell (5.1 ou 7+): os atalhos precisam de um caminho ESTAVEL para
+# o pwsh.exe — o da Store (...\Microsoft.PowerShell_7.x\pwsh.exe) muda a cada
+# atualizacao e o atalho deixaria de funcionar.
+$psHostHelper = Join-Path $PSScriptRoot "ps-host.ps1"
+if (Test-Path $psHostHelper) { . $psHostHelper }
+
 $Repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent   # ...\dsh-h-v1
 $Base = Join-Path $env:USERPROFILE ".dsh-envs"
 $RegistryFile = Join-Path $Base ".registry.json"
@@ -81,6 +87,69 @@ function Lock-Registry([int]$TimeoutMs = 20000) {
 function Unlock-Registry($handle) {
   if ($handle) { try { $handle.Dispose() } catch { } }
   Remove-Item (Join-Path $Base ".registry.lock") -Force -ErrorAction SilentlyContinue
+}
+
+# ── Atalhos por instancia (Desktop + Menu Iniciar) ──────────────────────────
+# Antes so existia o .bat dentro de ~/.dsh-envs\<nome>, que ninguem acha — a
+# instancia ficava sem icone para clicar. O atalho chama 'core-env.ps1 up <nome>':
+# sobe a instancia se preciso, captura a URL autenticada (o token muda a cada
+# boot, por isso a URL nao pode ficar fixa no atalho) e abre o navegador.
+# As funcoes abaixo NAO escrevem na saida (a saida deste script e lida pelo
+# painel): devolvem contagens e quem chama imprime a mensagem.
+function Shortcut-Nome([string]$n) { return "DeepSeek Harness - $n.lnk" }
+function Shortcut-Caminhos([string]$n) {
+  $arq = Shortcut-Nome $n
+  # DOIS caminhos de Desktop de proposito. Nesta maquina o registro aponta o
+  # Desktop do shell para '...\OneDrive\antigos-ate-out-2025\Desktop' — uma pasta
+  # ARQUIVADA dentro do OneDrive (o proprio atalho da GUI principal caiu la e o
+  # usuario nao o ve). O desktop realmente usado e %USERPROFILE%\Desktop. Como
+  # nao da para saber qual o usuario olha, gravamos nos dois (dedup abaixo) mais
+  # o Menu Iniciar, que e o lugar confiavel.
+  $cands = @(
+    (Join-Path ([Environment]::GetFolderPath("Desktop")) $arq),
+    (Join-Path $env:USERPROFILE ("Desktop\" + $arq)),
+    (Join-Path $env:APPDATA ("Microsoft\Windows\Start Menu\Programs\" + $arq))
+  )
+  $vistos = @{}
+  $out = @()
+  foreach ($c in $cands) {
+    $k = $c.ToLowerInvariant()
+    if (-not $vistos.ContainsKey($k)) { $vistos[$k] = $true; $out += $c }
+  }
+  return $out
+}
+function New-InstanceShortcut([string]$n) {
+  $tgt = $null
+  if (Get-Command Get-PsHostPersistPath -ErrorAction SilentlyContinue) { $tgt = Get-PsHostPersistPath }
+  if (-not $tgt) { $tgt = "powershell.exe" }
+  # nome proprio: $args e automatico no PowerShell e nao pode ser reusado aqui
+  $argLnk = "-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $PSScriptRoot "core-env.ps1") + "`" up $n"
+  $ico = Join-Path $Repo "assets\deepseek.ico"
+  if (-not (Test-Path $ico)) { $ico = "" }
+  $feitos = 0
+  try {
+    $ws = New-Object -ComObject WScript.Shell
+    foreach ($p in (Shortcut-Caminhos $n)) {
+      try {
+        $lnk = $ws.CreateShortcut($p)
+        $lnk.TargetPath = $tgt
+        $lnk.Arguments = $argLnk
+        $lnk.WorkingDirectory = $Repo
+        $lnk.Description = "DeepSeek Harness - instancia $n (core isolado)"
+        if ($ico) { $lnk.IconLocation = "$ico,0" }
+        $lnk.Save()
+        $feitos = $feitos + 1
+      } catch { }
+    }
+  } catch { }
+  return $feitos
+}
+function Remove-InstanceShortcut([string]$n) {
+  $feitos = 0
+  foreach ($p in (Shortcut-Caminhos $n)) {
+    if (Test-Path $p) { Remove-Item $p -Force -ErrorAction SilentlyContinue; $feitos = $feitos + 1 }
+  }
+  return $feitos
 }
 
 # ── Reserva de porta ────────────────────────────────────────────────────────
@@ -316,7 +385,15 @@ switch ($Command) {
       "if not defined PSEXE ( where powershell >nul 2>nul && set `"PSEXE=powershell`" )",
       "`"%PSEXE%`" -NoProfile -ExecutionPolicy Bypass -File `"$me`" up $Name",
       "pause") | Set-Content -Encoding ASCII $bat
-    Write-Host "[OK] instancia '$Name' criada: $($started.Url) (launcher: $bat)"
+    # 7) atalho no Desktop + Menu Iniciar, para a instancia ser clicavel como a
+    #    GUI principal (o .bat acima fica escondido em ~/.dsh-envs\<nome>)
+    $nAtalhos = New-InstanceShortcut $Name
+    if ($nAtalhos -gt 0) {
+      Write-Host "[OK] atalho '$(Shortcut-Nome $Name)' criado no Desktop e no Menu Iniciar"
+    } else {
+      Write-Host "[i] nao consegui criar os atalhos - launcher: $bat"
+    }
+    Write-Host "[OK] instancia '$Name' criada: $($started.Url)"
   }
   "up" {
     if (-not $Name) { throw "Informe o nome (up <nome>)" }
@@ -395,10 +472,30 @@ switch ($Command) {
       Where-Object { $_.CommandLine -like "*dsh-envs*$Name*" } |
       ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
     Remove-Item -Recurse -Force (Env-Home $Name) -ErrorAction SilentlyContinue
+    # a mensagem abaixo sempre prometeu "e atalhos", mas nada os removia: os
+    # icones ficavam no Desktop/Menu Iniciar apontando para uma instancia morta
+    $nAtalhos = Remove-InstanceShortcut $Name
     $reg = @(Read-Registry) | Where-Object { $_.Name -ne $Name }
     Write-Registry @($reg)
     if ($entry.Pid) { Stop-Process -Id $entry.Pid -Force -ErrorAction SilentlyContinue }
-    Write-Host "[OK] instancia '$Name' removida (e atalhos/pasta/perfil)"
+    Write-Host "[OK] instancia '$Name' removida (e $nAtalhos atalho(s)/pasta/perfil)"
+  }
+  "shortcut" {
+    # (Re)cria o atalho de Desktop + Menu Iniciar. Sem nome: todas as instancias
+    # do registro (util para as que foram criadas antes desta funcao existir).
+    $alvos = @()
+    if ($Name) {
+      if (-not (Entry $Name)) { throw "Instancia '$Name' nao existe (veja: core-env.ps1 ports)" }
+      $alvos = @($Name)
+    } else {
+      $alvos = @(Read-Registry | ForEach-Object { $_.Name })
+    }
+    if ($alvos.Count -eq 0) { Write-Host "i nenhuma instancia no registro"; break }
+    foreach ($alvo in $alvos) {
+      $n = New-InstanceShortcut $alvo
+      if ($n -gt 0) { Write-Host "[OK] atalho de '$alvo': '$(Shortcut-Nome $alvo)' (Desktop + Menu Iniciar)" }
+      else { Write-Host "[X] nao consegui criar o atalho de '$alvo'" }
+    }
   }
   default { # ports
     Write-Host "== Instancias (registro) =="
