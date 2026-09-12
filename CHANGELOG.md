@@ -496,3 +496,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.115.
 Release manual/estrutural — 2 commit(s) desde v0.2.116.
   - 3a5e39d fix(badge): versao curta no run-gui + LayoutPanel adota badge por ID
   - e651022 fix(ci): piai-meta-patch sem SC2066 (CI estava vermelho desde 569ec3b)
+
+## [v0.2.118] — 2026-09-11 21:35 (máquina BOOK-FRSV64J9S3)
+Release manual/estrutural — 1 commit(s) desde v0.2.117.
+  - 93319d5 feat(llm): DeepSeek V4.1-Flash canonico (deepseek-flash) com visao nativa
