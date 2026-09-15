@@ -7,6 +7,7 @@
 .encryption-key
 sessions/
 storages/
+attachments/
 # dependências de runtime do harness por perfil (nunca versionadas)
 node_modules/
 *.log

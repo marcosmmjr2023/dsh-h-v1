@@ -51,3 +51,8 @@ overlay/.dsh-autoupdate.off
 overlay/.dsh-core-history.json
 overlay/.dsh-core-check.json
 overlay/app-profile/
+
+# Anexos de sessão (cache do harness): são do usuário, contêm detalhes da
+# máquina (caminhos, hostname) e não têm valor de projeto. Espelhar isso no
+# repositório público era acidente do espelho automático da config viva.
+overlay/attachments/
