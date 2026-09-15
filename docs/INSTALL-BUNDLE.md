@@ -33,6 +33,10 @@ Para remover:
 dsh plugin --profile web remove freedsh
 ```
 
+> Instalação e remoção testadas de ponta a ponta em um `DSH_HOME` limpo: o `add`
+> registra `freedsh` em `dsh.profile.bundles`, e o `remove` tira a dependência **e** a
+> linha do bundle do perfil, sem deixar pasta no `node_modules`.
+
 ## O que entra
 
 Seis plugins, registrados na camada do perfil (nada é sobrescrito no núcleo):

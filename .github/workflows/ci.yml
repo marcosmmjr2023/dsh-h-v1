@@ -49,6 +49,20 @@ jobs:
       - name: Valida manifest.json
         run: python3 -m json.tool manifest.json >/dev/null && echo "✔ manifest.json válido"
 
+      - name: Nenhum dado do usuário versionado
+        run: |
+          set -e
+          # Anexos de sessão, sessões, storages, perfil do app e credenciais nunca
+          # podem entrar num repositório público. Foi assim que anexos com hostname
+          # de VPS e caminhos pessoais apareceram aqui (espelho automático da config
+          # viva). Falha o CI se voltarem a ser versionados.
+          padrao='^(overlay/)?(attachments|sessions|storages|app-profile)/|\.credentials\.yaml|\.encryption-key$|\.anonymous-user-id$|\.dsh-version\.json$'
+          if git ls-files | grep -E "$padrao"; then
+            echo "::error::dado do usuário versionado no repositório público — veja tools/sync-excludes.txt e o .gitignore"
+            exit 1
+          fi
+          echo "✔ nenhum dado do usuário versionado"
+
   tests:
     runs-on: ubuntu-latest
     steps:
