@@ -90,6 +90,11 @@ Landing page (install command): https://marcosmmjr2023.github.io/dsh-h-v1/
 
 Thanks for the Harness itself; it's the reason any of this exists.
 
+> **Status: publicado.** [Discussion #6685](https://github.com/deepseek-ai/deepseek-harness/discussions/6685) no repositório do upstream,
+> categoria "Show Your Plugins!", em 2026-09-15. As notas de publicação
+> abaixo continuam valendo para a manutenção do thread (responder rápido no começo, não fazer bump,
+> e não marcar mantenedores).
+>
 > **Notas de publicação**: publique em dia útil, no começo da manhã no horário de Brasília (por
 > volta das 9h), para pegar o começo do dia útil na Ásia, que é quando o repositório costuma ter
 > mais movimento — mas trate o horário como secundário: aqui o que decide é o tom. **Não marque

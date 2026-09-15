@@ -1,5 +1,13 @@
 # Material de lançamento do FreeDSH
 
+> **Status em 15/09/2026:** a Discussion no repositório do upstream **já foi publicada**, por decisão
+> do dono do projeto, fora da ordem sugerida neste playbook — está em
+> <https://github.com/deepseek-ai/deepseek-harness/discussions/6685> (categoria *Show Your Plugins!*),
+> com o texto de `upstream-discussion.md`. A recomendação de esperar continua valendo para as
+> **awesome lists**: elas costumam recusar projeto sem tração comprovada, então seguem em D+14–30.
+> Enquanto o thread do upstream estiver vivo, a prioridade é responder em até um dia (sem bump e sem
+> marcar mantenedores).
+
 Este diretório reúne os textos prontos para publicar, um por comunidade, cada um adaptado ao
 público daquele lugar. O objetivo não é "viralizar": é conseguir os **primeiros usuários reais**
 e os primeiros relatos reproduzíveis.
