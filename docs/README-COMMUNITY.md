@@ -10,5 +10,7 @@ Use these documents together:
 - [GITHUB-SETTINGS.md](GITHUB-SETTINGS.md) — repository-level settings checklist.
 - [DISCUSSIONS-SEED.md](DISCUSSIONS-SEED.md) — initial Discussion posts.
 - [LAUNCH-CHECKLIST.md](LAUNCH-CHECKLIST.md) — launch execution checklist.
+- [INSTALL-BUNDLE.md](INSTALL-BUNDLE.md) — instalar só os plugins, como bundle do DSH (`dsh plugin add`), sem instalador.
+- [launch/README.md](launch/README.md) — playbook de divulgação: ordem de publicação, textos por canal e régua de métricas.
 
 The project should prioritize useful technical evidence, reproducible provider reports and contributor onboarding over generic promotion.
