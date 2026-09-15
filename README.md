@@ -91,7 +91,7 @@ FreeDSH also ships as a **DSH bundle**, for people who already have a working ha
 dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1
 ```
 
-Remove it with `dsh plugin --profile web remove freedsh`. The bundle registers plugins only — it never touches your keys, providers or settings.
+Remove it with `dsh plugin --profile web remove freedsh`. The bundle registers plugins only — it never touches your keys, providers or settings. Requirements, what is included, where the state lives and common issues: **[docs/INSTALL-BUNDLE.md](docs/INSTALL-BUNDLE.md)**.
 
 ---
 
@@ -114,6 +114,7 @@ Technical overview: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 | Topic | Guide |
 |---|---|
 | Windows | [docs/WINDOWS.md](docs/WINDOWS.md) · [Português](docs/WINDOWS-PT.md) |
+| Install as a DSH bundle (`dsh plugin add`) | [docs/INSTALL-BUNDLE.md](docs/INSTALL-BUNDLE.md) |
 | Linux / server | [docs/SERVER-MAP.md](docs/SERVER-MAP.md) |
 | Core updates / parallel instances | [docs/CORE-UPDATE.md](docs/CORE-UPDATE.md) |
 | Two-way sync / rollback | [docs/SYNC.en.md](docs/SYNC.en.md) · [Português](docs/SYNC.md) |

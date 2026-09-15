@@ -48,6 +48,13 @@ Nada aqui é opcional se o objetivo é que alguém consiga instalar.
 - [ ] GIF de 20–30s no topo do README + 3–4 screenshots sem chaves, sem paths pessoais.
 - [ ] Pelo menos **um teste real e datado** de provedor/fallback, para citar quando alguém perguntar.
 - [ ] Testar a instalação de 1 linha em uma máquina limpa, em PowerShell 5.1 **e** 7.x.
+- [ ] Testar a instalação como **bundle** em um `DSH_HOME` limpo:
+      `dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1` (e a remoção com `remove freedsh`).
+      Instruções em `docs/INSTALL-BUNDLE.md`. **Já validado**: os 6 plugins carregam e as APIs
+      (`/api/dsh-version`, `/api/smart-router`, `/api/model-visibility`, `/api/layout-info`) respondem 200.
+- [ ] Publicar no npm (`Actions → publish`), se você tiver o secret `NPM_TOKEN`. Depois disso o
+      comando curto `dsh plugin --profile web add freedsh` passa a funcionar e o projeto aparece na
+      busca do npm — aí vale trocar o comando nos posts e no README/página.
 - [ ] Confirmar que o instalador não quebrou nenhuma instalação existente.
 
 Cuidado conhecido: existe **um** comando canônico de instalação no Windows — o mesmo do `README.md` e
@@ -59,6 +66,10 @@ PowerShell 5.1 **e** uma cópia velha vinda do cache do `raw.githubusercontent.c
 tiver uma delas, troque pelo comando canônico. Se o formato do canal não couber o comando inteiro
 (uma thread do X, por exemplo), aponte para a landing page
 <https://marcosmmjr2023.github.io/dsh-h-v1/> como fonte do comando, em vez de encurtar o comando.
+
+> O mesmo vale para o bundle: enquanto o pacote **não** estiver publicado no npm, cite sempre a forma
+> com git (`dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1`). O comando curto
+> (`... add freedsh`) só pode aparecer depois de um `npm publish` bem-sucedido.
 
 ## Ordem de publicação
 

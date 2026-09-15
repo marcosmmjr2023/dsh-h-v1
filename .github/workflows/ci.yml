@@ -57,6 +57,22 @@ jobs:
         run: |
           ./tools/test.sh
 
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Conteúdo do pacote npm (bundle instalável)
+        run: |
+          set -e
+          # Falha se faltar arquivo que o bundle precisa ou se entrar no pacote
+          # algo da config viva (anexos, settings.yaml, profiles, credenciais).
+          node tools/check-npm-package.mjs
+
   windows-syntax:
     runs-on: ubuntu-latest
     steps:

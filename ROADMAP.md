@@ -4,7 +4,10 @@ This roadmap is intentionally lightweight. It describes directions where communi
 
 ## Now — make the project easy to adopt
 
-- [ ] Add a short demo GIF/video to the README.
+- [x] Add a short demo GIF/video to the README. *(done — `assets/freedsh-demo.gif`)*
+- [x] Ship the plugins as an installable DSH bundle, so an existing harness can add them with `dsh plugin --profile web add`. *(done for the git form — `dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1`; see [docs/INSTALL-BUNDLE.md](docs/INSTALL-BUNDLE.md))*
+- [ ] Publish the bundle to the npm registry (`npm publish`), so the shorter `dsh plugin --profile web add freedsh` works and the project is searchable on npm. The workflow is ready (`.github/workflows/publish.yml`, needs the `NPM_TOKEN` secret).
+- [x] Publish versioned GitHub Releases with a source ZIP and checksums. *(done — `.github/workflows/release.yml`)*
 - [ ] Improve first-run provider setup and credential guidance.
 - [ ] Expand provider compatibility testing.
 - [ ] Improve installer diagnostics on Windows and Linux.
@@ -26,7 +29,7 @@ This roadmap is intentionally lightweight. It describes directions where communi
 - [ ] Better routing using observed latency/reliability.
 - [ ] User-defined routing policies.
 - [ ] More languages and OS coverage.
-- [ ] Easier plugin packaging/discovery for reusable FreeDSH components.
+- [x] Easier plugin packaging/discovery for reusable FreeDSH components. *(bundle packaging done; publishable to npm and validated by `tools/check-npm-package.mjs`)*
 
 ## Contribution ideas
 

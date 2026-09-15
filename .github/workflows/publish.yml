@@ -1,0 +1,132 @@
+# Publish — publica o pacote `freedsh` no npm (registry público).
+# ═══════════════════════════════════════════════════════════════════════════
+# Por que existe: com o pacote no npm, instalar os plugins vira
+#
+#   dsh plugin --profile web add freedsh
+#
+# (sem git, sem compilar nada) além de o projeto aparecer na busca do npm.
+#
+# Como usar (uma vez): crie um token de automação em
+# https://www.npmjs.com/settings/<seu-usuario>/tokens (tipo "Automation") e
+# salve como secret do repositório com o nome NPM_TOKEN
+# (Settings → Secrets and variables → Actions → New repository secret).
+#
+# Depois: Actions → publish → Run workflow, informando a tag (ex.: v0.2.125) e o
+# dist-tag (latest por padrão). O workflow confere que a versão do package.json
+# é igual à da tag, publica com --provenance (atestado de origem assinado pelo
+# GitHub) e falha se a versão já existir no registry.
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag cuja versão será publicada (ex.: v0.2.125)"
+        required: true
+        type: string
+      dist_tag:
+        description: "dist-tag do npm"
+        required: false
+        type: string
+        default: latest
+      dry_run:
+        description: "Só simular (npm publish --dry-run), sem publicar"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # exigido pelo --provenance
+
+concurrency:
+  group: publish-npm
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publicar no npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (com tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node + registry público
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Conferir tag, versão e token
+        id: chk
+        env:
+          TAG: ${{ inputs.tag }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${TAG#refs/tags/}"
+          if ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::a tag $TAG não existe neste repositório"
+            exit 1
+          fi
+          git checkout --quiet "tags/$TAG"
+          versao="$(node -p "require('./package.json').version")"
+          esperado="${TAG#v}"
+          echo "versão do package.json: $versao | tag: $TAG"
+          if [ "$versao" != "$esperado" ]; then
+            echo "::error::package.json está em $versao mas a tag é $TAG — sincronize antes de publicar (tools/release.sh faz isso automaticamente)."
+            exit 1
+          fi
+          nome="$(node -p "require('./package.json').name")"
+          if npm view "$nome@$versao" version >/dev/null 2>&1; then
+            echo "::error::$nome@$versao já existe no npm — nada a publicar. Bump a versão antes."
+            exit 1
+          fi
+          if [ -z "${NPM_TOKEN:-}" ] && [ "${{ inputs.dry_run }}" != "true" ]; then
+            echo "::error::o secret NPM_TOKEN não está configurado neste repositório (Settings → Secrets and variables → Actions). Para só simular, rode com dry_run = true."
+            exit 1
+          fi
+          echo "versao=$versao" >> "$GITHUB_OUTPUT"
+          echo "nome=$nome" >> "$GITHUB_OUTPUT"
+
+      - name: Instalar e empacotar (checagem do conteúdo)
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund --ignore-scripts
+          npm pack --dry-run
+
+      - name: Publicar
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DIST_TAG: ${{ inputs.dist_tag }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ "$DRY" = "true" ]; then
+            npm publish --dry-run --access public
+            echo "✔ simulação concluída (nada foi publicado)"
+            exit 0
+          fi
+          npm publish --access public --provenance --tag "$DIST_TAG"
+          echo "✔ publicado: https://www.npmjs.com/package/freedsh"
+
+      - name: Resumo
+        if: inputs.dry_run != true
+        env:
+          NOME: ${{ steps.chk.outputs.nome }}
+          VERSAO: ${{ steps.chk.outputs.versao }}
+        run: |
+          {
+            echo "### Publicado no npm"
+            echo
+            echo "- pacote: \`$NOME@$VERSAO\`"
+            echo "- página: https://www.npmjs.com/package/$NOME"
+            echo
+            echo "Instalação para quem já usa o DeepSeek Harness:"
+            echo
+            echo '```bash'
+            echo "dsh plugin --profile web add $NOME"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

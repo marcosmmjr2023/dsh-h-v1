@@ -91,7 +91,7 @@ O FreeDSH também é distribuído como **bundle do DSH**, para quem já tem o ha
 dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1
 ```
 
-Para remover: `dsh plugin --profile web remove freedsh`. O bundle só registra plugins — ele não mexe nas suas chaves, provedores nem configurações.
+Para remover: `dsh plugin --profile web remove freedsh`. O bundle só registra plugins — ele não mexe nas suas chaves, provedores nem configurações. Requisitos, o que entra, onde fica o estado e problemas comuns: **[docs/INSTALL-BUNDLE.md](docs/INSTALL-BUNDLE.md)**.
 
 ---
 
@@ -114,6 +114,7 @@ Visão técnica: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 | Tema | Guia |
 |---|---|
 | Windows | [docs/WINDOWS-PT.md](docs/WINDOWS-PT.md) · [English](docs/WINDOWS.md) |
+| Instalar como bundle do DSH (`dsh plugin add`) | [docs/INSTALL-BUNDLE.md](docs/INSTALL-BUNDLE.md) |
 | Linux / servidor | [docs/SERVER-MAP.md](docs/SERVER-MAP.md) |
 | Atualização do core / instâncias paralelas | [docs/CORE-UPDATE.md](docs/CORE-UPDATE.md) |
 | Sincronização / rollback | [docs/SYNC.md](docs/SYNC.md) · [English](docs/SYNC.en.md) |
