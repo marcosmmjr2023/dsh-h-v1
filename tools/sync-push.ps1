@@ -22,8 +22,8 @@ git -C $CLONE pull --rebase 2>$null
 
 robocopy $LIVE (Join-Path $CLONE "overlay") /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
     /XD sessions storages app-profile `
-    /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
-        *.log *.bak *.bak-* state.json *.tpl
+    /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id .encryption-key `
+        .dsh-version.json .dsh-autoupdate.off .dsh-core-check.json .dsh-core-history.json *.log *.log.err *.bak *.bak-* state.json freeapi.db freeapi.db-journal *.tpl
 if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy reportou erros (código $LASTEXITCODE)" -ForegroundColor Yellow }
 
 # cordis.patch.yml é GERADO por máquina (nunca volta para o repo)

@@ -44,6 +44,7 @@ Thumbs.db
 
 # ── overlay/: cordis.patch.yml é GERADO pelo sync a partir do .tpl
 overlay/cordis.patch.yml
+overlay/.encryption-key
 overlay/.dsh-version.json
 overlay/.dsh-autoupdate.off
 

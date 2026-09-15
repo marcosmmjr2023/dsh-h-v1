@@ -4,6 +4,7 @@
 .credentials.yaml.bak
 .credentials.yaml.bak-*
 .anonymous-user-id
+.encryption-key
 sessions/
 storages/
 # dependências de runtime do harness por perfil (nunca versionadas)

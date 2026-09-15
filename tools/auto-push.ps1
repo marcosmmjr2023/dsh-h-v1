@@ -39,7 +39,7 @@ $SELF    = Split-Path -Parent $MyInvocation.MyCommand.Path
 $CLONE   = if ($env:DSH_CLONE) { $env:DSH_CLONE } else { Split-Path -Parent $SELF }
 $LIVE    = if ($env:DSH_LIVE)  { $env:DSH_LIVE  } else { Join-Path $env:USERPROFILE ".dsh" }
 $CHLOG   = Join-Path $CLONE "CHANGELOG.md"
-$HOST    = $env:COMPUTERNAME
+$MACHINE = $env:COMPUTERNAME
 
 if (-not (Test-Path (Join-Path $CLONE ".git"))) { Write-Host "ERRO: $CLONE não é um clone git." -ForegroundColor Red; exit 1 }
 if (-not (Test-Path $LIVE)) { Write-Host "ERRO: config viva $LIVE não existe." -ForegroundColor Red; exit 1 }
@@ -118,8 +118,8 @@ Write-Host "▶ auto-push: $LIVE → $CLONE\overlay (publicação rotineira, via
 if ($DryRun) {
     robocopy $LIVE (Join-Path $CLONE "overlay") /L /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
         /XD sessions storages node_modules app-profile `
-        /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
-            .dsh-version.json .dsh-autoupdate.off *.log *.bak *.bak-* state.json *.tpl
+        /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id .encryption-key `
+            .dsh-version.json .dsh-autoupdate.off .dsh-core-check.json .dsh-core-history.json *.log *.log.err *.bak *.bak-* state.json freeapi.db freeapi.db-journal *.tpl
     $ahead = @(git -C $CLONE log "@{u}..HEAD" --oneline 2>$null).Count
     Write-Host "── commits locais ainda não enviados: $ahead ──"
     if ($ahead -gt 0) { git -C $CLONE log "@{u}..HEAD" --oneline }
@@ -139,8 +139,8 @@ if (-not (Invoke-RebasePull)) {
 # 2) Espelha a config viva sobre o espelho do clone
 robocopy $LIVE (Join-Path $CLONE "overlay") /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
     /XD sessions storages node_modules app-profile `
-    /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
-        .dsh-version.json .dsh-autoupdate.off *.log *.bak *.bak-* state.json *.tpl | Out-Null
+    /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id .encryption-key `
+        .dsh-version.json .dsh-autoupdate.off .dsh-core-check.json .dsh-core-history.json *.log *.log.err *.bak *.bak-* state.json freeapi.db freeapi.db-journal *.tpl | Out-Null
 if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy reportou erros (código $LASTEXITCODE)" -ForegroundColor Yellow }
 # cordis.patch.yml é GERADO por máquina — nunca volta para o repo
 Remove-Item -Force (Join-Path $CLONE "overlay\cordis.patch.yml") -ErrorAction SilentlyContinue
@@ -199,7 +199,7 @@ if (-not (Test-Path $CHLOG)) {
 }
 $entry = @(
     "",
-    "## [$V] — $NOW (máquina $HOST)",
+    "## [$V] — $NOW (máquina $MACHINE)",
     "Publicação automática — última sincronização desta máquina."
 )
 if ($NFILES -gt 0) {

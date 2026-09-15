@@ -33,8 +33,8 @@ New-Item -ItemType Directory -Force -Path $snapDir | Out-Null
 if (Test-Path $LIVE) {
     robocopy $LIVE $snapDir /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
         /XD sessions storages app-profile node_modules `
-        /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
-            *.log *.bak *.bak-* state.json *.tpl | Out-Null
+        /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id .encryption-key `
+            .dsh-version.json .dsh-autoupdate.off .dsh-core-check.json .dsh-core-history.json *.log *.log.err *.bak *.bak-* state.json freeapi.db freeapi.db-journal *.tpl | Out-Null
     Write-Host "✔ snapshot criado: $snapName"
 }
 # manutenção: mantém só as 8 mais recentes
@@ -46,7 +46,7 @@ New-Item -ItemType Directory -Force -Path $LIVE | Out-Null
 # robocopy: /E copia subpastas; /XD e /XF excluem segredos/estado/backups
 robocopy (Join-Path $CLONE "overlay") $LIVE /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
     /XD sessions storages app-profile node_modules `
-    /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
+    /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id .encryption-key `
         *.log *.bak *.bak-* state.json
 if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy reportou erros (código $LASTEXITCODE)" -ForegroundColor Yellow }
 

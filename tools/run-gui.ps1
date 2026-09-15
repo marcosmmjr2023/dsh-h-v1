@@ -19,13 +19,13 @@ function Ensure-Shortcuts {
     # atalho aponta para o MESMO host que esta rodando (5.1 ou 7+)
     $tgt = Get-PsHostPersistPath
     if (-not $tgt) { $tgt = "powershell.exe" }
-    $args = "-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Repo "tools\run-gui.ps1") + "`""
+    $lnkArgs = "-NoProfile -ExecutionPolicy Bypass -File `"" + (Join-Path $Repo "tools\run-gui.ps1") + "`""
     $desk = Join-Path ([Environment]::GetFolderPath("Desktop")) "DeepSeek Harness.lnk"
     $sm = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\DeepSeek Harness.lnk"
     foreach ($p in @($desk, $sm)) {
       $lnk = $ws.CreateShortcut($p)
       $lnk.TargetPath = $tgt
-      $lnk.Arguments = $args
+      $lnk.Arguments = $lnkArgs
       $lnk.WorkingDirectory = $Repo
       $lnk.Description = "DeepSeek Harness (dsh-h-v1)"
       if ($ico) { $lnk.IconLocation = "$ico,0" }
