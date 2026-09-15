@@ -116,8 +116,8 @@ Write-Host "▶ auto-push: $LIVE → $CLONE\overlay (publicação rotineira, via
 
 # Dry-run: mostra o que seria espelhado sem alterar nada
 if ($DryRun) {
-    robocopy $LIVE (Join-Path $CLONE "overlay") /L /E /IS /IT /NFL /NDL /NJH /NJS `
-        /XD sessions storages node_modules `
+    robocopy $LIVE (Join-Path $CLONE "overlay") /L /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
+        /XD sessions storages node_modules app-profile `
         /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
             .dsh-version.json .dsh-autoupdate.off *.log *.bak *.bak-* state.json *.tpl
     $ahead = @(git -C $CLONE log "@{u}..HEAD" --oneline 2>$null).Count
@@ -137,8 +137,8 @@ if (-not (Invoke-RebasePull)) {
 }
 
 # 2) Espelha a config viva sobre o espelho do clone
-robocopy $LIVE (Join-Path $CLONE "overlay") /E /IS /IT /NFL /NDL /NJH /NJS `
-    /XD sessions storages node_modules `
+robocopy $LIVE (Join-Path $CLONE "overlay") /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
+    /XD sessions storages node_modules app-profile `
     /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
         .dsh-version.json .dsh-autoupdate.off *.log *.bak *.bak-* state.json *.tpl | Out-Null
 if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy reportou erros (código $LASTEXITCODE)" -ForegroundColor Yellow }

@@ -49,3 +49,4 @@ overlay/.dsh-autoupdate.off
 
 overlay/.dsh-core-history.json
 overlay/.dsh-core-check.json
+overlay/app-profile/

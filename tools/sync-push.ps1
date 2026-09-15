@@ -20,8 +20,8 @@ if (-not (Test-Path $LIVE)) { Write-Host "ERRO: config viva $LIVE não existe." 
 Write-Host "▶ sync-push: $LIVE → $CLONE\overlay"
 git -C $CLONE pull --rebase 2>$null
 
-robocopy $LIVE (Join-Path $CLONE "overlay") /E /IS /IT /NFL /NDL /NJH /NJS `
-    /XD sessions storages `
+robocopy $LIVE (Join-Path $CLONE "overlay") /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
+    /XD sessions storages app-profile `
     /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
         *.log *.bak *.bak-* state.json *.tpl
 if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy reportou erros (código $LASTEXITCODE)" -ForegroundColor Yellow }

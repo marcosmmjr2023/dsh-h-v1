@@ -31,8 +31,8 @@ $snapName = "snap-" + (Get-Date -Format "yyyyMMdd-HHmmss") + "-" + $hash
 $snapDir  = Join-Path $SNAP_ROOT $snapName
 New-Item -ItemType Directory -Force -Path $snapDir | Out-Null
 if (Test-Path $LIVE) {
-    robocopy $LIVE $snapDir /E /IS /IT /NFL /NDL /NJH /NJS `
-        /XD sessions storages `
+    robocopy $LIVE $snapDir /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
+        /XD sessions storages app-profile node_modules `
         /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
             *.log *.bak *.bak-* state.json *.tpl | Out-Null
     Write-Host "✔ snapshot criado: $snapName"
@@ -44,8 +44,8 @@ Get-ChildItem -Path $SNAP_ROOT -Directory -Filter "snap-*" | Sort-Object Name -D
 # 2) Aplica o overlay novo sobre a config viva
 New-Item -ItemType Directory -Force -Path $LIVE | Out-Null
 # robocopy: /E copia subpastas; /XD e /XF excluem segredos/estado/backups
-robocopy (Join-Path $CLONE "overlay") $LIVE /E /IS /IT /NFL /NDL /NJH /NJS `
-    /XD sessions storages `
+robocopy (Join-Path $CLONE "overlay") $LIVE /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS `
+    /XD sessions storages app-profile node_modules `
     /XF .credentials.yaml .credentials.yaml.bak .credentials.yaml.bak-* .anonymous-user-id `
         *.log *.bak *.bak-* state.json
 if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy reportou erros (código $LASTEXITCODE)" -ForegroundColor Yellow }

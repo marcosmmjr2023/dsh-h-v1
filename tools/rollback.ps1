@@ -20,7 +20,7 @@ $MANAGED   = Join-Path $CLONE "overlay"
 
 if (-not (Test-Path (Join-Path $CLONE ".git"))) { Write-Host "ERRO: $CLONE não é um clone git." -ForegroundColor Red; exit 1 }
 
-$XD = "/XD", "sessions", "storages"
+$XD = "/XD", "sessions", "storages", "app-profile"
 $XF = "/XF", ".credentials.yaml", ".credentials.yaml.bak", ".credentials.yaml.bak-*", ".anonymous-user-id",
           "*.log", "*.bak", "*.bak-*", "state.json", "*.tpl"
 
@@ -29,7 +29,7 @@ function New-Snapshot {
     $name = "snap-" + (Get-Date -Format "yyyyMMdd-HHmmss") + "-" + $hash
     $dest = Join-Path $SNAP_ROOT $name
     New-Item -ItemType Directory -Force -Path $dest | Out-Null
-    if (Test-Path $LIVE) { robocopy $LIVE $dest /E /IS /IT $XD $XF /NFL /NDL /NJH /NJS | Out-Null }
+    if (Test-Path $LIVE) { robocopy $LIVE $dest /E /IS /IT $XD $XF /R:1 /W:1 /NFL /NDL /NJH /NJS | Out-Null }
     Write-Host "  (estado atual salvo em snapshot $name antes do rollback)"
 }
 
@@ -59,7 +59,7 @@ switch ($Cmd) {
         $dest = Join-Path $SNAP_ROOT $Arg
         if (-not (Test-Path $dest)) { Write-Host "ERRO: snapshot '$Arg' não encontrado." -ForegroundColor Red; exit 1 }
         Write-Host "▶ Restaurando snapshot: $Arg → $LIVE"
-        robocopy $dest $LIVE /E /PURGE /IS /IT $XD $XF /NFL /NDL /NJH /NJS
+        robocopy $dest $LIVE /E /PURGE /IS /IT $XD $XF /R:1 /W:1 /NFL /NDL /NJH /NJS
         if ($LASTEXITCODE -ge 8) { Write-Host "⚠ robocopy: código $LASTEXITCODE" -ForegroundColor Yellow }
         Write-Host "✔ Config viva restaurada. Reinicie o harness."
     }
@@ -104,8 +104,8 @@ switch ($Cmd) {
         # (no 7 seria "-AsByteStream") — assim roda igual nos dois hosts.
         git -C $CLONE archive --format=zip -o (Join-Path $tmp "o.zip") $Cmd overlay
         Expand-Archive -Path (Join-Path $tmp "o.zip") -DestinationPath $tmp -Force
-        robocopy (Join-Path $tmp "overlay") $MANAGED /E /IS /IT /NFL /NDL /NJH /NJS | Out-Null
-        robocopy $MANAGED $LIVE /E /IS /IT $XD $XF /NFL /NDL /NJH /NJS | Out-Null
+        robocopy (Join-Path $tmp "overlay") $MANAGED /E /IS /IT /R:1 /W:1 /NFL /NDL /NJH /NJS | Out-Null
+        robocopy $MANAGED $LIVE /E /IS /IT $XD $XF /R:1 /W:1 /NFL /NDL /NJH /NJS | Out-Null
         Remove-Item -Recurse -Force $tmp
         # regenera cordis.patch.yml local (caminhos desta máquina) conforme o ref
         & (Join-Path $SELF "render-cordis.ps1")
