@@ -524,3 +524,7 @@ Release manual/estrutural — 1 commit(s) desde v0.2.122.
 ## [v0.2.124] — 2026-09-14 23:05 (máquina DESKTOP-3DND3TP)
 Release manual/estrutural — 1 commit(s) desde v0.2.123.
   - e7a442c fix(win): auto-update travava para sempre no robocopy (app-profile) + tarefa agendada
+
+## [v0.2.125] — 2026-09-14 23:10 (máquina DESKTOP-3DND3TP)
+Release manual/estrutural — 1 commit(s) desde v0.2.124.
+  - 49287da fix(win): auto-push morria com \System.Management.Automation.Internal.Host.InternalHost (variavel somente-leitura) + exclusoes alinhadas
