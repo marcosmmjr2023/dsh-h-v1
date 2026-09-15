@@ -528,3 +528,22 @@ Release manual/estrutural — 1 commit(s) desde v0.2.123.
 ## [v0.2.125] — 2026-09-14 23:10 (máquina DESKTOP-3DND3TP)
 Release manual/estrutural — 1 commit(s) desde v0.2.124.
   - 49287da fix(win): auto-push morria com \System.Management.Automation.Internal.Host.InternalHost (variavel somente-leitura) + exclusoes alinhadas
+
+## [v0.2.126] — 2026-09-14 23:35 (máquina DESKTOP-3DND3TP)
+Publicação automática — última sincronização desta máquina.
+- Arquivos alterados (15):
+  - attachments/v1/objects/28/28c937331edfb213d527996bcd09c41b557a767e8e49618e66729a218388f48a
+  - attachments/v1/objects/68/682a05366d02480730a585c2721e8aa1c8f05db9dc3b3f926f57ff1163c5bc03
+  - attachments/v1/objects/88/888224ab70a2b5077e5ca43603250101ef40f8b717ee9184981b48ec7218a57b
+  - attachments/v1/objects/8a/8ad1903cdce01e6da7c243a9aee3519a4f5b0068846585305ab22ce35f0c34eb
+  - attachments/v1/objects/ab/ab2574e8908d13c7010d380b09480b6f819c4440ea68a8aa062f5e817a626337
+  - attachments/v1/objects/ab/ab48467b9ca5cbcad0f64468977ae8f6f1662b0a2e62c7db0890932da7c17838
+  - attachments/v1/objects/d4/d48b30c87250248871fc950021eee2deb6243aa055c6e8a9fc398df317c71247
+  - attachments/v1/objects/df/df502e03e9b2ae82fbd515ea424c7fcd092afd9405072bacaffbf37aa58c30c7
+  - attachments/v1/request-images/06/06b0fe03eabd44920b0c785e08c00e1ce6c0498be2c97c125dec5896e0376338
+  - attachments/v1/request-images/34/34614373328dd83a5cb9b02ba84420a1830ac95a36a03a5a4e6acc3ee119fe32
+  - attachments/v1/request-images/63/63fec224d9f5f659fdf75606a012c8d90d1200076b531ca08880521284402535
+  - attachments/v1/request-images/6c/6c471f6a7300d3fb4c7425db57f1146e1e923559cc4ff2bd1e995abcc972693c
+  - attachments/v1/request-images/6d/6d5fd5068cc3d16cbc8f5138a3c582f0b7c7ce9e0ee3781469aba63c74141447
+  - attachments/v1/request-images/a8/a8ab061fc8c124724a5fa37aeb370489dcf3844ebd1a15b55bcc587e523755ce
+  - attachments/v1/request-images/f0/f08750a1206f34a1f932172a204c7217a7c3fffb88712824e5b41a6dad689419
