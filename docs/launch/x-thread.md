@@ -23,12 +23,14 @@ automático para o próximo.
 
 **3/5**
 
-No Windows é um comando:
+No Windows é um comando só. A linha é longa, então copie da página do projeto — é lá que o comando
+fica sempre atualizado:
 
-`irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex`
+https://marcosmmjr2023.github.io/dsh-h-v1/
 
-Baixa o core, aplica o overlay, traduz e cria os atalhos. Testado em PowerShell 5.1 e 7.x — inclusive
-o encoding/BOM e um travamento do robocopy que descobri na marra.
+Baixa o core, aplica o overlay, traduz e cria os atalhos. Testado em PowerShell 5.1 e 7.x.
+
+E se você já tem o harness instalado, dá para instalar só os plugins — sem instalador (bundle do DSH).
 
 **4/5**
 
@@ -41,8 +43,8 @@ Tradução pt-BR do núcleo: 1078 frases.
 
 **5/5**
 
-Sendo honesto: o projeto é novo (1 star, 0 forks, 0 releases) e é NÃO oficial, sem vínculo com a
-DeepSeek.
+Sendo honesto: o projeto é novo (1 star, 0 forks, 1 release: a v0.2.125) e é NÃO oficial, sem vínculo
+com a DeepSeek. O código é MIT.
 
 O que eu preciso não é estrela, é gente que instale e diga o que quebrou.
 
@@ -68,12 +70,15 @@ automatically.
 
 **3/5**
 
-On Windows it's one line:
+On Windows it's one command. The line is long, so copy it from the project page — that's where it
+stays current:
 
-`irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex`
+https://marcosmmjr2023.github.io/dsh-h-v1/
 
 It pulls the core, applies the overlay, applies the translation and creates shortcuts. Tested on
-PowerShell 5.1 and 7.x, including the encoding/BOM bugs and a robocopy hang I found the hard way.
+PowerShell 5.1 and 7.x.
+
+And if you already run Harness, you can install just the plugins — no installer (DSH bundle).
 
 **4/5**
 
@@ -86,8 +91,8 @@ Also: full pt-BR localization of the core (1078 strings).
 
 **5/5**
 
-Being honest: this is new (1 star, 0 forks, 0 releases) and it's UNOFFICIAL — no affiliation with
-DeepSeek.
+Being honest: this is new (1 star, 0 forks, 1 release: v0.2.125) and it's UNOFFICIAL — no affiliation
+with DeepSeek. The code is MIT.
 
 I'm not asking for stars. I'm asking for people who install it and tell me what broke.
 

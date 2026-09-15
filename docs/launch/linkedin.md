@@ -31,23 +31,29 @@ O que ele faz, sem promessa que eu não possa cumprir:
   digo o que é verdade: ele foi projetado para usar modelos gratuitos antes dos pagos.
 - **Tradução do núcleo para português**, com 1078 frases traduzidas, incluindo as telas de conversa,
   de modelos, de arquivos e os visualizadores de HTML, imagem e PDF.
-- **Instalação de um comando só no Windows**, em menos de um minuto, com suporte a Linux também.
+- **Instalação de um comando só no Windows**, em menos de um minuto, com suporte a Linux também. Para
+  quem já tem o harness rodando, dá para instalar só os plugins, sem instalador nenhum (é o "bundle"
+  do DSH: `dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1`).
 - **Atualização segura.** Em vez de sobrescrever a instalação que funciona, ele testa a versão nova
   em uma instância isolada, com snapshot e rollback de um clique.
 
 Duas coisas que eu não quero esconder. A primeira é que o projeto é novo: o repositório está com
-1 star, 0 forks e nenhuma release publicada. A segunda é que a soma disso não é uma promessa de IA
-gratuita para sempre — os planos gratuitos dos provedores mudam o tempo todo. O que o FreeDSH faz é
-organizar e rotear as chaves que a própria pessoa configura, de forma que a queda de um provedor não
-pare o trabalho.
+1 star, 0 forks e **uma release publicada** (a `v0.2.125`, com o ZIP e o `SHA256SUMS.txt`). A
+descoberta real ainda é praticamente nenhuma — 90 visitas de **11 pessoas únicas** nos últimos 14
+dias —, e é justamente isso que este post tenta mudar. A segunda é que a soma disso não é uma promessa
+de IA gratuita para sempre — os planos gratuitos dos provedores mudam o tempo todo. O que o FreeDSH
+faz é organizar e rotear as chaves que a própria pessoa configura, de forma que a queda de um provedor
+não pare o trabalho.
 
-O código está aberto e o projeto é não oficial, sem vínculo com a DeepSeek.
+O código está aberto sob licença MIT (o escopo — o que a licença cobre e o que é de terceiros — está
+documentado no repositório) e o projeto é não oficial, sem vínculo com a DeepSeek.
 
 Eu não estou buscando holofote. Estou buscando **as primeiras pessoas que instalem e contem o que
 quebrou**. Se você usa IA para programar no Windows e já perdeu tempo com instalação ou com
 interface em inglês, seu relato vale muito mais para mim do que uma curtida.
 
-Se quiser testar: https://github.com/marcosmmjr2023/dsh-h-v1
+Se quiser testar: https://github.com/marcosmmjr2023/dsh-h-v1 — a página do projeto, com o comando de
+instalação e o download, está em https://marcosmmjr2023.github.io/dsh-h-v1/
 
 E se preferir só conversar sobre o problema — roteamento entre modelos, custo de IA no dia a dia,
 tradução de ferramentas de desenvolvimento — me chama. Essa parte é a que mais me interessa.

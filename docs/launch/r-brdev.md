@@ -23,11 +23,17 @@ instalador e ferramentas.
 dicionários da conversa, da tela de modelos, da sidebar de arquivos e dos visualizadores de
 HTML/imagem/PDF. Tem `README.pt-BR.md` e a documentação de Windows em português também.
 
-**No Windows, com um comando:**
+**No Windows, com um comando** (este é o do README; ele é longo porque baixa o script para um arquivo
+temporário com `-Headers` de no-cache, o que evita o cache do GitHub e os problemas de encoding/BOM do
+PowerShell 5.1):
 
 ```powershell
-irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
+powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\dsh-setup.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 -Headers @{'Cache-Control'='no-cache'} -OutFile $f; & $f"
 ```
+
+E se você já tem o harness instalado e não quer passar pelo instalador, os plugins vão como **bundle do
+DSH**: `dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1` (remover:
+`dsh plugin --profile web remove freedsh`).
 
 O instalador é interativo, detecta instalação existente e baixa o core, aplica o overlay, traduz e
 cria os atalhos. Tem suporte a Linux também, no mesmo espírito. Antes de subir, testei em PowerShell
@@ -49,9 +55,14 @@ um clique. Também tem auto-update sincronizando com o GitHub a cada 30 minutos 
 no Windows, cron no Linux). Já perdi configuração que funcionava por causa de update, e não queria
 repetir isso.
 
-**Agora a parte honesta:** o repo tem **1 star, 0 forks, 125 tags e 0 releases publicadas**. É novo.
-Versão que funciona é a do `main`. Não tenho base de usuários nenhuma, é exatamente por isso que
-estou postando aqui. E reforçando: **projeto não oficial, sem vínculo com a DeepSeek**.
+**Agora a parte honesta:** o repo tem **1 star, 0 forks, 127 tags e 1 release publicada** — a
+`v0.2.125`, com ZIP e `SHA256SUMS.txt`, em
+https://github.com/marcosmmjr2023/dsh-h-v1/releases/tag/v0.2.125. É novo. Versão que funciona é a do
+`main` (e a maioria das 127 tags é âncora automática de rollback do sync, não lançamento). Base de
+usuários eu não tenho: nos últimos 14 dias o repositório teve 90 views de **11 pessoas únicas** —
+pouquíssima descoberta real, e é exatamente por isso que estou postando aqui. O código é MIT, e o
+escopo da licença (o que é meu e o que é de terceiros) está no `LICENSE-SCOPE.md`. E reforçando:
+**projeto não oficial, sem vínculo com a DeepSeek**.
 
 **O que eu peço:** instale e me diga o que quebrou, de preferência com sistema, versão do harness e
 os provedores que você configurou. Se a tradução tiver frase truncada ou esquisita, me manda o print
@@ -59,6 +70,7 @@ os provedores que você configurou. Se a tradução tiver frase truncada ou esqu
 E se discordar de alguma decisão de arquitetura, fala: é melhor descobrir agora.
 
 Repositório: https://github.com/marcosmmjr2023/dsh-h-v1
+Página do projeto, com o comando de instalação sempre atualizado: https://marcosmmjr2023.github.io/dsh-h-v1/
 
 Se você instalar e funcionar, comenta aqui o que usou. Se não funcionar, comenta ainda mais rápido.
 

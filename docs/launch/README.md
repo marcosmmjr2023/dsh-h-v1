@@ -38,16 +38,27 @@ Três consequências práticas:
 
 Nada aqui é opcional se o objetivo é que alguém consiga instalar.
 
-- [ ] Descrição e topics do repositório preenchidos (ver `docs/COMMUNITY-LAUNCH.md`).
+- [ ] Descrição e topics do repositório preenchidos (ver `docs/COMMUNITY-LAUNCH.md`). **Já feito**:
+      20 topics, incluindo `pt-br`, `portuguese`, `localization`, `i18n`, `windows`,
+      `windows-installer`, `dsh-bundle` e `freedsh`.
+- [ ] Landing page no ar, com o comando canônico e a release atual
+      (<https://marcosmmjr2023.github.io/dsh-h-v1/>). **Já está no ar**: ela é o canal de aterrissagem
+      do projeto junto do `README.md`, e os dois precisam mudar juntos quando o comando mudar.
 - [ ] Discussions ativas, com categorias e os primeiros tópicos semeados (`docs/DISCUSSIONS-SEED.md`).
 - [ ] GIF de 20–30s no topo do README + 3–4 screenshots sem chaves, sem paths pessoais.
 - [ ] Pelo menos **um teste real e datado** de provedor/fallback, para citar quando alguém perguntar.
 - [ ] Testar a instalação de 1 linha em uma máquina limpa, em PowerShell 5.1 **e** 7.x.
 - [ ] Confirmar que o instalador não quebrou nenhuma instalação existente.
 
-Cuidado conhecido: o `irm ... | iex` é o comando curto que as pessoas vão copiar, mas o README
-traz a forma mais robusta (download para arquivo temporário + execução), que evita problemas de
-encoding/BOM em PowerShell 5.1. Deixe as duas visíveis e diga qual usar se a primeira falhar.
+Cuidado conhecido: existe **um** comando canônico de instalação no Windows — o mesmo do `README.md` e
+da página do projeto. Ele baixa o script para um arquivo temporário com
+`-Headers @{'Cache-Control'='no-cache'}` antes de executar, o que evita problemas de encoding/BOM no
+PowerShell 5.1 **e** uma cópia velha vinda do cache do `raw.githubusercontent.com`.
+
+**Não publique a forma curta `irm ... | iex` nem a variante sem `-Headers`** — se algum post ainda
+tiver uma delas, troque pelo comando canônico. Se o formato do canal não couber o comando inteiro
+(uma thread do X, por exemplo), aponte para a landing page
+<https://marcosmmjr2023.github.io/dsh-h-v1/> como fonte do comando, em vez de encurtar o comando.
 
 ## Ordem de publicação
 
@@ -112,9 +123,43 @@ O `docs/POST-LAUNCH-METRICS.md` já separa sinal forte de sinal fraco; siga a me
 
 ## Estado atual do repositório (para você ser honesto se for citar)
 
-`dsh-h-v1`: **1 star, 0 forks, 125 tags, 0 releases publicadas.** É um projeto novo, buscando os
+`dsh-h-v1`: **1 star, 0 forks, 127 tags, 1 release publicada.** A release é a tag `v0.2.125`,
+título "FreeDSH v0.2.125", com os assets `freedsh-v0.2.125.zip` e `SHA256SUMS.txt`:
+<https://github.com/marcosmmjr2023/dsh-h-v1/releases/tag/v0.2.125>. É um projeto novo, buscando os
 primeiros usuários. Assuma isso nos posts — "acabei de abrir" é mais convincente do que fingir
 tração que não existe, e abre espaço para pedir ajuda de verdade.
+
+Cuidado com a leitura das 127 tags: a maioria é âncora automática de rollback criada pelo auto-push
+(mensagem `sync(auto): ...`), **não** lançamento. Só as tags anotadas por `tools/release.sh`
+(mensagem começando com `release:`) viram release.
+
+O que **já existe** hoje e pode ser citado com segurança — isto é estado, não promessa:
+
+- **Licença MIT**, e o GitHub já detecta o repositório como MIT (antes aparecia "NOASSERTION"). O
+  escopo — o que a MIT deste repositório cobre e o que é de terceiros/upstream — fica em
+  `LICENSE-SCOPE.md`, junto do aviso de não afiliação. Por isso aquele arquivo existe **fora** do
+  `LICENSE`: um preâmbulo antes do texto MIT faz o GitHub classificar como "NOASSERTION".
+- **Duas formas de instalar.** (1) O instalador do Windows, com o comando canônico acima. (2) O
+  **bundle do DSH**, sem instalador, para quem já tem um harness funcionando:
+  `dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1` — remover com
+  `dsh plugin --profile web remove freedsh`. O bundle registra **6 plugins** do harness (Smart Router,
+  grupos do OpenRouter, visibilidade de modelos, atalho do FreeLLMAPI, painel lateral e badge de
+  versão) e nada mais: não toca em chaves, provedores ou settings. Foi instalado e testado de verdade
+  em um `DSH_HOME` limpo, com os 6 plugins carregando e as APIs respondendo 200.
+- **Repositório apresentável**: descrição atualizada, homepage e **20 topics** (incluindo `pt-br`,
+  `portuguese`, `localization`, `i18n`, `windows`, `windows-installer`, `dsh-bundle`, `freedsh`) e
+  **GitHub Pages no ar** em <https://marcosmmjr2023.github.io/dsh-h-v1/> — a **landing page** do
+  projeto, com o comando de instalação e o download. Use-a como destino dos posts, ao lado do
+  `README.md`.
+- **Release automática por tag**: `.github/workflows/release.yml` publica a GitHub Release (notas do
+  CHANGELOG + `freedsh-<tag>.zip` + `SHA256SUMS.txt`) quando uma tag anotada é criada por
+  `tools/release.sh` (mensagem `release: ...`). As tags do auto-push (`sync(auto): ...`) são
+  ignoradas de propósito, para não inundar a aba Releases.
+
+**Tráfego real** (Insights → Traffic, últimos 14 dias): **90 views (11 visitantes únicos)**, **2136
+clones (419 únicos)** e referrer `github.com` (54). Traduzindo: há pouquíssima descoberta real — isto
+não é tração —, mas **não é literalmente zero**. Nunca escreva "zero procura": a frase honesta é "11
+visitantes únicos em 14 dias".
 
 ## Verificação de fatos no dia do post
 
@@ -122,10 +167,22 @@ Antes de publicar qualquer coisa, confirme:
 
 - [ ] o número de stars do DeepSeek Harness que você for citar (é volátil);
 - [ ] quais tiers gratuitos ainda existem nos provedores citados;
-- [ ] o estado do repositório (stars/forks) se você for mencionar;
+- [ ] o estado do repositório (stars/forks/tags/releases) se você for mencionar. Fotografia de hoje:
+      **1 star, 0 forks, 127 tags, 1 release** (a `v0.2.125`);
+- [ ] qual é a **release mais recente**, se o post citar release ou download (aba Releases, ou
+      `gh release list`), e se os assets (`freedsh-<tag>.zip`, `SHA256SUMS.txt`) continuam no ar;
+- [ ] que o GitHub **continua detectando a licença como MIT** — a detecção depende de o `LICENSE`
+      seguir sendo o texto MIT limpo, sem preâmbulo (o preâmbulo mora em `LICENSE-SCOPE.md`);
+- [ ] que a **landing page** (<https://marcosmmjr2023.github.io/dsh-h-v1/>) está no ar e que o comando
+      publicado nela é idêntico ao do `README.md`. Página e README andam juntos: um comando novo sem
+      atualizar o outro é a forma mais rápida de publicar informação errada;
 - [ ] a contagem de frases da tradução pt-BR, se for citar;
-- [ ] que o comando de instalação daquele post ainda funciona, colando ele de verdade em um
-      terminal.
+- [ ] que o comando de instalação daquele post ainda funciona, colando ele de verdade em um terminal —
+      o **comando canônico**, com `-Headers @{'Cache-Control'='no-cache'}`, nunca a forma
+      `irm ... | iex`;
+- [ ] se o post citar o bundle do DSH, teste
+      `dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1` em um `DSH_HOME` limpo antes de
+      publicar (a instalação e a remoção precisam continuar funcionando).
 
 Um número errado em um post público custa mais credibilidade do que qualquer ganho de entusiasmo.
 

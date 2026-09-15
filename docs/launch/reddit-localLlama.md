@@ -11,7 +11,8 @@ I built a free-first model router for DeepSeek Harness: free providers tried fir
 **What it is**
 
 FreeDSH is an unofficial distribution layer for DeepSeek Harness (MIT). It is not a fork — it is an
-overlay of Harness plugins plus an installer and tooling. I am the author.
+overlay of Harness plugins plus an installer and tooling. I am the author. FreeDSH's own code is MIT
+as well; what that grant covers, and what stays upstream, is spelled out in `LICENSE-SCOPE.md`.
 
 The part I actually care about is the routing. Instead of pinning my daily workflow to one
 provider, FreeDSH tries the free routes first and only then the paid ones:
@@ -50,18 +51,37 @@ skeptical:
 **Install (one line)**
 
 ```powershell
-irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
+powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\dsh-setup.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 -Headers @{'Cache-Control'='no-cache'} -OutFile $f; & $f"
 ```
+
+Yes, that line is long on purpose: it downloads the script to a temp file with a no-cache header
+instead of piping it straight into `iex`, which can serve a stale copy and breaks on encoding/BOM in
+PowerShell 5.1.
 
 Windows is the well-tested path, PowerShell 5.1 and 7.x both. Linux has an equivalent script. macOS
 is untested — I don't have a machine for it. Real bugs fixed on the way: encoding/BOM handling and a
 `robocopy` hang when files were in use.
 
+If you already have Harness installed and don't want the installer at all, the overlay is also a
+**DSH bundle**:
+
+```
+dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1
+```
+
+(remove: `dsh plugin --profile web remove freedsh`). Six Harness plugins, nothing else — your keys,
+providers and settings are untouched. I installed and tested it in a clean `DSH_HOME`: all six plugins
+load and their APIs answer 200.
+
 Repo: https://github.com/marcosmmjr2023/dsh-h-v1
+Landing page (canonical install command + download): https://marcosmmjr2023.github.io/dsh-h-v1/
 
 **What's missing**
 
-The repo is brand new: 1 star, 0 forks, 125 tags, 0 published releases. Working version is `main`.
+The repo is brand new: 1 star, 0 forks, 127 tags, 1 published release (`v0.2.125` — zip +
+SHA256SUMS), and almost no discovery: 90 views from **11 unique visitors** in the last 14 days. Most
+of those 127 tags are automatic rollback anchors from my sync job, not releases. Working version is
+`main`.
 And I have **no benchmark to show you** — no latency table, no per-provider failure rates, nothing I
 would stand behind. That is the biggest gap, and I'd rather admit it than post numbers I can't
 reproduce. Provider tier claims also rot fast, so anything I said about a free tier today could be

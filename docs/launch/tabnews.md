@@ -38,25 +38,34 @@ instalador e ferramentas.
 - **Auto-update**: sincroniza com o GitHub a cada 30 minutos (Agendador de Tarefas no Windows,
   cron no Linux).
 
-No Windows, instala assim:
+No Windows, instala assim (este é o comando do README, e ele é longo de propósito: baixa o script
+para um arquivo temporário com `-Headers` de no-cache, o que evita o cache do GitHub e os problemas
+de encoding/BOM do PowerShell 5.1):
 
 ```powershell
-irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
+powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\dsh-setup.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 -Headers @{'Cache-Control'='no-cache'} -OutFile $f; & $f"
 ```
+
+Se você já tem o harness instalado e só quer os plugins, ele também é instalável como **bundle do
+DSH**, sem instalador nenhum: `dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1` (para
+remover: `dsh plugin --profile web remove freedsh`).
 
 **A parte que eu corrigi na marra**, porque doeu: bugs reais de encoding/BOM e um travamento do
 `robocopy` quando havia arquivo em uso. Hoje o instalador é testado com PowerShell 5.1 e 7.x, que é
 onde a maior parte dos scripts de instalação por aí simplesmente quebra.
 
 **Sendo honesto sobre o estado do projeto.** Essa é a parte chata de postar: o repo está com 1
-star, 0 forks, 125 tags e 0 releases publicadas. Ou seja, é novo de verdade. A versão que funciona
-é a do `main`, e o que eu mais preciso agora é gente que instale e me diga onde travou. Não estou
-prometendo inferência grátis para sempre — tiers gratuitos mudam toda hora. A proposta é
-**rotear para modelos gratuitos antes dos pagos** e degradar com elegância quando um provedor cai,
-usando as chaves que a própria pessoa configura.
+star, 0 forks, 127 tags e **1 release publicada** — a `v0.2.125`, com os arquivos `freedsh-v0.2.125.zip`
+e `SHA256SUMS.txt` em https://github.com/marcosmmjr2023/dsh-h-v1/releases/tag/v0.2.125. Ou seja, é
+novo de verdade (a maioria das 127 tags é âncora automática de rollback do meu próprio sync, não
+lançamento). A versão que funciona é a do `main`, e o que eu mais preciso agora é gente que instale e
+me diga onde travou. Não estou prometendo inferência grátis para sempre — tiers gratuitos mudam toda
+hora. A proposta é **rotear para modelos gratuitos antes dos pagos** e degradar com elegância quando um
+provedor cai, usando as chaves que a própria pessoa configura.
 
 **Um aviso que importa:** o FreeDSH é um projeto não oficial, sem vínculo nenhum com a DeepSeek. O
-DeepSeek Harness é MIT, de outra gente, e é instalado separadamente.
+código do FreeDSH é MIT (o escopo — o que a licença cobre e o que é de terceiros — está no
+`LICENSE-SCOPE.md`). O DeepSeek Harness é MIT, de outra gente, e é instalado separadamente.
 
 **O que eu queria de você**, se o tema te interessar:
 
@@ -68,6 +77,7 @@ DeepSeek Harness é MIT, de outra gente, e é instalado separadamente.
 4. Discordar da arquitetura. Ainda dá tempo de mudar coisa.
 
 Repositório: https://github.com/marcosmmjr2023/dsh-h-v1
+Página do projeto (com o comando de instalação atualizado e o download): https://marcosmmjr2023.github.io/dsh-h-v1/
 
 Não precisa de estrela. Se você instalar e disser o que quebrou, já ajudou mais do que a estrela.
 

@@ -35,25 +35,44 @@ Other things in it:
 Install (Windows, PowerShell 5.1 and 7.x are both tested):
 
 ```powershell
-irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 | iex
+powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\dsh-setup.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 -Headers @{'Cache-Control'='no-cache'} -OutFile $f; & $f"
 ```
+
+That long single line is deliberate: it downloads the script to a temp file with a no-cache header.
+The short `irm ... | iex` form can serve a stale copy and trips over encoding/BOM in PowerShell 5.1.
 
 The installer downloads the core, applies the overlay, applies the translation and creates
 shortcuts. Linux has an equivalent script. A couple of real bugs got fixed along the way, notably
 encoding/BOM handling and a `robocopy` hang when files were in use.
 
+If you already run Harness and only want the plugins, the overlay also ships as a **DSH bundle**, with
+no installer and no overlay copying:
+
+```
+dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1
+```
+
+Remove it with `dsh plugin --profile web remove freedsh`. The bundle registers six Harness plugins
+(smart router, OpenRouter groups, model visibility, FreeLLMAPI shortcut, right-hand panel, version
+badge) and nothing else — it never touches your keys, providers or settings. I installed and tested it
+in a clean `DSH_HOME`: all six plugins load and their APIs answer 200.
+
 Repo: https://github.com/marcosmmjr2023/dsh-h-v1
+Landing page (canonical install command and download): https://marcosmmjr2023.github.io/dsh-h-v1/
 
-What's missing, honestly: the repo is brand new — 1 star, 0 forks, 0 published releases, and no
-macOS testing. There is no benchmark publishable yet, so I have no latency or cost numbers I'd
-stand behind. I'd rather say that than quote numbers I can't reproduce.
+What's missing, honestly: the repo is brand new — 1 star, 0 forks, 1 published release (`v0.2.125`,
+ZIP + SHA256SUMS) — and there is no macOS testing. Discovery is close to nothing: 90 views from **11
+unique visitors** in the last 14 days. There is no benchmark publishable yet, so I have no latency or
+cost numbers I'd stand behind. I'd rather say that than quote numbers I can't reproduce.
 
-Not affiliated with or endorsed by DeepSeek.
+The FreeDSH code is MIT, like the Harness; what that grant covers (and what stays upstream) is in
+`LICENSE-SCOPE.md`. Not affiliated with or endorsed by DeepSeek.
 
 Feedback I'm looking for: whether the router's fallback behavior is right (retry vs. skip, when to
-surface a failure to the user), how you'd want provider compatibility reports structured, and
-whether packaging the overlay as a single installable bundle (`dsh plugin add`) is the right call
-versus keeping the installer.
+surface a failure to the user), how you'd want provider compatibility reports structured, and whether
+the bundle route (`dsh plugin --profile web add ...`) should be the primary way to consume this
+instead of the installer — it is already packaged and tested that way, so I'm mostly asking which one
+you would reach for.
 
 > **Notas de publicação**: poste de terça a quinta, entre 8h e 10h ET — o HN é majoritariamente
 > americano e o post precisa pegar a manhã deles. O título **tem que começar exatamente com

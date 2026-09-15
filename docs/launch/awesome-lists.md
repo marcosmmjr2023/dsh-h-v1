@@ -16,8 +16,8 @@ aceita autopromoção. Uma entrada fora do formato é fechada sem discussão.
 | `awesome-llm-apps` | média | Muitas variantes da mesma ideia. Escolha uma, a mais ativa, e não abra PR em três ao mesmo tempo. |
 | `awesome-llm` | média | Lista ampla e movimentada; costuma exigir projeto com alguma tração. |
 | `awesome-free-llm-apis` / listas de APIs gratuitas | alta | Encaixe direto no tema "usar modelos gratuitos antes dos pagos" — mas descreva como agregador de chaves do usuário, nunca como fonte de acesso grátis. |
-| Índices/registries de **plugins do DeepSeek Harness** | alta | O overlay **já é** um conjunto de plugins do harness. Se existir um índice de plugins (ou um comando tipo `dsh plugin`), esse é o caminho de distribuição mais correto de todos. |
-| Listas "awesome" em pt-BR / de projetos brasileiros | média | Bom encaixe para o ângulo "ferramenta de IA em português". Confirme se a lista aceita projeto mantido por uma pessoa só e sem releases. |
+| Índices/registries de **plugins do DeepSeek Harness** | alta | O overlay **já é** um bundle de plugins do harness, instalável de verdade (`dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1`, 6 plugins). Se existir um índice de plugins, esse é o caminho de distribuição mais correto de todos. |
+| Listas "awesome" em pt-BR / de projetos brasileiros | média | Bom encaixe para o ângulo "ferramenta de IA em português". Confirme se a lista aceita projeto mantido por uma pessoa só e com pouca tração (hoje: 1 star, 1 release). |
 | `awesome-windows` / listas de ferramentas para Windows | baixa | Só faz sentido se o instalador de 1 linha for o destaque da entrada, e se a lista aceitar aplicação que depende de outro projeto. |
 
 Não invente URL. Antes de abrir o PR, procure o repositório no GitHub, confirme que ele existe,
@@ -72,18 +72,21 @@ Regras de forma que essas listas costumam cobrar, e que as entradas acima já re
 ## O cuidado honesto sobre timing
 
 Muitas listas sérias têm critério informal de tração: projeto com algum tempo de estrada, uso
-comprovado, releases publicadas. O estado atual é **1 star, 0 forks, 125 tags e 0 releases
-publicadas** — ou seja, boa parte delas vai recusar hoje, e com razão.
+comprovado, releases publicadas. O estado atual é **1 star, 0 forks, 127 tags e 1 release publicada**
+(a `v0.2.125`, com ZIP e SHA256) — a primeira release já existe, mas a tração ainda é nenhuma: 90
+views de **11 visitantes únicos** nos últimos 14 dias. Ou seja, boa parte dessas listas vai recusar
+hoje, e com razão.
 
 Por isso a recomendação é **esperar**: publique os posts de comunidade primeiro, colete relatos de
-uso, publique pelo menos uma release, e só depois vá atrás das listas. Um "não" agora custa a chance
-de um "sim" em dois meses. E não abra dez PRs de um mesmo perfil novo no mesmo dia — isso é lido como
-spam e pode bloquear a conta.
+uso, e só depois vá atrás das listas — a release já está publicada, o que falta é uso real. Um "não"
+agora custa a chance de um "sim" em dois meses. E não abra dez PRs de um mesmo perfil novo no mesmo
+dia — isso é lido como spam e pode bloquear a conta.
 
 > **Notas de publicação**: aqui não existe "horário de pico" — o que existe é leitura de regra e
 > paciência. PRs dessas listas são revisados por mantenedores voluntários, então espere dias, não
 > horas. Faça um PR por vez e aguarde o merge antes de abrir o seguinte: se uma lista recusar por
 > formato, você corrige antes de repetir o erro nas outras. Nunca marque o mantenedor da lista no X
 > cobrando review, e nunca edite a entrada de outro projeto no mesmo PR para "encaixar" a sua — PR
-> com mudança não relacionada é fechado na hora. Quando houver release publicada, volte às listas que
-> recusaram por falta de tração citando a release; é uma reabertura legítima, diferente de insistir.
+> com mudança não relacionada é fechado na hora. Quando houver uso real, volte às listas que
+> recusaram por falta de tração citando a release publicada (a `v0.2.125` já está no ar — o que falta
+> é relato de uso); é uma reabertura legítima, diferente de insistir.

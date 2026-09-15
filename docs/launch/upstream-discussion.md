@@ -21,14 +21,16 @@ situation, and to ask for feedback — not to ask for anything else.
 
 **To be explicit: this is unofficial.** It is not affiliated with or endorsed by DeepSeek, it isn't
 a fork, and it isn't trying to be the upstream project. The Harness is installed separately and is
-not redistributed as part of it.
+not redistributed as part of it. FreeDSH's own code is MIT, and what that grant covers — versus what
+stays upstream or third-party — is written down in `LICENSE-SCOPE.md`, outside the `LICENSE` file so
+the GitHub license detection reads a clean MIT text instead of "NOASSERTION".
 
 **What it is, architecturally**
 
-It's an overlay — a set of Harness plugins (`smart-router-plugin`, `layout-panel-plugin`,
-`model-visibility-plugin`, `version-badge-plugin`, a FreeLLMAPI shortcut plugin), plus an installer
-and some maintenance tooling. Everything it does to the Harness goes through the plugin surface, so
-it stays out of the way of the core.
+It's an overlay — a set of Harness plugins (`smart-router-plugin`, `openrouter-enhanced-plugin`,
+`model-visibility-plugin`, `freellmapi-shortcut-plugin`, `layout-panel-plugin`,
+`version-badge-plugin`), plus an installer and some maintenance tooling. Everything it does to the
+Harness goes through the plugin surface, so it stays out of the way of the core.
 
 **What it adds**
 
@@ -47,29 +49,44 @@ it stays out of the way of the core.
   replaces the working one, with snapshots and rollback.
 - **A panel inside the UI**: router/model badges, current model with cost, recent files, core status.
 
-**Where I'd like to go with this**
+**How it's distributed, as of now**
 
-The overlay is currently distributed through the installer. My plan is to package it as a single
-installable bundle so it can be added with `dsh plugin add` instead, which would make it portable to
-any existing install and would let people pick only the plugins they want. If anyone has advice on
-that direction — or thinks it's the wrong one — I'd genuinely like to hear it, including anything
-that would make such a bundle easier to consume from the Harness side.
+There are two paths, and both work today. The **installer** gives you everything (core install or
+update, overlay, translation, shortcuts). And the overlay itself is packaged as an **installable
+bundle**, so it can be added to an existing Harness install with one command, without the installer
+and without copying overlay files:
+
+```
+dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1
+```
+
+(removed with `dsh plugin --profile web remove freedsh`.) It registers the six plugins listed above
+and nothing else — provider credentials, settings and models stay untouched. I installed and tested
+that command in a clean `DSH_HOME`: all six plugins load and their APIs answer 200. This is the
+distribution path I'd expect other Harness users to prefer, since it drops straight into a setup that
+already works. If you have opinions on it — what a bundle like this should or shouldn't do to a
+profile, or what would make it easier to consume from the Harness side — I'd genuinely like to hear
+them.
 
 **What I'm asking for**
 
 Only feedback. Specifically:
 
 - whether the plugin-based overlay approach is the appropriate way to extend the Harness;
-- whether `dsh plugin add` is the right packaging target for this;
+- whether the bundle (`dsh plugin --profile web add ...`) is the right packaging target to make the
+  primary one, or whether the installer should stay the main path;
 - any guidance on how an unofficial distribution layer should describe its relationship to the
   upstream project so it's not mistaken for an official one;
 - and, if you use the Harness in a non-English locale or on Windows, whether any of these problems
   match yours.
 
-The project is new — the repository currently has 1 star, 0 forks and 0 published releases — so I
-expect the most valuable outcome of this thread is criticism, not adoption.
+The project is new — the repository currently has 1 star, 0 forks and 1 published release (tag
+`v0.2.125`, with a source ZIP and `SHA256SUMS.txt`) — so I expect the most valuable outcome of this
+thread is criticism, not adoption. Real traffic is 90 views from 11 unique visitors over the last 14
+days, so I'm not pretending there's adoption to speak of.
 
 Repo: https://github.com/marcosmmjr2023/dsh-h-v1
+Landing page (install command and download): https://marcosmmjr2023.github.io/dsh-h-v1/
 
 Thanks for the Harness itself; it's the reason any of this exists.
 
@@ -82,5 +99,5 @@ Thanks for the Harness itself; it's the reason any of this exists.
 > alguém responder que prefere receber isso como PR na documentação ou que o lugar certo é outro,
 > agradeça e siga a orientação. Enquanto a discussão estiver viva, responda em até um dia; depois,
 > deixe o thread em paz e não faça "bump" para chamar atenção. Se ninguém responder, isso não é
-> rejeição: trate como "ainda não é hora" e volte em alguns meses com uma release publicada e relatos
-> de uso, em um novo thread e não no antigo.
+> rejeição: trate como "ainda não é hora" e volte em alguns meses com relatos de uso de verdade (a
+> release já existe: `v0.2.125`), em um novo thread e não no antigo.
