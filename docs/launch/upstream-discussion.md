@@ -86,7 +86,7 @@ thread is criticism, not adoption. Real traffic is 90 views from 11 unique visit
 days, so I'm not pretending there's adoption to speak of.
 
 Repo: https://github.com/marcosmmjr2023/dsh-h-v1
-Landing page (install command and download): https://marcosmmjr2023.github.io/dsh-h-v1/
+Landing page (install command): https://marcosmmjr2023.github.io/dsh-h-v1/
 
 Thanks for the Harness itself; it's the reason any of this exists.
 

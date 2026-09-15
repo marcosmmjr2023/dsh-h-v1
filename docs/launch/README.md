@@ -41,7 +41,7 @@ Nada aqui é opcional se o objetivo é que alguém consiga instalar.
 - [ ] Descrição e topics do repositório preenchidos (ver `docs/COMMUNITY-LAUNCH.md`). **Já feito**:
       20 topics, incluindo `pt-br`, `portuguese`, `localization`, `i18n`, `windows`,
       `windows-installer`, `dsh-bundle` e `freedsh`.
-- [ ] Landing page no ar, com o comando canônico e a release atual
+- [ ] Landing page no ar, com o comando canônico publicado nela
       (<https://marcosmmjr2023.github.io/dsh-h-v1/>). **Já está no ar**: ela é o canal de aterrissagem
       do projeto junto do `README.md`, e os dois precisam mudar juntos quando o comando mudar.
 - [ ] Discussions ativas, com categorias e os primeiros tópicos semeados (`docs/DISCUSSIONS-SEED.md`).
@@ -149,8 +149,8 @@ O que **já existe** hoje e pode ser citado com segurança — isto é estado, n
 - **Repositório apresentável**: descrição atualizada, homepage e **20 topics** (incluindo `pt-br`,
   `portuguese`, `localization`, `i18n`, `windows`, `windows-installer`, `dsh-bundle`, `freedsh`) e
   **GitHub Pages no ar** em <https://marcosmmjr2023.github.io/dsh-h-v1/> — a **landing page** do
-  projeto, com o comando de instalação e o download. Use-a como destino dos posts, ao lado do
-  `README.md`.
+  projeto, com o comando de instalação publicado nela (e o botão dela apontando para o repositório,
+  que é onde ficam os arquivos e a release). Use-a como destino dos posts, ao lado do `README.md`.
 - **Release automática por tag**: `.github/workflows/release.yml` publica a GitHub Release (notas do
   CHANGELOG + `freedsh-<tag>.zip` + `SHA256SUMS.txt`) quando uma tag anotada é criada por
   `tools/release.sh` (mensagem `release: ...`). As tags do auto-push (`sync(auto): ...`) são

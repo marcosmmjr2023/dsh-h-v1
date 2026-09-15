@@ -15,22 +15,20 @@ Escrevi uma camada open source para resolver isso. Chama FreeDSH. 🧵
 
 **2/5**
 
-Não é fork. É um overlay: um conjunto de plugins do próprio harness, mais instalador e ferramentas.
+Não é fork: é um overlay do próprio harness — plugins, instalador e ferramentas.
 
-O que ele faz de mais útil é rotear. Tenta primeiro os provedores gratuitos que você configurou —
-FreeLLMAPI local, OpenRouter `:free`, OpenCode — e só depois os pagos. Se um cai, tem fallback
-automático para o próximo.
+O mais útil é o roteamento: tenta primeiro os provedores gratuitos que você configurou (FreeLLMAPI
+local, OpenRouter :free, OpenCode) e só depois os pagos. Se um cai, cai para o próximo.
 
 **3/5**
 
-No Windows é um comando só. A linha é longa, então copie da página do projeto — é lá que o comando
-fica sempre atualizado:
+No Windows é um comando só — a linha é longa, então copie da página do projeto (o comando fica sempre
+atualizado lá):
 
 https://marcosmmjr2023.github.io/dsh-h-v1/
 
-Baixa o core, aplica o overlay, traduz e cria os atalhos. Testado em PowerShell 5.1 e 7.x.
-
-E se você já tem o harness instalado, dá para instalar só os plugins — sem instalador (bundle do DSH).
+Testado em PowerShell 5.1 e 7.x. E se já tem o harness instalado, dá para instalar só os plugins
+(bundle do DSH).
 
 **4/5**
 
@@ -62,23 +60,19 @@ So I wrote an open-source layer for it. It's called FreeDSH. 🧵
 
 **2/5**
 
-It's not a fork. It's an overlay — a set of Harness plugins plus an installer and tooling.
+It's not a fork — it's an overlay on Harness itself: plugins, installer, tooling.
 
-The useful part is routing: it tries the free providers you configured first (local FreeLLMAPI,
-OpenRouter `:free`, OpenCode) and only then paid ones. If one goes down, it falls back
-automatically.
+The useful part is routing: try the free providers you configured first (local FreeLLMAPI,
+OpenRouter :free, OpenCode), paid later. If one fails, it falls back automatically.
 
 **3/5**
 
-On Windows it's one command. The line is long, so copy it from the project page — that's where it
-stays current:
+On Windows it's one command — a long line, so copy it from the project page (kept current there):
 
 https://marcosmmjr2023.github.io/dsh-h-v1/
 
-It pulls the core, applies the overlay, applies the translation and creates shortcuts. Tested on
-PowerShell 5.1 and 7.x.
-
-And if you already run Harness, you can install just the plugins — no installer (DSH bundle).
+Tested on PowerShell 5.1 and 7.x. And if you already run Harness, you can install just the plugins — no
+installer (DSH bundle).
 
 **4/5**
 

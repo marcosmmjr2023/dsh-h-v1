@@ -74,7 +74,7 @@ providers and settings are untouched. I installed and tested it in a clean `DSH_
 load and their APIs answer 200.
 
 Repo: https://github.com/marcosmmjr2023/dsh-h-v1
-Landing page (canonical install command + download): https://marcosmmjr2023.github.io/dsh-h-v1/
+Landing page (canonical install command): https://marcosmmjr2023.github.io/dsh-h-v1/
 
 **What's missing**
 

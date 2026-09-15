@@ -53,7 +53,7 @@ quebrou**. Se você usa IA para programar no Windows e já perdeu tempo com inst
 interface em inglês, seu relato vale muito mais para mim do que uma curtida.
 
 Se quiser testar: https://github.com/marcosmmjr2023/dsh-h-v1 — a página do projeto, com o comando de
-instalação e o download, está em https://marcosmmjr2023.github.io/dsh-h-v1/
+instalação, está em https://marcosmmjr2023.github.io/dsh-h-v1/
 
 E se preferir só conversar sobre o problema — roteamento entre modelos, custo de IA no dia a dia,
 tradução de ferramentas de desenvolvimento — me chama. Essa parte é a que mais me interessa.

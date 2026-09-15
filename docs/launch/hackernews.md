@@ -58,7 +58,7 @@ badge) and nothing else — it never touches your keys, providers or settings. I
 in a clean `DSH_HOME`: all six plugins load and their APIs answer 200.
 
 Repo: https://github.com/marcosmmjr2023/dsh-h-v1
-Landing page (canonical install command and download): https://marcosmmjr2023.github.io/dsh-h-v1/
+Landing page (canonical install command): https://marcosmmjr2023.github.io/dsh-h-v1/
 
 What's missing, honestly: the repo is brand new — 1 star, 0 forks, 1 published release (`v0.2.125`,
 ZIP + SHA256SUMS) — and there is no macOS testing. Discovery is close to nothing: 90 views from **11

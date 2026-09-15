@@ -77,7 +77,7 @@ código do FreeDSH é MIT (o escopo — o que a licença cobre e o que é de ter
 4. Discordar da arquitetura. Ainda dá tempo de mudar coisa.
 
 Repositório: https://github.com/marcosmmjr2023/dsh-h-v1
-Página do projeto (com o comando de instalação atualizado e o download): https://marcosmmjr2023.github.io/dsh-h-v1/
+Página do projeto (com o comando de instalação atualizado): https://marcosmmjr2023.github.io/dsh-h-v1/
 
 Não precisa de estrela. Se você instalar e disser o que quebrou, já ajudou mais do que a estrela.
 
