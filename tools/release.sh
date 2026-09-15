@@ -96,6 +96,24 @@ fi
   echo "Release manual/estrutural — ${COMMIT_N:-0} commit(s) desde ${LAST_TAG:-o início}."
   printf '%s\n' "$COMMITS" | sed 's/^/  - /'
 } >>"$CHLOG"
+# ── Versão do pacote = versão da tag ───────────────────────────
+# O bundle instalável (`dsh plugin add`) e o badge de versão leem o
+# package.json: se ele ficar para trás, quem instala vê a versão errada (e o
+# workflow de release recusa publicar). O manifest.json é só a base do
+# próximo número, mas também vale manter alinhado.
+bump_version_file() {
+  local file="$1" ver="$2"
+  [ -f "$file" ] || return 0
+  sed -i -E 's/^([[:space:]]*"version"[[:space:]]*:[[:space:]]*")[^"]*(")/\1'"$ver"'\2/' "$file"
+  if git -C "$CLONE" diff --quiet -- "$file"; then
+    return 0
+  fi
+  git -C "$CLONE" add "$file"
+  echo "✔ $(basename "$file") → $ver"
+}
+bump_version_file "$CLONE/package.json" "${V#v}"
+bump_version_file "$CLONE/manifest.json" "${V#v}"
+
 git -C "$CLONE" add "$CHLOG"
 
 # ── Guard de segredos (o conteúdo do changelog é commitado) ─────

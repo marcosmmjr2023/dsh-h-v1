@@ -10,6 +10,8 @@
 [![Linux](https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=black)](#install-in-1-minute)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen)](CONTRIBUTING.md)
 [![License](https://img.shields.io/badge/original%20code-MIT-blue)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/marcosmmjr2023/dsh-h-v1?label=release&sort=semver)](https://github.com/marcosmmjr2023/dsh-h-v1/releases)
+[![Discussions](https://img.shields.io/badge/discussions-open-blue)](https://github.com/marcosmmjr2023/dsh-h-v1/discussions)
 
 **Português:** [README.pt-BR.md](README.pt-BR.md)
 
@@ -81,6 +83,16 @@ For manual/server installation, see [docs/SERVER-MAP.md](docs/SERVER-MAP.md).
 
 > Provider credentials stay local and must never be committed. See [SECURITY.md](SECURITY.md) before exposing any FreeLLMAPI/admin interface beyond localhost.
 
+### Already run DeepSeek Harness?
+
+FreeDSH also ships as a **DSH bundle**, for people who already have a working harness and only want the plugins (Smart Router, OpenRouter groups, model visibility, FreeLLMAPI shortcut, right-hand panel, version badge). No installer, no overlay copying:
+
+```bash
+dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1
+```
+
+Remove it with `dsh plugin --profile web remove freedsh`. The bundle registers plugins only — it never touches your keys, providers or settings.
+
 ---
 
 ## What is inside?
@@ -125,6 +137,8 @@ You do **not** need to be an expert in the whole project. Useful contributions i
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md), then look for issues tagged **`good first issue`** or **`help wanted`**.
 
+Questions, ideas and "does this work with X?" belong in [Discussions](https://github.com/marcosmmjr2023/dsh-h-v1/discussions). Bugs and concrete proposals go to [Issues](https://github.com/marcosmmjr2023/dsh-h-v1/issues) — a minimal report (OS, PowerShell version, `dsh doctor` output) gets fixed much faster.
+
 If you use FreeDSH and it helps you, a ⭐ on the repository helps other DeepSeek Harness users discover it.
 
 ---
@@ -142,6 +156,7 @@ If you use FreeDSH and it helps you, a ⭐ on the repository helps other DeepSee
 ## License and attribution
 
 - Original FreeDSH overlay/tools/installer/docs: **MIT** — see [LICENSE](LICENSE).
+- What that MIT grant covers (and what is explicitly not ours): [LICENSE-SCOPE.md](LICENSE-SCOPE.md).
 - Third-party assets: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - DeepSeek Harness is installed separately and is not redistributed as this project's core.
 

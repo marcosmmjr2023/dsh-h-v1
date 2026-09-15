@@ -657,7 +657,22 @@ const modelVisibilityPlugin = {
     // incluindo o que esta oculto — e necessario para poder desmarcar.
     // Enriquece cada modelo com metadados do data file do openrouter-enhanced
     // (intelligence, modalities, cost, contextWindow) para os filtros/ordenacao.
-    const ENH_DATA_FILE = path.join(__dirname, "openrouter-enhanced-data.json");
+    // Data file do openrouter-enhanced: mora na config viva. Instalado como BUNDLE
+    // o plugin roda de dentro de node_modules, onde não se deve gravar estado.
+    const ENH_HOME = (function () {
+      const aqui = typeof __dirname === "string" ? __dirname : "";
+      const dentroDoPacote = /[\\/]node_modules[\\/]/.test(aqui);
+      if (process.env.DSH_HOME) return process.env.DSH_HOME; // config viva declarada
+      if (aqui && !dentroDoPacote) return aqui;              // overlay copiado na config viva
+      return path.join(require("node:os").homedir(), ".dsh");
+    })();
+    const ENH_DATA_FILE = (function () {
+      const vivo = path.join(ENH_HOME, "openrouter-enhanced-data.json");
+      if (fs.existsSync(vivo)) return vivo;
+      // instalação por pacote: usa o catálogo que vem dentro do pacote
+      const noPacote = path.join(__dirname, "openrouter-enhanced-data.json");
+      return fs.existsSync(noPacote) ? noPacote : vivo;
+    })();
     let enhIndex = null; // "provider/id" -> meta
     function enhMetaOf(provider, model) {
       if (enhIndex === null) {

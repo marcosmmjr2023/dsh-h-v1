@@ -1,0 +1,69 @@
+# ═══════════════════════════════════════════════════════════════════
+# CAMADA (BUNDLE) DO FREEDSH — para instalar via `dsh plugin add`
+# ═══════════════════════════════════════════════════════════════════
+# Este é o patch aplicado quando um PERFIL lista o pacote `freedsh` em
+# `dsh.profile.bundles` (equivalente ao cordis.patch.yml do overlay, com uma
+# diferença: aqui os plugins são referenciados pelo NOME DO PACOTE, para o Node
+# resolvê-los dentro do node_modules do perfil — em vez de caminhos absolutos
+# file:/// da máquina).
+#
+# Instalação:
+#   dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1
+#   (ou, depois de publicado no npm:  dsh plugin --profile web add freedsh)
+#
+# O que ESTA camada traz: os plugins do painel (roteador gratuito, grupos do
+# OpenRouter, filtro de catálogo/modelos, atalho e painel do FreeLLMAPI, coluna
+# lateral e badge de versão com atualização segura).
+#
+# O que NÃO traz (de propósito): configuração de provedores/chaves, o catálogo
+# customizado do provider DeepSeek oficial e a compactação — esses trechos são
+# específicos de cada máquina/usuário e continuam no
+# `overlay/cordis.patch.yml.win.tpl`. Copie as linhas que quiser para o seu
+# `$DSH_HOME/cordis.patch.yml`.
+
+# 1) Smart Model Router: roteamento automático entre provedores (free-first),
+#    cadeia de fallback e modos de custo (auto/eco/balanced/ultra).
+- insert:
+    - id: smart-router
+      name: 'freedsh/overlay/smart-router-plugin.js'
+      config:
+        enabled: true
+
+# 2) OpenRouter Enhanced: grupos "OpenRouter Free" (modelos gratuitos) e
+#    "OpenRouter Pro" (escolha do provedor por modelo).
+- insert:
+    - id: openrouter-enhanced
+      name: 'freedsh/overlay/openrouter-enhanced-plugin.js'
+      config:
+        enabled: true
+
+# 3) Model Visibility: filtro do catálogo no seletor + página /models.
+- insert:
+    - id: model-visibility
+      name: 'freedsh/overlay/model-visibility-plugin.js'
+      config:
+        enabled: true
+
+# 4) FreeLLMAPI Shortcut: badge que abre o painel do gateway local (chaves dos
+#    provedores gratuitos) dentro do app.
+- insert:
+    - id: freellmapi-shortcut
+      name: 'freedsh/overlay/freellmapi-shortcut-plugin.js'
+      config:
+        enabled: true
+
+# 5) Layout Panel: coluna direita com os badges, últimos arquivos modificados,
+#    status do gateway e núcleo. API /api/layout-info.
+- insert:
+    - id: layout-panel
+      name: 'freedsh/overlay/layout-panel-plugin.js'
+      config:
+        enabled: true
+
+# 6) Version Badge: versão instalada, atualização segura do núcleo (instância
+#    isolada), snapshots e rollback. API /api/dsh-version e /api/dsh-core.
+- insert:
+    - id: dsh-version-badge
+      name: 'freedsh/overlay/version-badge-plugin.js'
+      config:
+        enabled: true

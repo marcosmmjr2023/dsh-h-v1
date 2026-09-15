@@ -64,9 +64,30 @@ for (const lib of CANDIDATE_LIBS) {
   } catch (e) { resolveDiag.push(lib + " :: " + (e && e.message ? e.message : e)); }
 }
 
-// __dirname nao existe se o loader usar ESM; cai para o cwd nesse caso.
-const HERE = (typeof __dirname !== "undefined" && __dirname) ? __dirname : process.cwd();
+// Diretorio do data file: o proprio plugin quando ele E a config viva (overlay em
+// ~/.dsh); instalado como BUNDLE (dsh plugin add) o codigo roda dentro de
+// node_modules, entao o estado vai para a config viva. __dirname nao existe se o
+// loader usar ESM: nesse caso cai para DSH_HOME/~/.dsh (nunca o cwd).
+const HERE = (function () {
+  const aqui = typeof __dirname === "string" ? __dirname : "";
+  const dentroDoPacote = /[\\/]node_modules[\\/]/.test(aqui);
+  if (process.env.DSH_HOME) return process.env.DSH_HOME;  // config viva declarada
+  if (aqui && !dentroDoPacote) return aqui;               // overlay copiado na config viva
+  return path.join(require("node:os").homedir(), ".dsh");
+})();
 const DATA_FILE = path.join(HERE, "openrouter-enhanced-data.json");
+// Instalado como BUNDLE (`dsh plugin add`) o repositório traz um catálogo padrão
+// dentro do pacote: copie-o para a config viva na primeira execução, senão o
+// plugin se desativaria por falta do data file em uma instalação nova.
+(function seedDataFile() {
+  try {
+    if (fs.existsSync(DATA_FILE)) return;
+    const src = path.join(__dirname, "openrouter-enhanced-data.json");
+    if (src === DATA_FILE || !fs.existsSync(src)) return;
+    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+    fs.copyFileSync(src, DATA_FILE);
+  } catch { /* segue sem o catálogo padrão */ }
+})();
 
 const FREE = "openrouter-free";
 const PRO = "openrouter-pro";

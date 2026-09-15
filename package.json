@@ -1,0 +1,51 @@
+{
+  "name": "freedsh",
+  "version": "0.2.125",
+  "private": false,
+  "description": "FreeDSH — free-first multi-model routing, automatic fallback, safe core updates and pt-BR support for DeepSeek Harness. Installable as a DSH bundle (dsh plugin add).",
+  "license": "MIT",
+  "homepage": "https://github.com/marcosmmjr2023/dsh-h-v1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marcosmmjr2023/dsh-h-v1.git"
+  },
+  "bugs": {
+    "url": "https://github.com/marcosmmjr2023/dsh-h-v1/issues"
+  },
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "cordis-plugin",
+    "llm-router",
+    "free-llm",
+    "openrouter",
+    "freellmapi",
+    "pt-br",
+    "portuguese",
+    "windows"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.bundle.yml"
+    }
+  },
+  "files": [
+    "cordis.bundle.yml",
+    "overlay/",
+    "core-i18n-pt/dictionaries/",
+    "core-i18n-pt/tools/",
+    "tools/",
+    "assets/",
+    "README.md",
+    "README.pt-BR.md",
+    "LICENSE",
+    "LICENSE-SCOPE.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

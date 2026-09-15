@@ -28,8 +28,11 @@
  * se uma atualização quebrar o sistema). Recolhidos pelo LayoutPanel na
  * coluna direita (.dlp-badges).
  *
- * Localização dos arquivos: mesmo diretório deste plugin (= config viva).
- * Clone do repo: env DSH_CLONE ou ~/projects/dsh/dsh-h-v1 (canônico) / legado ~/dsh-v2.
+ * Localização dos arquivos: o diretório deste plugin quando ele É a config viva
+ * (overlay copiado para ~/.dsh); instalado como BUNDLE (`dsh plugin add`, código
+ * dentro de node_modules) o estado vai para DSH_HOME / ~/.dsh, nunca para o pacote.
+ * Clone do repo: env DSH_CLONE ou ~/projects/dsh/dsh-h-v1 (canônico) / legado ~/dsh-v2;
+ * sem clone, as ferramentas são procuradas dentro do próprio pacote.
  */
 "use strict";
 
@@ -40,9 +43,32 @@ const { execFile, execFileSync, execSync, spawn } = require("node:child_process"
 
 const IS_WIN = process.platform === "win32";
 
-const VERSION_FILE = path.join(__dirname, ".dsh-version.json");
-const AUTO_UPDATE_OFF = path.join(__dirname, ".dsh-autoupdate.off");
 const HOME = os.homedir();
+
+/**
+ * Diretorio onde mora o ESTADO da config viva (.dsh-version.json, flags,
+ * caches, historico). No fluxo do overlay este arquivo e copiado para a
+ * propria config viva, entao __dirname ja e o lugar certo; instalado como
+ * BUNDLE (dsh plugin add) o plugin roda de dentro de node_modules/freedsh e o
+ * estado precisa continuar indo para a config viva do usuario.
+ */
+function liveDir() {
+  const aqui = (typeof __dirname === "string" && __dirname) ? __dirname : "";
+  const dentroDoPacote = /[\\/]node_modules[\\/]/.test(aqui);
+  const temCarimbo = (d) => { try { return fs.existsSync(path.join(d, ".dsh-version.json")); } catch { return false; } };
+  // 1) overlay copiado para a config viva: o carimbo de versão está ao lado do plugin
+  if (aqui && !dentroDoPacote && temCarimbo(aqui)) return aqui;
+  // 2) config viva declarada explicitamente (instância isolada, HOME alternativo)
+  if (process.env.DSH_HOME) return process.env.DSH_HOME;
+  // 3) overlay copiado, ainda sem carimbo (primeira execução)
+  if (aqui && !dentroDoPacote) return aqui;
+  // 4) instalado como pacote (npm/git): o estado vai para a config viva padrão
+  return path.join(HOME, ".dsh");
+}
+const LIVE = liveDir();
+
+const VERSION_FILE = path.join(LIVE, ".dsh-version.json");
+const AUTO_UPDATE_OFF = path.join(LIVE, ".dsh-autoupdate.off");
 
 /**
  * Le um JSON tolerando o BOM UTF-8.
@@ -60,14 +86,19 @@ function autoUpdateEnabled() {
 
 function cloneDir() {
   if (process.env.DSH_CLONE) return process.env.DSH_CLONE;
+  const pacote = path.resolve(__dirname, ".."); // instalado como bundle?
   const candidates = [
     path.join(HOME, "projects", "dsh", "dsh-h-v1"), // canônico nesta máquina
     path.join(HOME, "dsh-v2"),                       // legado
     path.join(HOME, "dsh-h-v1"),
+    pacote,                                          // bundle: tools/ vem no pacote
   ];
   for (const c of candidates) {
     try {
-      if (fs.existsSync(path.join(c, ".git")) && fs.existsSync(path.join(c, "tools", "rollback.sh"))) return c;
+      const temFerramentas = fs.existsSync(path.join(c, "tools", "rollback.sh"))
+        || fs.existsSync(path.join(c, "tools", "rollback.ps1"));
+      // o pacote instalado não traz .git; os demais candidatos precisam ser um clone
+      if (temFerramentas && (c === pacote || fs.existsSync(path.join(c, ".git")))) return c;
     } catch { /* tenta o próximo */ }
   }
   return candidates[0];
@@ -95,7 +126,17 @@ function versionPayload() {
         encoding: "utf8", timeout: 8000, windowsHide: true,
       }) || "").trim();
       if (tag) data = { version: tag, commit: sha, updatedAt: "" };
-    } catch { /* sem git/clone: mantem "local" */ }
+    } catch { /* sem git/clone: tenta a versão do pacote (instalação por bundle) */ }
+    // Sem clone com .git (instalação por BUNDLE) o fallback passa a ser a versão
+    // do próprio pacote, para o badge não exibir "local" nesse caminho.
+    if (data.version === "local") {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, "..", "package.json"), "utf8"));
+        if (pkg && pkg.name === "freedsh" && pkg.version) {
+          data = { version: "v" + String(pkg.version), commit: "", updatedAt: "" };
+        }
+      } catch { /* mantém "local" */ }
+    }
   }
   return {
     ok: true,
@@ -179,7 +220,7 @@ function doRollback(target, cb) {
   const isSnapshot = /^snap-/.test(target);
   const env = Object.assign({}, process.env, {
     DSH_CLONE: clone,
-    DSH_LIVE: __dirname,
+    DSH_LIVE: LIVE,
     DSH_SNAP_ROOT: snapRoot(),
   });
   // No Windows os parametros do .ps1 sao nomeados (-Cmd/-Arg): passar "--snapshot"
@@ -243,8 +284,8 @@ const CORE_CANDIDATES = [
   "/opt/dsh-tui/node/lib/node_modules/@deepseek-ai/dsh/package.json",
   "/usr/lib/node_modules/@deepseek-ai/dsh/package.json",
 ];
-const CORE_CHECK_CACHE = path.join(__dirname, ".dsh-core-check.json");
-const CORE_HISTORY = path.join(__dirname, ".dsh-core-history.json");
+const CORE_CHECK_CACHE = path.join(LIVE, ".dsh-core-check.json");
+const CORE_HISTORY = path.join(LIVE, ".dsh-core-history.json");
 
 let corePathsCache = null;
 /** Caminhos candidatos do package.json do nucleo, do mais confiavel ao fixo. */
@@ -407,7 +448,7 @@ function corePatchesOk(installed) {
 function coreHistory() {
   // O nome canonico e ".dsh-core-history.json" (core-update.sh/.ps1); aceita
   // tambem o nome legado sem ponto, que a versao Windows gravava antes.
-  for (const f of [CORE_HISTORY, path.join(__dirname, "core-history.json")]) {
+  for (const f of [CORE_HISTORY, path.join(LIVE, "core-history.json")]) {
     try {
       const h = readJson(f);
       if (Array.isArray(h)) return h.slice(0, 5);
@@ -553,7 +594,7 @@ function syncNowStart(cb) {
   const before = versionPayload();
   const store = { running: true, done: false, ok: false, error: "", lines: [], output: "", before, after: null };
   SYNC_PROGRESS.set(id, store);
-  const env = Object.assign({}, process.env, { HOME, DSH_CLONE: cloneDir(), DSH_LIVE: __dirname });
+  const env = Object.assign({}, process.env, { HOME, DSH_CLONE: cloneDir(), DSH_LIVE: LIVE });
   const child = IS_WIN
     ? spawn(psHost() || "powershell.exe", psFileArgs(tool), { env, windowsHide: true })
     : spawn(tool, [], { env });
@@ -600,7 +641,7 @@ function coreRollback(version, cb) {
   }
   const tool = path.join(cloneDir(), "core-i18n-pt", "tools", "core-update.sh");
   if (!fs.existsSync(tool)) { cb({ ok: false, error: "core-update.sh não encontrado no repo" }); return; }
-  const args = ["-n", tool, "--live", __dirname, "--rollback", version];
+  const args = ["-n", tool, "--live", LIVE, "--rollback", version];
   execFile("sudo", args, { timeout: 300000, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
     const output = String(stdout || "") + (stderr ? "\n" + stderr : "");
     if (err) { cb({ ok: false, error: "falha (sudo?)", needSudo: true, output }); return; }

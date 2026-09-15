@@ -1,0 +1,185 @@
+# Release — publica uma GitHub Release quando uma tag de versão é criada.
+# ═══════════════════════════════════════════════════════════════════════════
+# Como isto funciona no dia a dia deste repositório:
+#
+#   • `tools/release.sh` cria uma tag ANOTADA com mensagem "release: vX.Y.Z — …"
+#     → ESTE workflow publica a GitHub Release (notas do CHANGELOG + ZIP + SHA256).
+#
+#   • o auto-push (a cada sincronização) também cria tags, mas com a mensagem
+#     "sync(auto): …" → são âncoras de rollback e NÃO viram release, para não
+#     inundar a aba Releases com dezenas de entradas automáticas.
+#
+#   • manualmente: Actions → release → Run workflow, informando a tag. Marque
+#     "force" para publicar mesmo uma tag automática (ex.: a primeira release,
+#     feita depois do fato).
+#
+# Assets publicados: `freedsh-<tag>.zip` (código-fonte da tag, via git archive)
+# e `SHA256SUMS.txt`. Nada é publicado no npm por este workflow.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag a publicar (ex.: v0.2.125)"
+        required: true
+        type: string
+      force:
+        description: "Publicar mesmo se for uma tag automática (sync(auto): …)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publicar GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (histórico e tags completos)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decidir se publica e resolver a tag
+        id: dec
+        env:
+          EVENTO: ${{ github.event_name }}
+          TAG_PUSH: ${{ github.ref_name }}
+          TAG_INPUT: ${{ inputs.tag }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENTO" = "workflow_dispatch" ]; then TAG="$TAG_INPUT"; else TAG="$TAG_PUSH"; fi
+          TAG="${TAG#refs/tags/}"
+          case "$TAG" in
+            v[0-9]*) : ;;
+            *) echo "::error::tag inválida: '$TAG' (esperado algo como v0.2.125)"; exit 1 ;;
+          esac
+          if ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::a tag $TAG não existe neste repositório"
+            exit 1
+          fi
+          ASSUNTO="$(git tag -l --format='%(contents:subject)' "$TAG")"
+          AUTOMATICA=1
+          case "$ASSUNTO" in release:*) AUTOMATICA=0 ;; esac
+          if [ "$AUTOMATICA" = "1" ] && [ "${FORCE:-false}" != "true" ]; then
+            echo "publicar=0" >> "$GITHUB_OUTPUT"
+            echo "ℹ  $TAG é uma tag automática (\"$ASSUNTO\") — nenhuma GitHub Release publicada."
+            echo "ℹ  Para publicar mesmo assim: Actions → release → Run workflow, com force = true."
+          else
+            echo "publicar=1" >> "$GITHUB_OUTPUT"
+            echo "✔ $TAG será publicada (tag: \"$ASSUNTO\")"
+          fi
+          {
+            echo "tag=$TAG"
+            echo "assunto=$ASSUNTO"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Versão do pacote confere com a tag
+        if: steps.dec.outputs.publicar == '1'
+        env:
+          TAG: ${{ steps.dec.outputs.tag }}
+        run: |
+          set -euo pipefail
+          esperado="${TAG#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          man="$(node -p "require('./manifest.json').version")"
+          echo "tag=$esperado  package.json=$pkg  manifest.json=$man"
+          if [ "$pkg" != "$esperado" ]; then
+            echo "::error::package.json está em $pkg mas a tag é $TAG — o bundle instalado por 'dsh plugin add' mostraria a versão errada. Rode tools/release.sh (que sincroniza as duas) ou ajuste package.json/manifest.json e recrie a tag."
+            exit 1
+          fi
+          if [ "$man" != "$esperado" ]; then
+            echo "::warning::manifest.json está em $man (a tag é $TAG) — é só a base do próximo número de versão, mas vale sincronizar."
+          fi
+
+      - name: Notas da release
+        if: steps.dec.outputs.publicar == '1'
+        env:
+          TAG: ${{ steps.dec.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # Bloco do CHANGELOG desta versão (literal, sem regex: o arquivo é
+          # cronológico, a versão mais recente fica no fim).
+          BLOCO="$(awk -v needle="## [$TAG]" 'index($0, needle) == 1 {f=1; print; next} f && index($0, "## [") == 1 {exit} f {print}' CHANGELOG.md || true)"
+          PREV="$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)"
+          {
+            echo "FreeDSH **$TAG** — camada não oficial de roteamento gratuito, painel e pt-BR para o DeepSeek Harness."
+            echo
+            if [ -n "${BLOCO//[[:space:]]/}" ]; then
+              printf '%s\n' "$BLOCO"
+            else
+              echo "### Mudanças"
+              echo
+              git log --no-decorate --oneline "${PREV:-$(git rev-list --max-parents=0 HEAD | tail -1)}..$TAG" | sed 's/^/  - /'
+            fi
+          } > notes.md
+          # Bloco literal (heredoc citado): os comandos de instalação têm aspas,
+          # crases e cifrões que devem chegar intactos às notas da release.
+          cat >> notes.md <<'MDEOF'
+
+          ### Instalar / atualizar
+
+          ```powershell
+          powershell -ExecutionPolicy Bypass -Command "$f=\"$env:TEMP\dsh-setup.ps1\"; irm https://raw.githubusercontent.com/marcosmmjr2023/dsh-h-v1/main/installer/dsh-setup.ps1 -Headers @{'Cache-Control'='no-cache'} -OutFile $f; & $f"
+          ```
+
+          Já usa o DeepSeek Harness e quer só os plugins (bundle):
+
+          ```bash
+          dsh plugin --profile web add github:marcosmmjr2023/dsh-h-v1
+          ```
+          MDEOF
+          {
+            echo
+            echo "### Assets"
+            echo
+            echo "- \`freedsh-$TAG.zip\` — código-fonte desta tag (baixe e rode o instalador de dentro dele, se preferir não usar git)."
+            echo "- \`SHA256SUMS.txt\` — soma de verificação do ZIP."
+            echo
+            echo "---"
+            echo
+            echo "FreeDSH é um projeto **não oficial**, sem vínculo com a DeepSeek. O núcleo do DeepSeek Harness é instalado separadamente, a partir do npm, e mantém a licença dele."
+          } >> notes.md
+          echo "--- notas geradas (início) ---"
+          head -30 notes.md
+
+      - name: Empacotar o código na tag (ZIP + SHA256)
+        if: steps.dec.outputs.publicar == '1'
+        env:
+          TAG: ${{ steps.dec.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git archive --format=zip --prefix="freedsh-$TAG/" -o "freedsh-$TAG.zip" "$TAG"
+          sha256sum "freedsh-$TAG.zip" > SHA256SUMS.txt
+          ls -lh "freedsh-$TAG.zip" SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Publicar (cria ou atualiza a release)
+        if: steps.dec.outputs.publicar == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.dec.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "ℹ  release $TAG já existe — atualizando notas e assets."
+            gh release edit "$TAG" --title "FreeDSH $TAG" --notes-file notes.md
+            gh release upload "$TAG" "freedsh-$TAG.zip" SHA256SUMS.txt --clobber
+          else
+            gh release create "$TAG" \
+              --title "FreeDSH $TAG" \
+              --notes-file notes.md \
+              --verify-tag \
+              "freedsh-$TAG.zip" SHA256SUMS.txt
+          fi
+          gh release view "$TAG" --json url,tagName,assets --jq '{url, tagName, assets: [.assets[].name]}'

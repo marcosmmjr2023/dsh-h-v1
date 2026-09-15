@@ -1,0 +1,93 @@
+# Publica a landing page do FreeDSH no GitHub Pages.
+#
+# Como o Pages serve SOMENTE o diretório enviado no artefato, o diretório de
+# publicação (_site) é montado aqui na hora, juntando duas coisas:
+#   site/*   -> raiz do site publicado (index.html, styles.css, app.js)
+#   assets/  -> copiado para _site/assets, porque é de lá que sai o GIF da demo
+# Nada além disso é publicado: docs/, installer/ e overlay/ continuam só no
+# repositório. O site só funciona com o GIF em assets/freedsh-demo.gif ao lado
+# do index.html — é essa a razão da cópia (o Pages não publica o repositório
+# inteiro, apenas o que estiver dentro do artefato).
+
+name: pages
+
+on:
+  # Publica quando a landing page, os assets ou este workflow mudam na main.
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'assets/**'
+      - '.github/workflows/pages.yml'
+  # Permite republicar manualmente pela aba Actions (útil depois de mudar
+  # Settings → Pages).
+  workflow_dispatch:
+
+# Permissões mínimas exigidas pelo deploy nativo do Pages:
+# contents: read para ler o repositório, pages: write para publicar e
+# id-token: write para o token OIDC usado pela actions/deploy-pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Um deploy por vez; não cancela um deploy já em andamento para evitar
+# publicar um site pela metade.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # Job 1: monta o diretório de publicação e envia o artefato.
+  build:
+    name: Montar artefato
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar o Pages
+        uses: actions/configure-pages@v5
+
+      - name: Montar o diretório de publicação (_site)
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+
+          # 1) Conteúdo do site na raiz do artefato (inclui arquivos ocultos).
+          cp -R site/. _site/
+
+          # 2) Assets do repositório -> _site/assets (GIF da demo, ícones).
+          rm -rf _site/assets
+          cp -R assets _site/assets
+
+          # .nojekyll: garante que nenhum arquivo do site seja filtrado.
+          touch _site/.nojekyll
+
+          # Sanidade: sem estes arquivos o site publicado ficaria quebrado.
+          test -f _site/index.html || { echo "::error::faltou _site/index.html"; exit 1; }
+          test -f _site/styles.css || { echo "::error::faltou _site/styles.css"; exit 1; }
+          test -f _site/assets/freedsh-demo.gif || { echo "::error::faltou _site/assets/freedsh-demo.gif (GIF da demo)"; exit 1; }
+
+          echo "Arquivos que serão publicados:"
+          find _site -maxdepth 2 -type f | sort
+
+      - name: Enviar o artefato do Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Envia apenas o diretório montado acima, não o repositório inteiro.
+          path: _site
+
+  # Job 2: publica o artefato. Só roda se o build deu certo.
+  deploy:
+    name: Publicar
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
