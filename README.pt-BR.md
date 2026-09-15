@@ -13,7 +13,7 @@
 [![Última release](https://img.shields.io/github/v/release/marcosmmjr2023/dsh-h-v1?label=release&sort=semver)](https://github.com/marcosmmjr2023/dsh-h-v1/releases)
 [![Discussões](https://img.shields.io/badge/discussões-abertas-blue)](https://github.com/marcosmmjr2023/dsh-h-v1/discussions)
 
-**English:** [README.md](README.md)
+**English:** [README.md](README.md) · **Español:** [README.es.md](README.es.md)
 
 ![FreeDSH funcionando — FreeLLMAPI, Roteador Inteligente, controle de modelos e atualização segura do core](assets/freedsh-demo.gif)
 
