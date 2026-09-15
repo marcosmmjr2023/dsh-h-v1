@@ -1,4 +1,4 @@
-# FreeDSH — GitHub Discussions seed posts
+
 
 Use these after enabling GitHub Discussions. They are intentionally short and designed to invite useful technical replies.
 
