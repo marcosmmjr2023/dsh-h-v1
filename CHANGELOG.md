@@ -547,3 +547,8 @@ Publicação automática — última sincronização desta máquina.
   - attachments/v1/request-images/6d/6d5fd5068cc3d16cbc8f5138a3c582f0b7c7ce9e0ee3781469aba63c74141447
   - attachments/v1/request-images/a8/a8ab061fc8c124724a5fa37aeb370489dcf3844ebd1a15b55bcc587e523755ce
   - attachments/v1/request-images/f0/f08750a1206f34a1f932172a204c7217a7c3fffb88712824e5b41a6dad689419
+
+## [v0.2.127] — 2026-09-22 12:30 (máquina v2202608297065493408)
+Publicação automática — última sincronização desta máquina.
+- Arquivos alterados (1):
+  - llm-deepseek/files-v3.json
