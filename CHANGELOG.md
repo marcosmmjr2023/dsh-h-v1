@@ -552,3 +552,9 @@ Publicação automática — última sincronização desta máquina.
 Publicação automática — última sincronização desta máquina.
 - Arquivos alterados (1):
   - llm-deepseek/files-v3.json
+
+## [v0.2.128] — 2026-10-11 12:00 (máquina v2202608297065493408)
+Publicação automática — última sincronização desta máquina.
+- Arquivos alterados (2):
+  - llm-deepseek/files-v3.json
+  - llm-deepseek/files-v3.json.lock
